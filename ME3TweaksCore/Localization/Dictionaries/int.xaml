@@ -39,7 +39,7 @@
     <system:String x:Key="string_interp_cannotBackupGameIsRunning">Cannot backup while {0} is running.</system:String>
     <!-- 0={game name (mass effect, mass effect 2...)} -->
     <system:String x:Key="string_ensureCorrectGameChosen">Ensure correct game chosen</system:String>
-    <system:String x:Key="string_warningLinkedTargetWillNotLoad">The path you specify will be checked if it is a vanilla backup. Once this check is complete it will be marked as a backup and modding tools will refuse to modify it. Ensure this is not your active game path or you will be unable to mod the game.</system:String>
+    <system:String x:Key="string_warningLinkedTargetWillNotLoad">It will be checked if the path you specify is a vanilla backup. Once this check is complete it will be marked as a backup and modding tools will refuse to modify it. Ensure this is not your active game path or you will be unable to mod the game.</system:String>
     <system:String x:Key="string_iUnderstand">I understand</system:String>
     <system:String x:Key="string_abortLinking">Abort linking</system:String>
     <system:String x:Key="string_cannotLinkTargetWrongGenerationLEneedOT">Cannot use this target as backup: This is the Legendary Edition version of the game, the target you are trying to link is the Original Trilogy version.</system:String>
@@ -241,7 +241,7 @@
     <!-- 0={bPath} -->
     <system:String x:Key="string_createNewBackup">Create new backup</system:String>
     <system:String x:Key="string_gameNotInstalled">Game not installed</system:String>
-    <system:String x:Key="string_gameNotInstalledRunOnce">Game not installed. Run at least once to ensure game is fully setup</system:String>
+    <system:String x:Key="string_gameNotInstalledRunOnce">Game not installed. Run at least once to ensure game is fully set up</system:String>
     <system:String x:Key="string_cantCreateBackup">Can't create backup</system:String>
 
     <!-- Game restore controller -->
