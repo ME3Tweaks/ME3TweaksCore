@@ -193,7 +193,7 @@ namespace ME3TweaksCore.Helpers
                                 if (lastEqualsPos < propNameStartPos) throw new Exception(@"ASSERT ERROR: Error parsing string struct: equals cannot come before property name start. Value: " + inputString);
                                 string propertyName = inputString.Substring(propNameStartPos, lastEqualsPos - propNameStartPos).Trim();
                                 string value = "";
-                                if (openingQuotePos >= 0)
+                                if (openingQuotePos >= 0 && closingQuotePos > openingQuotePos)
                                 {
                                     value = inputString.Substring(openingQuotePos + 1, closingQuotePos - (openingQuotePos + 1)).Trim();
                                 }
@@ -224,7 +224,7 @@ namespace ME3TweaksCore.Helpers
                     string propertyName = inputString.Substring(propNameStartPos, lastEqualsPos - propNameStartPos)
                         .Trim();
                     string value = "";
-                    if (openingQuotePos >= 0)
+                    if (openingQuotePos >= 0 && closingQuotePos > openingQuotePos)
                     {
                         value = inputString.Substring(openingQuotePos + 1, closingQuotePos - (openingQuotePos + 1))
                             .Trim();
