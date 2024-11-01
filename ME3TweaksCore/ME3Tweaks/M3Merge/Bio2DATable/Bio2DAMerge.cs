@@ -207,7 +207,9 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
             finalPackageStream.Seek(tagSize - 8, SeekOrigin.Current);
 
             var lecllessSize = (int)finalPackageStream.Position;
-            var isVanilla = VanillaDatabaseService.IsFileVanilla(target.Game, target.GetRelativePath(finalPackage.FilePath), false, lecllessSize);
+            finalPackageStream.Position = 0;
+            var lecllessMd5 = MUtilities.CalculateHash(finalPackageStream, byteLenToHash: lecllessSize);
+            var isVanilla = VanillaDatabaseService.IsFileVanilla(target.Game, target.GetRelativePath(finalPackage.FilePath), false, lecllessSize, lecllessMd5);
 
             if (isVanilla)
             {
@@ -273,6 +275,11 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                 if (destPackage == null)
                 {
                     MLog.Error($@"Bio2DA merge 'packagefile' is invalid: {obj.GamePackageFile} - cannot merge into non-basegame/Bring Down The Sky 2DA files");
+                    MLog.Information(@"Packages in the 2DA cache:");
+                    foreach (var package in packageContainer.GetTargetablePackages())
+                    {
+                        MLog.Information($"  {package.FilePath}");
+                    }
                     throw new Exception(LC.GetString(LC.string_interp_2damerge_invalidTargetFile, obj.GamePackageFile));
                 }
 
@@ -332,7 +339,11 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                         return false;
                     }
 
-                    var baseTable = baseFile.Exports.FirstOrDefault(x => !x.IsDefaultObject && x.IsA(@"Bio2DA") && x.ObjectName.Instanced.CaseInsensitiveEquals(tableName));
+                    var baseTable = baseFile.Exports.FirstOrDefault(x => !x.IsDefaultObject && x.IsA(@"Bio2DA") &&
+                                                                         (x.ObjectName.Instanced.CaseInsensitiveEquals(tableName) || // Direct name
+                                                                          //10/31/2024 - Fix targetting _part tables in BDTS tables that we reset
+                                                                         (x.ObjectName.Name.Length > 5 && x.ObjectName.Name.StartsWith(tableName, StringComparison.CurrentCultureIgnoreCase) && x.ObjectName.Name.EndsWith("_part")) // Targetting _part table in BDTS tables
+                                                                         ));
                     if (baseTable == null)
                     {
                         MLog.Error($@"Bio2DA merge 'mergetables' value is invalid: {table} - could not find basegame table with base name '{tableName}' name in package '{basePackagePath}'");
@@ -340,7 +351,9 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                     }
 
                     // Check basetable is actually a vanilla table
-                    if (!packageContainer.VanillaTableNames.Contains(baseTable.ObjectName.Instanced, StringComparer.InvariantCultureIgnoreCase))
+                    // 10/31/2024 - Strip _part so we can successfully target BDTS tables
+                    var baseTableName = baseTable.ObjectName.Name.EndsWith("_part") ? baseTable.ObjectName.Name[..^5] : baseTable.ObjectName.Instanced;
+                    if (!packageContainer.VanillaTableNames.Contains(baseTableName, StringComparer.InvariantCultureIgnoreCase))
                     {
                         MLog.Error($@"Bio2DA merge 'mergetables' value is invalid: {table} - this is not a vanilla table. Bio2DA merge does not work with non-vanilla tables.");
                         throw new Exception(LC.GetString(LC.string_interp_2damerge_invalidNotAVanillaTable, table));
@@ -351,7 +364,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                     var mergedCount = mod2DA.MergeInto(base2DA, out var result);
                     if (result == Bio2DAMergeResult.OK)
                     {
-                        MLog.Information($@"Bio2DA merged {mergedCount.Count} rows from {table} into {tableName}");
+                        MLog.Information($@"Bio2DA merged {mergedCount.Count} rows from {table} in {modTable.FileRef.FilePath} into {base2DA.Export.ObjectName.Instanced} in {baseTable.FileRef.FileNameNoExtension}");
                         mergedResult |= mergedCount.Any();
                         base2DA.Write2DAToExport();
                         recordMerge(baseFile, Path.GetFileName(mergeFilePath)); // Record we applied this m3cd to this package
