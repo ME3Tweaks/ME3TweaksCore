@@ -4,7 +4,7 @@
 		<Description>Core library for ME3Tweaks software</Description>
 		<Company>ME3Tweaks</Company>
 		<Authors>ME3Tweaks</Authors>
-		<Version>9.0.1</Version>
+		<Version>9.1.0</Version>
 		<!-- Windows 2004 -->
 		<TargetFrameworks>net8.0-windows10.0.19041</TargetFrameworks>
 		<Platforms>x64</Platforms>
