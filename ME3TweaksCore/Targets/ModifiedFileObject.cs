@@ -48,7 +48,12 @@ namespace ME3TweaksCore.Targets
                 var info = BasegameFileIdentificationService.GetBasegameFileSource(target, fullpath, MD5);
                 if (info != null)
                 {
-                    ModificationSource = info.GetSourceForUI();
+                    var modSource =  info.GetSourceForUI();
+                    if (!string.IsNullOrWhiteSpace(modSource))
+                    {
+                        // Don't set value unless actually something
+                        ModificationSource = modSource;
+                    }
                 }
 #if DEBUG
                 //else
