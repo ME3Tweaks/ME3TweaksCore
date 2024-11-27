@@ -51,10 +51,10 @@ namespace ME3TweaksCore
                 throw new Exception(@"The ME3TweaksCoreLibInitPackage object was null! This object is required to initialize the library.");
             }
 
-            if (Log.Logger == Serilog.Core.Logger.None && package.CreateLogger != null)
+            if (Log.Logger == Serilog.Core.Logger.None && package.GetLogger != null)
             {
-                // Start logger if it is not already created.
-                Log.Logger = package.CreateLogger.Invoke();
+                // Attach to hosting logger
+                Log.Logger = package.GetLogger.Invoke();
                 MLog.Information(@"------------------------------------");
             }
 
@@ -64,7 +64,7 @@ namespace ME3TweaksCore
 
             // Load Legendary Explorer Core as we depend on it
             MEPackageHandler.GlobalSharedCacheEnabled = false; // ME3Tweaks tools (non LEX) do not use the global package cache
-            LegendaryExplorerCoreLib.InitLib(null, logger: Log.Logger, 
+            LegendaryExplorerCoreLib.InitLib(null, logger: package.GetLogger?.Invoke(), 
                 packageSavingFailed: package.LECPackageSaveFailedCallback, 
                 // objectDBsToLoad: package.PropertyDatabasesToLoad, // Use lazy loader now
                 usePropertyDBLazyLoad: true);
