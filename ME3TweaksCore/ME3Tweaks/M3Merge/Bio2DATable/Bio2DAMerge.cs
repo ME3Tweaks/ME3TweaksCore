@@ -135,7 +135,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
 
                         if (matchingExp.DataChanged)
                         {
-                            Debug.WriteLine($@"Reset table: {matchingExp} in {file.FileNameNoExtension}");
+                            Debug.WriteLine($@"Reset table: {matchingExp.InstancedFullPath} in {file.FileNameNoExtension}");
                         }
                     }
                 }
@@ -290,7 +290,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                     throw new Exception(LC.GetString(LC.string_interp_2damerge_couldNotFindTarget, obj.GamePackageFile));
                 }
 
-                var modPackagePath = Directory.GetFileSystemEntries(dlcCookedPath, obj.ModPackageFile, SearchOption.AllDirectories).FirstOrDefault();
+                var modPackagePath = Directory.GetFiles(dlcCookedPath, obj.ModPackageFile, SearchOption.AllDirectories).FirstOrDefault();
                 if (modPackagePath == null)
                 {
                     MLog.Error($@"Bio2DA merge 'mergepackagefile' is invalid: {obj.ModPackageFile} - could not find in CookedPCConsole folder of mod");
