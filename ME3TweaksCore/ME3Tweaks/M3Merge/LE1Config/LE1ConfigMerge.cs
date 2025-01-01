@@ -49,7 +49,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.LE1Config
 
             foreach (var dlc in dlcMountsInOrder)
             {
-                var dlcCookedPath = Path.Combine(M3Directories.GetDLCPath(target), dlc, target.Game.CookedDirName());
+                var dlcCookedPath = Path.Combine(target.GetDLCPath(), dlc, target.Game.CookedDirName());
 
                 MLog.Information($@"Looking for ConfigDelta-*.m3cd files in {dlcCookedPath}", log);
                 var m3cds = Directory.GetFiles(dlcCookedPath, @"*" + ConfigMerge.CONFIG_MERGE_EXTENSION, SearchOption.TopDirectoryOnly)

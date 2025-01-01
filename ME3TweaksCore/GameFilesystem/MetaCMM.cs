@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -28,6 +29,7 @@ namespace ME3TweaksCore.GameFilesystem
         public static readonly string PrefixNexusUpdateCode = @"[NEXUSUPDATECODE]";
         public static readonly string PrefixUsesEnhancedBink = @"[USESENHANCEDBINK]";
         public static readonly string PrefixInstallTime = @"[INSTALLTIME]";
+        public static readonly string PrefixModDescFeatureLevel = @"[MDFEATURELEVEL]";
         #endregion
 
         public string ModName { get; set; }
@@ -39,6 +41,11 @@ namespace ME3TweaksCore.GameFilesystem
         /// Path of moddesc.ini that was used to generate this (only used by M3)
         /// </summary>
         public string ModdescSourcePath { get; set; }
+
+        /// <summary>
+        /// The version for parsing moddesc-specific structs like requirements
+        /// </summary>
+        public double ModDescFeatureLevel { get; set; }
         /// <summary>
         /// List of DLC that this one is not compatible with
         /// </summary>
@@ -110,6 +117,12 @@ namespace ME3TweaksCore.GameFilesystem
             if (IncompatibleDLC.Any())
             {
                 sb.AppendLine($@"{PrefixIncompatibleDLC}{string.Join(';', IncompatibleDLC)}");
+            }
+
+            // Mod Manager 9.1: track feature level of moddesc which is used to determine required dlc parsing
+            if (ModDescFeatureLevel > 0)
+            {
+                sb.AppendLine($@"{PrefixModDescFeatureLevel}{ModDescFeatureLevel}");
             }
 
             // Mod Manager 8: Write the source moddesc.ini path so we can potentially use it to track 
@@ -214,9 +227,14 @@ namespace ME3TweaksCore.GameFilesystem
                                 try
                                 {
                                     // MetaCMM does not write things beyond version. I hope to not regret this decision
-                                    RequiredDLC.Add(DLCRequirement.ParseRequirement(s, true, false));
+                                    // Someday i'll look at this and be like,
+                                    // why did I not make this a static method for parsing a requirement? Why must I replace this 5 times?
+                                    var testreq = ModDescFeatureLevel >= 9.0
+                                        ? DLCRequirement.ParseRequirementKeyed(s, ModDescFeatureLevel)
+                                        : DLCRequirement.ParseRequirement(s, false, ModDescFeatureLevel >= 6.3);
+                                    RequiredDLC.Add(testreq);
                                 }
-                                catch
+                                catch(Exception ex1)
                                 {
                                     MLog.Warning($@"Failed to read DLC requirement: {s} in metacmm file {metaFile}");
                                 }

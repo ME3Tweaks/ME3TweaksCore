@@ -49,6 +49,11 @@ namespace ME3TweaksCore
         public Func<ILogger> CreateLogger { get; init; }
 
         /// <summary>
+        /// Delegate to create fetch the wrapping application's logger. Used when initializing logger objects.
+        /// </summary>
+        public Func<ILogger> GetLogger { get; init; }
+
+        /// <summary>
         /// Function to invoke to test if we can fetch online content. This method should be throttled (for example, once per day) to prevent server overload or having the web host blacklist the client IP.
         /// </summary>
         public Func<bool> CanFetchContentThrottleCheck { get; init; }

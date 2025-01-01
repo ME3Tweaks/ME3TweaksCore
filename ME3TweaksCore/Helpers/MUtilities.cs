@@ -14,6 +14,7 @@ using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Misc;
 using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
+using ME3TweaksCore.Misc;
 using NickStrupat;
 using ThreadState = System.Diagnostics.ThreadState;
 
@@ -175,8 +176,9 @@ namespace ME3TweaksCore.Helpers
         /// </summary>
         /// <param name="stream">Stream to hash</param>
         /// <param name="algorithm">Algorithm to use. Use null for MD5.</param>
+        /// <param name="byteLenToHash">How many bytes to hash. If 0, hash everything in the stream</param>
         /// <returns></returns>
-        public static string CalculateHash(Stream stream, string algorithm = null)
+        public static string CalculateHash(Stream stream, string algorithm = null, long byteLenToHash = 0)
         {
             HashAlgorithm algo = null;
 
@@ -197,7 +199,8 @@ namespace ME3TweaksCore.Helpers
                 }
 
                 stream.Position = 0;
-                var hash = algo.ComputeHash(stream);
+                Stream streamToHash = byteLenToHash > 0 ? new StreamReadLimitLengthWrapper(stream, byteLenToHash) : stream;
+                var hash = algo.ComputeHash(streamToHash);
                 stream.Position = 0; // reset stream
                 return BitConverter.ToString(hash).Replace(@"-", "").ToLowerInvariant();
             }

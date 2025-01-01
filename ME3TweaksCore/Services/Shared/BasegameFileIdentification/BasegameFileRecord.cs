@@ -45,7 +45,7 @@ namespace ME3TweaksCore.Services.Shared.BasegameFileIdentification
             hash = md5 ?? MUtilities.CalculateHash(relativePathToRoot);
             this.game = game.ToGameNum().ToString(); // due to how json serializes stuff we have to convert it here.
             this.size = size;
-            source = humanName;
+            source = humanName?.Trim(); // 10/31/2024 - .Trim()
         }
 
         /// <summary>
@@ -75,6 +75,11 @@ namespace ME3TweaksCore.Services.Shared.BasegameFileIdentification
             return $@"{BLOCK_OPENING}{blockName}={blockData}{BLOCK_CLOSING}";
         }
 
+        /// <summary>
+        /// Returns the source string without the block of the given name within it. Use this to subtract blocks out of the string.
+        /// </summary>
+        /// <param name="blockName"></param>
+        /// <returns></returns>
         public string GetWithoutBlock(string blockName)
         {
             string parsingStr = source;
@@ -110,8 +115,11 @@ namespace ME3TweaksCore.Services.Shared.BasegameFileIdentification
             List<string> blockValues = new List<string>();
 
             string parsingStr = source;
+            // Find start and end of first data block
             int openIdx = parsingStr.IndexOf(BLOCK_OPENING);
             int closeIdx = parsingStr.IndexOf(BLOCK_CLOSING);
+            
+            // Read all blocks into blockNames and blockValues
             while (openIdx >= 0 && closeIdx >= 0 && closeIdx > openIdx)
             {
                 var blockText = parsingStr.Substring(openIdx + BLOCK_OPENING.Length, closeIdx - (openIdx + BLOCK_OPENING.Length));
@@ -129,20 +137,23 @@ namespace ME3TweaksCore.Services.Shared.BasegameFileIdentification
                 openIdx = parsingStr.IndexOf(BLOCK_OPENING);
                 closeIdx = parsingStr.IndexOf(BLOCK_CLOSING);
             }
-
+            
+            // Reset parsing string back to original value as we have now extracted data
             parsingStr = source;
+
+            // Remove all data blocks from the string. Non-block data will be all that remains
             foreach (var block in blockNames)
             {
                 parsingStr = GetWithoutBlock(block);
             }
 
-            if (!string.IsNullOrWhiteSpace(parsingStr) && blockValues.Any())
+            if (blockValues.Any())
             {
                 parsingStr += "\n"; // do not localize
                 parsingStr += string.Join("\n", blockValues); // do not localize
             }
             
-            return parsingStr;
+            return parsingStr.Trim();
         }
     }
 }
