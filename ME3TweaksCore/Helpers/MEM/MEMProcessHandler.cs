@@ -112,5 +112,17 @@ namespace ME3TweaksCore.Helpers.MEM
                 return Processes.FirstOrDefault(x => x.ShouldWaitForExit && x.WaitReason != null)?.WaitReason;
             }
         }
+
+        /// <summary>
+        /// Returns if there are any MEM processes run from this application session
+        /// </summary>
+        /// <returns></returns>
+        public static bool IsMEMRunning()
+        {
+            lock (syncObj)
+            {
+                return Processes.Any();
+            }
+        }
     }
 }
