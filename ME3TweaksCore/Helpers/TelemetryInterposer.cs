@@ -61,7 +61,7 @@ namespace ME3TweaksCore.Helpers
         }
 
         /// <summary>
-        /// Instructs the calling application to trigger a error exception upload because an error has occurred
+        /// Instructs the calling application to trigger an error exception upload because an error has occurred
         /// </summary>
         /// <param name="exception"></param>
         /// <param name="relevantInfo"></param>
@@ -69,6 +69,7 @@ namespace ME3TweaksCore.Helpers
         {
             TrackErrorCallback?.Invoke(exception, relevantInfo);
         }
+
 
         public static void TrackErrorWithLog(Exception exception, Dictionary<string, string> dictionary)
         {
