@@ -91,7 +91,14 @@ namespace ME3TweaksCore.Helpers
                 if (string.IsNullOrWhiteSpace(name)) name = LC.GetString(LC.string_nameNotListedInMemBrackets);
                 var offset = memFile.ReadUInt64();
                 var size = memFile.ReadUInt64();
-                var flags = memFile.ReadUInt64();
+
+                // 04/04/2025 - It looks like MEM Legacy did not write this value
+                // as shown here https://github.com/MassEffectModder/MassEffectModderLegacy/blob/d7ce737cfc63e3c99c4b64be8d0f953ed3bc6943/MassEffectModder/Misc.cs#L1983
+                if (version >= 3)
+                {
+                    var flags = memFile.ReadUInt64();
+                }
+
                 files.Add(name);
             }
 
