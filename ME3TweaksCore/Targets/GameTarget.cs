@@ -455,14 +455,14 @@ namespace ME3TweaksCore.Targets
             if (TextureModded && Game.IsLEGame())
             {
                 // Non package files initially.
-                modifiedBasegameFiles = modifiedFiles.Where(x=>!x.RepresentsPackageFilePath()).Select(file => MExtendedClassGenerators.GenerateModifiedFileObject(
+                modifiedBasegameFiles = modifiedFiles.Where(x => !x.RepresentsPackageFilePath()).Select(file => MExtendedClassGenerators.GenerateModifiedFileObject(
                     file.Substring(TargetPath.Length + 1), this,
                     restoreBasegamefileConfirmationCallback,
                     notifyFileRestoringCallback,
                     notifyRestoredCallback)).ToList();
 
                 // Then look for only tracked package files
-                foreach (var trackedFile in BasegameFileIdentificationService.GetEntriesForGame(Game).Where(x=>x.Key.RepresentsPackageFilePath()))
+                foreach (var trackedFile in BasegameFileIdentificationService.GetEntriesForGame(Game).Where(x => x.Key.RepresentsPackageFilePath()))
                 {
                     var path = Path.Combine(TargetPath, trackedFile.Key);
                     var hash = MUtilities.CalculateHash(path);
@@ -1210,22 +1210,26 @@ namespace ME3TweaksCore.Targets
             var obinkPath = GetOriginalProxiedBinkPath();
             if (Game == MEGame.ME1)
             {
-                File.Delete(obinkPath);
+                if (File.Exists(obinkPath))
+                    File.Delete(obinkPath);
                 MUtilities.ExtractInternalFile(@"ME3TweaksCore.GameFilesystem.Bink._32.me1.binkw23.dll", binkPath, true);
             }
             else if (Game == MEGame.ME2)
             {
-                File.Delete(obinkPath);
+                if (File.Exists(obinkPath))
+                    File.Delete(obinkPath);
                 MUtilities.ExtractInternalFile(@"ME3TweaksCore.GameFilesystem.Bink._32.me2.binkw23.dll", binkPath, true);
             }
             else if (Game == MEGame.ME3)
             {
-                File.Delete(obinkPath);
+                if (File.Exists(obinkPath))
+                    File.Delete(obinkPath);
                 MUtilities.ExtractInternalFile(@"ME3TweaksCore.GameFilesystem.Bink._32.me3.binkw23.dll", binkPath, true);
             }
             else if (Game.IsLEGame())
             {
-                File.Delete(obinkPath);
+                if (File.Exists(obinkPath))
+                    File.Delete(obinkPath);
                 MUtilities.ExtractInternalFile(@"ME3TweaksCore.GameFilesystem.Bink._64.bink2w64_original.dll", binkPath, true);
             }
         }
