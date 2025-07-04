@@ -1,22 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BCnEncoder.Shared;
-using LegendaryExplorerCore.Coalesced;
-using LegendaryExplorerCore.Coalesced.Config;
 using LegendaryExplorerCore.GameFilesystem;
 using LegendaryExplorerCore.Helpers;
-using LegendaryExplorerCore.Misc;
 using LegendaryExplorerCore.Packages;
 using LegendaryExplorerCore.Unreal.BinaryConverters;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.GameFilesystem;
-using ME3TweaksCore.Helpers;
-using ME3TweaksCore.Localization;
-using ME3TweaksCore.ME3Tweaks.M3Merge.LE1Config;
 using ME3TweaksCore.Services.Backup;
 using ME3TweaksCore.Services.Shared.BasegameFileIdentification;
 using ME3TweaksCore.Targets;
@@ -90,7 +80,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
             {
                 // Serialize the assets
                 var ms = new MemoryStream();
-                var gscsc = new ShaderCache.GlobalShaderCacheSerializingContainer(ms, null) { ActualGame = target.Game };
+                var gscsc = new PackagelessSerializingContainer(ms, null) { Game = target.Game };
                 globalShaderCache.WriteTo(gscsc);
                 ms.WriteByte(0); // This forces size change, which lets us tell it's been modified on size check.
                 ms.WriteToFile(outF);
