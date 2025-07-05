@@ -4,11 +4,11 @@
 		<Description>Core library for ME3Tweaks software</Description>
 		<Company>ME3Tweaks</Company>
 		<Authors>ME3Tweaks</Authors>
-		<Version>9.0.1</Version>
+		<Version>9.1.0</Version>
 		<!-- Windows 2004 -->
 		<TargetFrameworks>net8.0-windows10.0.19041</TargetFrameworks>
 		<Platforms>x64</Platforms>
-		<Copyright>2021-2024 ME3Tweaks</Copyright>
+		<Copyright>2021-2025 ME3Tweaks</Copyright>
 		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 	</PropertyGroup>
 
@@ -62,13 +62,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="CliWrap" Version="3.6.6" />
+		<PackageReference Include="CliWrap" Version="3.9.0" />
 		<PackageReference Include="Flurl" Version="4.0.0" />
 		<PackageReference Include="Flurl.Http" Version="4.0.2" />
-		<PackageReference Include="Octokit" Version="12.0.0" />
+		<PackageReference Include="Octokit" Version="14.0.0" />
 		<PackageReference Include="PropertyChanged.Fody" Version="4.1.0" />
-		<PackageReference Include="System.Diagnostics.EventLog" Version="8.0.0" />
-		<PackageReference Include="System.Management" Version="8.0.0" />
+		<PackageReference Include="System.Diagnostics.EventLog" Version="9.0.6" />
+		<PackageReference Include="System.Management" Version="9.0.6" />
 	</ItemGroup>
 
 	<ItemGroup>
