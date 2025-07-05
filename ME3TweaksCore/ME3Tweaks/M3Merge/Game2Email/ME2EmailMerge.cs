@@ -178,7 +178,15 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Game2Email
             // Setup conditionals
             ExportEntry ConditionalClass = startup.FindExport($@"PlotManager{M3MergeDLC.MERGE_DLC_FOLDERNAME}.BioAutoConditionals");
             FileLib fl = new FileLib(startup);
-            bool initialized = fl.Initialize(new TargetPackageCache() { RootPath = M3Directories.GetBioGamePath(mergeDLC.Target) }, gameRootPath: mergeDLC.Target.TargetPath);
+            bool initialized = fl.Initialize(
+                new UnrealScriptOptionsPackage()
+                {
+                    Cache = new TargetPackageCache()
+                    {
+                        RootPath = M3Directories.GetBioGamePath(mergeDLC.Target)
+                    },
+                    GamePathOverride = mergeDLC.Target.TargetPath
+                });
             if (!initialized)
             {
                 throw new Exception(
@@ -486,7 +494,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Game2Email
             //func.indexValue = 0;
 
             var fullFunctionText = $@"public function bool F{conditionalId}(BioWorldInfo bioWorld, int Argument) {{ {innerFunctionText} }}";
-            var log = UnrealScriptCompiler.AddOrReplaceInClass(conditionalClass, fullFunctionText, fl, cache);
+            var log = UnrealScriptCompiler.AddOrReplaceInClass(conditionalClass, fullFunctionText, fl, new UnrealScriptOptionsPackage() { Cache = cache });
             if (log.AllErrors.Any())
             {
                 MLog.Error($@"Error compiling function F{conditionalId}");

@@ -197,8 +197,12 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.PlotManager
                 MLog.Information($@"Initializing plot manager path with relative package cache path {M3Directories.GetBioGamePath(target)}");
                 var fl = new FileLib(plotManager);
                 bool initialized =
-                    fl.Initialize(new TargetPackageCache() { RootPath = M3Directories.GetBioGamePath(target) },
-                        target.TargetPath, canUseBinaryCache: false);
+                    fl.Initialize(new UnrealScriptOptionsPackage()
+                    {
+                        GamePathOverride = target.TargetPath,
+                        Cache = new TargetPackageCache() { RootPath = M3Directories.GetBioGamePath(target) }
+                    }
+                    , canUseBinaryCache: false);
                 if (!initialized)
                 {
                     MLog.Error(@"Error initializing FileLib for plot manager sync:");
@@ -218,7 +222,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.PlotManager
                     MLog.Information($@"Updating conditional entry: {pmKey}", verboseLogging);
                     var exp = plotManager.FindExport(pmKey);
 
-                    (_, MessageLog log) = UnrealScriptCompiler.CompileFunction(exp, v.Value, fl);
+                    (_, MessageLog log) = UnrealScriptCompiler.CompileFunction(exp, v.Value, fl, new UnrealScriptOptionsPackage());
                     if (log.AllErrors.Any())
                     {
                         MLog.Error($@"Error compiling function {exp.InstancedFullPath}:");

@@ -31,7 +31,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
     public class SQMOutfitMerge
     {
         public const string SQUADMATE_MERGE_MANIFEST_V2_EXTENSION = @".sqm2";
-        
+
         public const string SQUADMATE_MERGE_MANIFEST_FILE = @"SquadmateMergeInfo.sqm";
         private const string SUICIDE_MISSION_STREAMING_PACKAGE_NAME = @"BioP_EndGm_StuntHench.pcc";
         public class SquadmateMergeInfo
@@ -397,7 +397,8 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
                     // Add Conditional Functions
                     var packageCache = new TargetPackageCache() { RootPath = mergeDLC.Target.GetBioGamePath() };
                     FileLib fl = new FileLib(startup);
-                    bool initialized = fl.Initialize(packageCache, mergeDLC.Target.TargetPath);
+                    var usop = new UnrealScriptOptionsPackage() { Cache = packageCache, GamePathOverride = mergeDLC.Target.TargetPath };
+                    bool initialized = fl.Initialize(usop);
                     if (!initialized)
                     {
                         throw new Exception(@"FileLib for script update could not initialize, cannot install conditionals");
@@ -414,7 +415,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
                             scText = scText.Replace(@"%SQUADMATEOUTFITPLOTINT%", GetSquadmateOutfitInt(outfit.HenchName, MEGame.LE2).ToString());
                             scText = scText.Replace(@"%OUTFITINDEX%", outfit.MemberAppearanceValue.ToString());
 
-                            MessageLog log = UnrealScriptCompiler.AddOrReplaceInClass(conditionalClass, scText, fl, packageCache);
+                            MessageLog log = UnrealScriptCompiler.AddOrReplaceInClass(conditionalClass, scText, fl, usop);
                             if (log.AllErrors.Any())
                             {
                                 MLog.Error($@"Error compiling function F{outfit.ConditionalIndex}:");

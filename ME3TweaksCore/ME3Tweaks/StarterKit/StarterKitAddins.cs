@@ -711,9 +711,10 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
             }
 
             var lib = new FileLib(startupFile);
-            lib.Initialize();
+            var usop = new UnrealScriptOptionsPackage();
+            lib.Initialize(usop);
             var scriptText = @"Class BioAutoConditionals extends BioConditionals; public function bool FTemplateFunction(BioWorldInfo bioWorld, int Argument){ local BioGlobalVariableTable gv; gv = bioWorld.GetGlobalVariables(); return TRUE; } defaultproperties { }";
-            UnrealScriptCompiler.CompileClass(startupFile, scriptText, lib, parent: sfPlotExport);
+            UnrealScriptCompiler.CompileClass(startupFile, scriptText, lib, usop, parent: sfPlotExport);
 
             if (startupFile.Game.IsGame1())
             {
@@ -1110,14 +1111,15 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
 
                 // Compile the classes
                 var fileLib = new FileLib(guiDataPackage);
-                if (!fileLib.Initialize())
+                var usop = new UnrealScriptOptionsPackage();
+                if (!fileLib.Initialize(usop))
                 {
                     MLog.Error($@"Error intitializing filelib for sfxguidata package: {fileLib.InitializationLog.AllErrors.Select(msg => msg.ToString())}");
                     return;
                 }
 
                 // 1. Parent class
-                (_, MessageLog log1) = UnrealScriptCompiler.CompileClass(guiDataPackage, new StreamReader(MUtilities.ExtractInternalFileToStream(LE3ModSettingsClassTextAsset)).ReadToEnd(), fileLib, parent: settingsData);
+                (_, MessageLog log1) = UnrealScriptCompiler.CompileClass(guiDataPackage, new StreamReader(MUtilities.ExtractInternalFileToStream(LE3ModSettingsClassTextAsset)).ReadToEnd(), fileLib, usop, parent: settingsData);
                 if (log1.HasErrors)
                 {
                     MLog.Error($@"Failed to compile SFXGUIData_ModSettings for sfxguidata package: {log1.AllErrors.Select(msg => msg.ToString())}");
@@ -1125,7 +1127,7 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
                 }
 
                 // 2. Our custom class
-                (_, MessageLog log2) = UnrealScriptCompiler.CompileClass(guiDataPackage, GetCustomLE3ModSettingsClassText(dlcName), fileLib, parent: container);
+                (_, MessageLog log2) = UnrealScriptCompiler.CompileClass(guiDataPackage, GetCustomLE3ModSettingsClassText(dlcName), fileLib, usop, parent: container);
                 if (log2.HasErrors)
                 {
                     MLog.Error($@"Failed to compile {className} for sfxguidata package: {log2.AllErrors.Select(msg => msg.ToString())}");
@@ -1272,7 +1274,8 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
 
                     // Compile the classes
                     var fileLib = new FileLib(msmDataPackage);
-                    if (!fileLib.Initialize())
+                    var usop = new UnrealScriptOptionsPackage();
+                    if (!fileLib.Initialize(usop))
                     {
                         var errors = string.Join(@", ", fileLib.InitializationLog.AllErrors.Select(msg => msg.ToString()));
                         MLog.Error($@"Error initializing filelib for msmdata package: {errors}");
@@ -1282,11 +1285,11 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
                     // 1. Parent class
                     (_, MessageLog log0) = UnrealScriptCompiler.CompileClass(msmDataPackage,
                         @"Class ModSettingsSubmenu;",
-                        fileLib, parent: container); // works around self-referencing issues.
+                        fileLib, usop, parent: container); // works around self-referencing issues.
                     (_, MessageLog log1) = UnrealScriptCompiler.CompileClass(msmDataPackage,
                         new StreamReader(MUtilities.ExtractInternalFileToStream(LE1ModSettingsClassTextAsset))
                             .ReadToEnd(),
-                        fileLib, export: msmDataPackage.FindExport(modSettingsClassPath, @"Class"));
+                        fileLib, usop, export: msmDataPackage.FindExport(modSettingsClassPath, @"Class"));
                     if (log1.HasErrors)
                     {
                         var errors = log1.AllErrors.Select(msg => msg.ToString());
@@ -1296,7 +1299,7 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
 
                     // 2. Our custom class
                     (_, MessageLog log2) = UnrealScriptCompiler.CompileClass(msmDataPackage,
-                        GetCustomLE1ModSettingsClassText(dlcName), fileLib);
+                        GetCustomLE1ModSettingsClassText(dlcName), fileLib, usop);
                     if (log2.HasErrors)
                     {
                         var errors = log2.AllErrors.Select(msg => msg.ToString());
