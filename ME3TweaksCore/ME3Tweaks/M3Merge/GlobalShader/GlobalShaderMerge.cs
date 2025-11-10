@@ -32,7 +32,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
 
             var globalShaderCacheF = Path.Combine(backup, "BioGame", "CookedPCConsole", "GlobalShaderCache-PC-D3D-SM5.bin");
             using var fs = File.OpenRead(globalShaderCacheF);
-            var globalShaderCache = ShaderCache.ReadGlobalShaderCache(fs, target.Game);
+            var globalShaderCache = GlobalShaderCache.ReadGlobalShaderCache(fs, target.Game);
             var shaders = globalShaderCache.Shaders.Values.ToList();
 
             var dlcMountsInOrder = MELoadedDLC.GetDLCNamesInMountOrder(target.Game, target.TargetPath);
