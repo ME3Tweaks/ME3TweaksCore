@@ -92,6 +92,14 @@ namespace ME3TweaksCore.Services
                     var lelstream = MUtilities.ExtractInternalFileToStream($@"{assetPrefix}.bin");
                     ParseDatabase(lelstream, LELauncherVanillaDatabase);
                     return LELauncherVanillaDatabase;
+                case MEGame.LMP:
+                    // TODO: CHANGE TO LMP
+                    if (LE3VanillaDatabase.Count > 0) return LE3VanillaDatabase;
+                    assetPrefix = $@"ME3TweaksCore.Assets.VanillaDatabase.le3";
+                    var lmpstream = MUtilities.ExtractInternalFileToStream($@"{assetPrefix}.bin");
+                    ParseDatabase(lmpstream, LE3VanillaDatabase);
+                    return LE3VanillaDatabase;
+
             }
 
             return null;
@@ -450,6 +458,12 @@ namespace ME3TweaksCore.Services
                     if (LELauncherVanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.LELauncher);
                     vanillaDB = LELauncherVanillaDatabase;
                     break;
+                case MEGame.LMP:
+                    // TODO: THIS NEEDS SET TO LMP
+                    if (LE3VanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.LE3);
+                    vanillaDB = LE3VanillaDatabase;
+                    break;
+
                 default:
                     throw new Exception(@"Cannot vanilla check against game that is not ME1/ME2/ME3/LE1/LE2/LE3/LELauncher");
             }
@@ -674,6 +688,7 @@ namespace ME3TweaksCore.Services
                     SUPPORTED_HASHES_LE2.TryGetValue(md5, out var le2result);
                     return (md5, le2result);
                 case MEGame.LE3:
+                case MEGame.LMP:
                     SUPPORTED_HASHES_LE3.TryGetValue(md5, out var le3result);
                     return (md5, le3result);
                 case MEGame.LELauncher:

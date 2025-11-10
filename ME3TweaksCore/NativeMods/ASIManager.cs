@@ -38,11 +38,13 @@ namespace ME3TweaksCore.NativeMods
         public static readonly List<ASIMod> MasterLE1ASIUpdateGroups = new List<ASIMod>();
         public static readonly List<ASIMod> MasterLE2ASIUpdateGroups = new List<ASIMod>();
         public static readonly List<ASIMod> MasterLE3ASIUpdateGroups = new List<ASIMod>();
+        public static readonly List<ASIMod> MasterLMPASIUpdateGroups = new List<ASIMod>();
+        public static readonly List<ASIMod> MasterLELauncherASIUpdateGroups = new List<ASIMod>();
 
         /// <summary>
         /// Returns an enumeration of all master update groups for all games
         /// </summary>
-        public static IEnumerable<ASIMod> AllASIMods => MasterLE1ASIUpdateGroups.Concat(MasterLE2ASIUpdateGroups).Concat(MasterLE3ASIUpdateGroups).Concat(MasterME1ASIUpdateGroups).Concat(MasterME2ASIUpdateGroups).Concat(MasterME3ASIUpdateGroups);
+        public static IEnumerable<ASIMod> AllASIMods => MasterLE1ASIUpdateGroups.Concat(MasterLE2ASIUpdateGroups).Concat(MasterLE3ASIUpdateGroups).Concat(MasterLMPASIUpdateGroups).Concat(MasterLELauncherASIUpdateGroups).Concat(MasterME1ASIUpdateGroups).Concat(MasterME2ASIUpdateGroups).Concat(MasterME3ASIUpdateGroups);
 
         /// <summary>
         /// ASI Manager 
@@ -167,7 +169,7 @@ namespace ME3TweaksCore.NativeMods
             var masterGroups = new[]
             {
                 MasterME1ASIUpdateGroups, MasterME2ASIUpdateGroups, MasterME3ASIUpdateGroups, MasterLE1ASIUpdateGroups,
-                MasterLE2ASIUpdateGroups, MasterLE3ASIUpdateGroups
+                MasterLE2ASIUpdateGroups, MasterLE3ASIUpdateGroups, MasterLMPASIUpdateGroups, MasterLELauncherASIUpdateGroups
             };
 
             for (int i = 0; i < masterGroups.Length; i++)
@@ -248,8 +250,9 @@ namespace ME3TweaksCore.NativeMods
                 case 6:
                     return MEGame.LE3;
                 case 7:
-                    // Not used currently but this is how ME3Tweaks Server identifies LELauncher
                     return MEGame.LELauncher;
+                case 8:
+                    return MEGame.LMP;
                 default:
                     throw new Exception(LC.GetString(LC.string_interp_unsupportedGameIdInAsiManifest, i));
             }
@@ -283,6 +286,12 @@ namespace ME3TweaksCore.NativeMods
                     break;
                 case MEGame.LE3:
                     relevantGroups = MasterLE3ASIUpdateGroups;
+                    break;
+                case MEGame.LMP:
+                    relevantGroups = MasterLMPASIUpdateGroups;
+                    break;
+                case MEGame.LELauncher:
+                    relevantGroups = MasterLELauncherASIUpdateGroups;
                     break;
                 default:
                     return null;
@@ -327,6 +336,12 @@ namespace ME3TweaksCore.NativeMods
                 case MEGame.LE3:
                     relevantGroups = MasterLE3ASIUpdateGroups;
                     break;
+                case MEGame.LMP:
+                    relevantGroups = MasterLMPASIUpdateGroups;
+                    break;
+                case MEGame.LELauncher:
+                    relevantGroups = MasterLELauncherASIUpdateGroups;
+                    break;
                 default:
                     return null;
             }
@@ -358,8 +373,10 @@ namespace ME3TweaksCore.NativeMods
                 MasterLE1ASIUpdateGroups.Clear();
                 MasterLE2ASIUpdateGroups.Clear();
                 MasterLE3ASIUpdateGroups.Clear();
+                MasterLMPASIUpdateGroups.Clear();
+                MasterLELauncherASIUpdateGroups.Clear();
                 XElement rootElement = XElement.Parse(xmlText.Trim());
-                Debug.WriteLine(rootElement.ToString());
+                // Debug.WriteLine(rootElement.ToString());
 
 
                 //I Love Linq
@@ -386,6 +403,64 @@ namespace ME3TweaksCore.NativeMods
                                             Game = intToGame((int)ugroup.Attribute(@"game")), // use ugroup element to pull from outer group
                                         }).OrderBy(x => x.Version).ToList()
                                     }).ToList();
+
+#if DEBUG
+                // Add some transient ASIs for now
+                // Todo: Put into server manifest
+
+                // Add AutoTOC
+                updateGroups.Add(new ASIMod()
+                {
+                    UpdateGroupId = 500,
+                    Game = MEGame.LMP,
+                    Versions = [new ASIModVersion {
+                        Name = @"LMP AutoTOC",
+                        InstalledPrefix="AutoTOC",
+                        Author = "ME3Tweaks",
+                        Version = 2,
+                        Description = "AutoTOC for LMP",
+                        Hash = "6e0418e9208743ea9addf5cf4aa94add",
+                        SourceCodeLink = "https://github.com/SirCxyrtyx/AutoTOC-asi/tree/master",
+                        DownloadLink = "https://github.com/SirCxyrtyx/AutoTOC-asi/releases/download/LEv2/AutoTOC_LE-v2.asi",
+                        IsBeta = false,
+                        Hidden = false,
+                        DevModeOnly = false,
+                        Game = MEGame.LMP
+                    }]
+                });
+
+                // Add MilanHost
+                updateGroups.Add(new ASIMod()
+                {
+                    UpdateGroupId = 501,
+                    Game = MEGame.LMP,
+                    Versions = [new ASIModVersion {
+                        Name = @"MilanHost",
+                        InstalledPrefix="MilanHost",
+                        Author = "ME3Tweaks",
+                        Version = 1,
+                        Description = "MilanHost adds required functionality to the game to allow Project Milan to work properly.",
+                        Hash = "9c8b72297757886998a21ab29194eccf",
+                        SourceCodeLink = "https://github.com/d00telemental/MilanClientServer",
+                        DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/MilanHost.asi",
+                        IsBeta = false,
+                        Hidden = false,
+                        DevModeOnly = false
+                    }]
+                });
+
+                // Add DebugLogger
+                //MasterLMPASIUpdateGroups.Add(new ASIMod()
+                //{
+                //    UpdateGroupId = 500,
+                //    Game = MEGame.LMP,
+                //    Versions = [new ASIModVersion {
+
+                //    }]
+                //});
+#endif
+
+
                 foreach (var v in updateGroups)
                 {
                     if (v.LatestVersionIncludingHidden == null)
@@ -399,7 +474,7 @@ namespace ME3TweaksCore.NativeMods
                     {
                         v.IsHidden = true;
                     }
-                    
+
                     switch (v.Game)
                     {
                         case MEGame.ME1:
@@ -419,6 +494,12 @@ namespace ME3TweaksCore.NativeMods
                             break;
                         case MEGame.LE3:
                             MasterLE3ASIUpdateGroups.Add(v);
+                            break;
+                        case MEGame.LMP:
+                            MasterLMPASIUpdateGroups.Add(v);
+                            break;
+                        case MEGame.LELauncher:
+                            MasterLELauncherASIUpdateGroups.Add(v);
                             break;
                     }
 
@@ -707,6 +788,10 @@ namespace ME3TweaksCore.NativeMods
                     return MasterLE2ASIUpdateGroups;
                 case MEGame.LE3:
                     return MasterLE3ASIUpdateGroups;
+                case MEGame.LMP:
+                    return MasterLMPASIUpdateGroups;
+                case MEGame.LELauncher:
+                    return MasterLELauncherASIUpdateGroups;
                 default:
                     return null;
             }

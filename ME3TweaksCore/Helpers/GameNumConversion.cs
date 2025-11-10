@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using LegendaryExplorerCore.Packages;
+﻿using LegendaryExplorerCore.Packages;
 
 namespace ME3TweaksCore.Helpers
 {
@@ -25,6 +20,7 @@ namespace ME3TweaksCore.Helpers
                 5 => MEGame.LE2,
                 6 => MEGame.LE3,
                 7 => MEGame.LELauncher,
+                8 => MEGame.LMP,
                 _ => MEGame.Unknown // Technically we could throw an exception here...
             };
         }
