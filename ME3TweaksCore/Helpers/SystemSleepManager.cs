@@ -60,15 +60,14 @@ namespace ME3TweaksCore.Helpers
             if (RemainingMinutesAwake < 0)
             {
                 // Whoever is keeping us awake might have forgotten
-                MLog.Error(
-                    $@"FAILSAFE: The application has not requested sleep prevention for {MinutesPerWake} minutes. This may be a bug; long running tasks should periodically issue PreventSleep() and always call AllowSleep() when done. We are releasing the wakelock. The last specified reason was {AwakeReason}");
+                MLog.Error($@"FAILSAFE: The application has not requested sleep prevention for {MinutesPerWake} minutes. This may be a bug; long running tasks should periodically issue PreventSleep() and always call AllowSleep() when done. We are releasing the wakelock. The last specified reason was {AwakeReason}");
                 AllowSleep();
             }
             else
             {
                 // Keep it awake.
                 MLog.Information($@"The system is not allowed to go to sleep for another {RemainingMinutesAwake + 1} minutes due to previous request by {AwakeReason}");
-                PreventSleep(AwakeReason);
+                SetThreadExecutionState(ExecutionState.EsContinuous | ExecutionState.EsSystemRequired);
             }
         }
 
@@ -92,6 +91,7 @@ namespace ME3TweaksCore.Helpers
                 {
                     _wakeTimer.Stop();
                     _wakeTimer.Elapsed -= keepAwakeTimerTick;
+                    _wakeTimer.Dispose(); //08/19/2025 - dispose of timer
                     _wakeTimer = null;
                 }
             }

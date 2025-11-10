@@ -68,6 +68,7 @@ namespace ME3TweaksCore.Services.Backup
                 GameBackupStatuses.Add(new GameBackupStatus(MEGame.LE1));
                 GameBackupStatuses.Add(new GameBackupStatus(MEGame.LE2));
                 GameBackupStatuses.Add(new GameBackupStatus(MEGame.LE3));
+                GameBackupStatuses.Add(new GameBackupStatus(MEGame.LMP));
                 GameBackupStatuses.Add(new GameBackupStatus(MEGame.LELauncher));
             }
 
