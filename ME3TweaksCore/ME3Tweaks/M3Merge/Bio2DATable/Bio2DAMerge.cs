@@ -29,7 +29,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
     public class Bio2DAMerge
     {
         private const string BIO2DA_MERGE_FILE_SUFFIX = @".m3da";
-        private const string BIO2DA_BGFIS_DATA_BLOCK = @"BGFIS-Bio2DAMerge";
+        public const string BIO2DA_BGFIS_DATA_BLOCK = @"BGFIS-Bio2DAMerge";
 
         private static readonly string[] Mergable2DAFiles = new[]
         {
@@ -175,7 +175,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                     var outStream = file.SaveToStream(true); // We only support LE1 so its always true
 
                     recordedApplications.TryGetValue(file.FilePath, out var recordedMergesForFile);
-                    var record = CreateRecord(target, packageContainer, file, outStream, recordedMergesForFile, out var savedVanilla);
+                    var record = CreateRecord(target, packageContainer, file, outStream, recordedMergesForFile, false, out var savedVanilla);
                     if (!savedVanilla)
                     {
                         outStream.WriteToFile(file.FilePath); // Save to disk
@@ -197,7 +197,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
             return false;
         }
 
-        private static BasegameFileRecord CreateRecord(GameTarget target, Bio2DAMergePackageContainer packageContainer, IMEPackage finalPackage, MemoryStream finalPackageStream, List<string> recordedMerges, out bool savedVanilla)
+        private static BasegameFileRecord CreateRecord(GameTarget target, Bio2DAMergePackageContainer packageContainer, IMEPackage finalPackage, MemoryStream finalPackageStream, List<string> recordedMerges, bool localize, out bool savedVanilla)
         {
             savedVanilla = false;
 
@@ -246,7 +246,14 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                 // Unfortunately we have no way to reset this because we have no idea what names were 
                 // added unless we compared to something else and figured out if any were
                 // still in use, and that would be slow. So that's not really helpful here...
-                newInfoString = @"(Vanilla - all M3DAs reverted)"; // This is not localized as it will show in diagnostics.
+                if (localize)
+                {
+                    newInfoString = "(Vanilla - all M3DAs reverted)";
+                }
+                else
+                {
+                    newInfoString = @"(Vanilla - all M3DAs reverted)"; // This is not localized as it will show in diagnostics.
+                }
             }
 
             return new BasegameFileRecord(target.GetRelativePath(finalPackage.FilePath), (int)finalPackageStream.Length, target.Game, newInfoString, finalHash);
@@ -386,6 +393,23 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
             }
 
             return mergedResult;
+        }
+
+        /// <summary>
+        /// Gets a list of Bio2DA merges into the given basegame file record
+        /// </summary>
+        /// <returns></returns>
+        internal static List<string> GetMergedFilenames(BasegameFileRecord info)
+        {
+            List<string> merges = new List<string>(0);
+            var blockText = info.GetBlock(BIO2DA_BGFIS_DATA_BLOCK);
+
+            if (blockText != null)
+            {
+                merges = blockText.Split(BasegameFileRecord.BLOCK_SEPARATOR).ToList();
+            }
+
+            return merges;
         }
     }
 }

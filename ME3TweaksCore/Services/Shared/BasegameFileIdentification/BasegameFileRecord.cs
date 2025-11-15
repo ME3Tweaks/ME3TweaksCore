@@ -70,6 +70,12 @@ namespace ME3TweaksCore.Services.Shared.BasegameFileIdentification
         public static readonly string BLOCK_CLOSING = @"]]";
         public static readonly string BLOCK_SEPARATOR = @"|"; // This character cannot be in a filename, so it will work better
 
+        /// <summary>
+        /// Generates a data block string for the given name and data for use in the source text of a record
+        /// </summary>
+        /// <param name="blockName"></param>
+        /// <param name="blockData"></param>
+        /// <returns></returns>
         public static string CreateBlock(string blockName, string blockData)
         {
             return $@"{BLOCK_OPENING}{blockName}={blockData}{BLOCK_CLOSING}";
@@ -154,6 +160,34 @@ namespace ME3TweaksCore.Services.Shared.BasegameFileIdentification
             }
             
             return parsingStr.Trim();
+        }
+
+        /// <summary>
+        /// Retrieves a block by its name. Can return null.
+        /// </summary>
+        /// <param name="blockName">The name of the block to retrieve. Cannot be null or empty.</param>
+        internal string GetBlock(string blockName)
+        {
+            string parsingStr = source;
+            int openIdx = parsingStr.IndexOf(BLOCK_OPENING);
+            int closeIdx = parsingStr.IndexOf(BLOCK_CLOSING);
+            while (openIdx >= 0 && closeIdx >= 0 && closeIdx > openIdx)
+            {
+                var blockText = parsingStr.Substring(openIdx + BLOCK_OPENING.Length, closeIdx - (openIdx + BLOCK_OPENING.Length));
+                var blockEqIdx = blockText.IndexOf('=');
+                if (blockEqIdx > 0)
+                {
+                    var pBlockName = blockText.Substring(0, blockEqIdx);
+                    if (pBlockName.CaseInsensitiveEquals(blockName))
+                    {
+                        // Return the found block's content
+                        return blockText.Substring(blockText.IndexOf('=')+1);
+                    }
+                }
+            }
+            
+            // Block not found
+            return null;
         }
     }
 }

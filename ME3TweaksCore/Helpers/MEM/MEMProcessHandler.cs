@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Windows.System.Diagnostics;
 using ME3TweaksCore.Diagnostics;
 
 namespace ME3TweaksCore.Helpers.MEM

@@ -5,9 +5,9 @@
 		<Description>Core library for ME3Tweaks software - UI extensions</Description>
 		<Company>ME3Tweaks</Company>
 		<Authors>ME3Tweaks</Authors>
-		<Version>9.1.0</Version>
+		<Version>10.0</Version>
 		<!-- Windows 2004 -->
-		<TargetFrameworks>net8.0-windows10.0.19041</TargetFrameworks>
+		<TargetFrameworks>net10.0-windows</TargetFrameworks>
 		<UseWPF>true</UseWPF>
 		<Platforms>x64</Platforms>
 	</PropertyGroup>
