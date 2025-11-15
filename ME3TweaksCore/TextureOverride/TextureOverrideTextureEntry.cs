@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Packages;
 using LegendaryExplorerCore.Unreal;
 using LegendaryExplorerCore.Unreal.BinaryConverters;
-using LegendaryExplorerCore.Unreal.Classes;
 using LegendaryExplorerCore.Unreal.ObjectInfo;
 using Newtonsoft.Json;
 
@@ -78,9 +74,19 @@ namespace ME3TweaksCore.TextureOverride
 
     public class TextureOverrideTextureEntry
     {
+        /// <summary>
+        /// Maximum length of a name of a TFC in bytes.
+        /// </summary>
         private const int TFCNameMaxLength = 64 * 2; // unicode
+        /// <summary>
+        /// Maximum length of a texture IFP in bytes.
+        /// </summary>
         private const int IFPMaxLength = 256 * 2; // unicode
 
+        // SHOULD ONLY CONTAIN TEXTURES!!
+        // Examples: TO_BlueOutfit.pcc
+        //           TO_A_BaseComponent.pcc
+        //           TO_A_Armour_HeavyTextures.pcc
         /// <summary>
         /// Name of package to find this texture in, in the current folder. Can be relative.
         /// </summary>
@@ -94,7 +100,7 @@ namespace ME3TweaksCore.TextureOverride
         public string TextureIFP { get; set; }
 
         /// <summary>
-        /// Maps a mip level to 
+        /// Maps a mip level's metadata to its position in the manifest stream, and the actual data position in the TFC
         /// </summary>
         [JsonIgnore]
         private Dictionary<int, (int manifestPos, int manifestDataPos)> ManifestOffsetMap = new();
@@ -102,89 +108,122 @@ namespace ME3TweaksCore.TextureOverride
         /// <summary>
         /// Serializes to binary form
         /// </summary>
-        /// <param name="stream"></param>
-        public void Serialize(string sourceFolder, Stream stream, Stream manifestStoredStream)
+        /// <param name="metadataStreamChunk">Chunk that holds metadata about the mips</param>
+        /// <param name="mipDataStreamChunk">Chunk that contains the actual mip data</param>
+        public void Serialize(string sourceFolder, Stream metadataStreamChunk, Stream mipDataStreamChunk)
         {
+            // Find texture package
             var packagePath = Path.Combine(sourceFolder, CompilingSourcePackage);
             if (!File.Exists(packagePath))
             {
                 throw new Exception($"sourcepackage does not exist at location {packagePath}");
             }
+
+            // Load package anf find texture
             using var package = MEPackageHandler.UnsafePartialLoad(packagePath, x => x.InstancedFullPath == TextureIFP);
             var texture = package.FindExport(TextureIFP);
             if (texture == null)
                 throw new Exception($"Could not find textureifp {TextureIFP} in package {packagePath}");
 
+            // Make sure it's Texture2D
             if (!texture.IsA("Texture2D"))
                 throw new Exception($"{TextureIFP} is not a texture object in {packagePath} ({texture.ClassName})");
 
+            // Read metadata about texture.
             var texBin = ObjectBinary.From<UTexture2D>(texture); // I think everything serializes from here?
             var tfc = texture.GetProperty<NameProperty>(@"TextureFileCacheName");
             var tfcGuidProp = texture.GetProperty<StructProperty>(@"TFCFileGuid");
 
-            var paddedEndPos = stream.Position + IFPMaxLength;
-            stream.WriteStringUnicodeNull(TextureIFP);
-            if (paddedEndPos > stream.Position) // Pad to struct size
-                stream.WriteZeros((uint)(paddedEndPos - stream.Position));
-
-            paddedEndPos = stream.Position + TFCNameMaxLength;
-            stream.WriteStringUnicodeNull(tfc?.Value.Instanced ?? @""); // Empty string = No TFC, package stored.
-            if (paddedEndPos > stream.Position) // Pad to struct size
-                stream.WriteZeros((uint)(paddedEndPos - stream.Position));
+            // We store as fixed-length strings
+            // Write TextureIFP and then pad to fill the remaining space
+            var paddedEndPos = metadataStreamChunk.Position + IFPMaxLength;
+            metadataStreamChunk.WriteStringUnicodeNull(TextureIFP);
+            if (paddedEndPos > metadataStreamChunk.Position)
+            {
+                // Pad to struct size
+                metadataStreamChunk.WriteZeros((uint)(paddedEndPos - metadataStreamChunk.Position));
+            }
+            // Write TFC name and then pad to fill the remaining space
+            // Empty means package stored
+            paddedEndPos = metadataStreamChunk.Position + TFCNameMaxLength;
+            metadataStreamChunk.WriteStringUnicodeNull(tfc?.Value.Instanced ?? @"");
+            if (paddedEndPos > metadataStreamChunk.Position)
+            {
+                // Pad to struct size
+                metadataStreamChunk.WriteZeros((uint)(paddedEndPos - metadataStreamChunk.Position));
+            }
+            
             // Should we check the position is not wrong here? Like too long of IFP
 
-
-            stream.WriteGuid(tfcGuidProp != null ? CommonStructs.GetGuid(tfcGuidProp) : Guid.Empty); // Zero guid = No TFC, package stored.
-            stream.WriteInt32(texBin.Mips.Count);
+            // Write TFC Guid. Zero Guid = Package Stored.
+            metadataStreamChunk.WriteGuid(tfcGuidProp != null ? CommonStructs.GetGuid(tfcGuidProp) : Guid.Empty); 
+            
+            // Write the number of populated mips.
+            metadataStreamChunk.WriteInt32(texBin.Mips.Count);
             int i = 0;
+
+            // Write out populated mips data
+            // The struct size is 13 mips so we then fill it with blanks
             for(; i < 13; i++)
             {
                 if (texBin.Mips.Count == i)
                     break;
 
                 var mip = texBin.Mips[i];
-                stream.WriteInt32(mip.UncompressedSize);
-                stream.WriteInt32(mip.CompressedSize);
+                // Write sizes
+                metadataStreamChunk.WriteInt32(mip.UncompressedSize);
+                metadataStreamChunk.WriteInt32(mip.CompressedSize);
+                
                 if (mip.IsLocallyStored)
                 {
+                    // Locally stored puts them into the override file itself.
+                    // This is non-TFC textures and lower mips of TFC textures
                     // Store where offset maps to manifest data segment position.
-                    ManifestOffsetMap[i] = ((int)stream.Position, (int)manifestStoredStream.Position);
-                    stream.WriteInt32(0); // Will be updated later
-                    manifestStoredStream.Write(mip.Mip);
+                    ManifestOffsetMap[i] = ((int)metadataStreamChunk.Position, (int)mipDataStreamChunk.Position);
+                    metadataStreamChunk.WriteInt32(0); // Will be updated later
+                    mipDataStreamChunk.Write(mip.Mip);
                 }
                 else
                 {
-                    stream.WriteInt32(mip.DataOffset); // TFC offset
+                    metadataStreamChunk.WriteInt32(mip.DataOffset); // TFC offset
                 }
-                stream.WriteInt16((short)mip.SizeX);
-                stream.WriteInt16((short)mip.SizeY);
+                metadataStreamChunk.WriteInt16((short)mip.SizeX);
+                metadataStreamChunk.WriteInt16((short)mip.SizeY);
                 int mipFlag = 0;
                 if (!mip.IsLocallyStored)
                 {
+                    // Set mip flag as stored in TFC
                     mipFlag |=  1 << 2;
                 }
-                stream.WriteInt32(mipFlag);
+                metadataStreamChunk.WriteInt32(mipFlag);
             }
 
+            // Write out remaining blanks to fill struct
             while (i < 13)
             {
                 // Write out blank data.
-                stream.WriteZeros(0x14); // null data for undefined mips
+                metadataStreamChunk.WriteZeros(0x14); // null data for undefined mips
                 i++;
             }
 
-            // Format should always be set, deafults to Unknown if not set in game
+            // Format should always be set, in game defaults to Unknown if not set
             var format = texture.GetProperty<EnumProperty>("Format");
             if (Enum.TryParse<TOPixelFormat>(format.Value.Instanced, out var fmt))
             {
-                stream.WriteInt32((int)fmt);
+                // Write Format Byte
+                metadataStreamChunk.WriteInt32((int)fmt);
             }
             else
             {
-                throw new Exception("Could not parse format!");
+                throw new Exception($"'Format' property missing on texture {TextureIFP}");
             }
         }
 
+        /// <summary>
+        /// Serializes the offsets to the target stream
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="dataOffset"></param>
         public void SerializeOffsets(Stream stream, int dataOffset)
         {
             foreach (var entry in ManifestOffsetMap)

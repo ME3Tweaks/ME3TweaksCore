@@ -168,11 +168,9 @@ namespace ME3TweaksCore.Services.Restore
                             }
 
                             //TODO: PREVENT RESTORING TO DOCUMENTS/BIOWARE
-
                         }
 
                         TelemetryInterposer.TrackEvent(@"Chose to restore game to custom location", new Dictionary<string, string>() { { @"Game", Game.ToString() } });
-
                     }
                     else
                     {
@@ -191,7 +189,6 @@ namespace ME3TweaksCore.Services.Restore
                     //b.Result = RestoreResult.ERROR_COULD_NOT_CREATE_DIRECTORY;
                     return false;
                 }
-
 
                 RestoreUsingRoboCopy(backupPath, restoreTarget, backupStatus, destinationDirectory);
 
@@ -309,6 +306,7 @@ namespace ME3TweaksCore.Services.Restore
                 }
             }
 
+            // This doesn't work on Linux
             RoboCommand rc = new RoboCommand();
             rc.CopyOptions.Destination = destinationPathOverride ?? destTarget.TargetPath;
             rc.CopyOptions.Source = backupPath;
