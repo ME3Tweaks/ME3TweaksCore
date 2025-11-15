@@ -1,15 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Dynamic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Management;
-using System.Reflection;
-using System.Text;
-using System.Threading;
-using AuthenticodeExaminer;
+﻿using AuthenticodeExaminer;
 using Flurl.Http;
 using LegendaryExplorerCore.Compression;
 using LegendaryExplorerCore.GameFilesystem;
@@ -25,6 +14,7 @@ using ME3TweaksCore.Helpers;
 using ME3TweaksCore.Helpers.ME1;
 using ME3TweaksCore.Helpers.MEM;
 using ME3TweaksCore.Localization;
+using ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable;
 using ME3TweaksCore.Misc;
 using ME3TweaksCore.NativeMods;
 using ME3TweaksCore.NativeMods.Interfaces;
@@ -34,8 +24,21 @@ using ME3TweaksCore.Services.Shared.BasegameFileIdentification;
 using ME3TweaksCore.Services.ThirdPartyModIdentification;
 using ME3TweaksCore.Targets;
 using Microsoft.Win32;
+using Newtonsoft.Json.Linq;
 using NickStrupat;
 using Serilog;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Dynamic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Management;
+using System.Reflection;
+using System.Text;
+using System.Threading;
 
 namespace ME3TweaksCore.Diagnostics
 {
@@ -64,11 +67,12 @@ namespace ME3TweaksCore.Diagnostics
             BOLDBLUE,
             SUPERCEDANCE_FILE,
             SAVE_FILE_HASH_NAME,
+            NOPRE
         }
         public class InstalledDLCStruct
         {
             // Used to tell log viewer which version we have to parse
-            private const int SERVERCODE_VER = 3;
+            private const int SERVERCODE_VER = 4;
 
             /// <summary>
             /// MetaCMM name
@@ -76,11 +80,14 @@ namespace ME3TweaksCore.Diagnostics
             public string ModName { get; set; }
             public string DLCFolderName { get; set; }
             public int NexusUpdateCode { get; set; }
+            public int MountPriority { get; set; }
             public string InstalledBy { get; set; }
             public string VersionInstalled { get; set; }
             public DateTime? InstallTime { get; set; }
             public IEnumerable<string> InstalledOptions { get; set; }
             public bool IsOfficialDLC { get; set; }
+
+            private List<string> errors = new List<string>();
 
             public void PrintToDiag(Action<string, LogSeverity> printToDiagFunc)
             {
@@ -144,6 +151,94 @@ namespace ME3TweaksCore.Diagnostics
                         }
                     }
                 }
+            }
+
+            /// <summary>
+            /// Prints this struct to the diagnostic as a table row.
+            /// </summary>
+            /// <param name="printToDiagFunc"></param>
+            public string GetAsDiagTableRow()
+            {
+                StringBuilder sb = new StringBuilder();
+
+                List<string> modifiers = new List<string>();
+
+                // Adds a data-<attr> attribute so it can be fetched with javascript
+                void addDataAttr(string attrName, object attrValue) {
+                    modifiers.Add($@"data-{attrName}=""{attrValue}""");
+                }
+
+                void addCell(string value, bool advancedOnly = false)
+                {
+                    if (advancedOnly)
+                    {
+                        sb.Append($@"<td class=""advanced-only"">{value}</td>");
+                    }
+                    else
+                    {
+                        sb.Append($@"<td>{value}</td>");
+                    }
+                }
+
+                // Only table cells is added, row is set after
+                string rowClass = "row-mod";
+                if (IsOfficialDLC)
+                {
+                    sb.Append(DLCFolderName);
+                    rowClass = "row-officialdlc";
+                }
+                else
+                {
+                    addCell(DLCFolderName);
+                    addCell(ModName); // Useful if not found in TPMI
+                    addCell(VersionInstalled != null ? VersionInstalled : @"");
+                    addCell(MountPriority.ToString(), true);
+
+                    // Install source
+                    string installedBy = null;
+                    // It's a modded DLC
+                    if (string.IsNullOrWhiteSpace(InstalledBy))
+                    {
+                        installedBy = @"Unknown"; // Invalid metacmm or not present
+                    }
+                    else if (int.TryParse(InstalledBy, out var _))
+                    {
+                        installedBy = $@"Mod Manager Build {InstalledBy}"; // Legacy (and M3) - only list build number
+                    }
+                    else
+                    {
+                        installedBy = InstalledBy; // The metacmm lists the string
+                    }
+
+                    addCell(installedBy);
+
+                    // Install date
+                    addCell(InstallTime?.ToString());
+
+                    // Add some extra useful info
+                    addDataAttr(@"nexus-update-code", NexusUpdateCode);
+
+                    // SELECTED OPTIONS
+                    var options = InstalledOptions != null ? string.Join(@"", InstalledOptions.Select(x=> $@"<p class=""install-option"">{x}</p>")) : @"";
+                    addCell(options);
+
+                    // Extra info - can be populated by server
+                    addCell(string.Join("\n", errors));
+                }
+
+                if (errors.Any())
+                {
+                    // Mark as error
+                    rowClass = @"row-error";
+                }
+
+                var result = $"<tr class=\"{rowClass}\" {string.Join(@" ", modifiers)}>{sb.ToString()}</tr>"; // do not localize
+                return result;
+            }
+
+            internal void AddError(string message)
+            {
+                errors.Add(message);
             }
         }
     }
@@ -399,6 +494,14 @@ namespace ME3TweaksCore.Diagnostics
                         break;
                     case ME3TweaksLogViewer.LogSeverity.SAVE_FILE_HASH_NAME:
                         diagStringBuilder.Append($@"[SF]{message}");
+                        break;
+                    case ME3TweaksLogViewer.LogSeverity.NOPRE:
+                        // Server will not use <pre>
+                        // Do it for each line so we don't have to do blocks on server
+                        foreach (var line in message.SplitLinesAll(options: StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            diagStringBuilder.Append($@"[NOPRE]{message}");
+                        }
                         break;
                     default:
                         Debugger.Break();
@@ -1026,11 +1129,22 @@ namespace ME3TweaksCore.Diagnostics
                         {
                             if (mf.StartsWith(cookedPath, StringComparison.InvariantCultureIgnoreCase))
                             {
+                                var fileName = mf.Substring(cookedPath.Length + 1);
                                 if (mf.Equals(markerPath, StringComparison.InvariantCultureIgnoreCase)) continue; //don't report this file
                                 var info = BasegameFileIdentificationService.GetBasegameFileSource(package.DiagnosticTarget, mf);
+                                var cell = $@"<td>{fileName}</td>";
+
                                 if (info != null)
                                 {
-                                    modifiedBGFiles.Add($@" - {mf.Substring(cookedPath.Length + 1)} - {info.source.Replace("\n", ", ")}"); // do not localize
+                                    var source = info.source;
+                                    // Strip BGFIS Bio2DA block and parse it, then add the BGFIS block for Bio2DA merge
+                                    var strippedSource = info.GetWithoutBlock(Bio2DAMerge.BIO2DA_BGFIS_DATA_BLOCK).Trim();
+                                    var twoDAMerge = Bio2DAMerge.GetMergedFilenames(info);
+                                    if (twoDAMerge.Count > 0)
+                                    {
+                                        strippedSource += '\n' + string.Join('\n', twoDAMerge);
+                                    }
+                                    cell += $@"<td>{strippedSource.Replace("\n", "<br>")}</td>";
                                 }
                                 else
                                 {
@@ -1038,11 +1152,17 @@ namespace ME3TweaksCore.Diagnostics
                                     {
                                         // Do not print out texture modded only files
                                         hasAtLeastOneTextureModdedOnlyFile = true;
+                                        cell = null;
                                     }
                                     else
                                     {
-                                        modifiedBGFiles.Add($@" - {mf.Substring(cookedPath.Length + 1)}");
+                                        cell += $@"<td>{fileName}</td>";
                                     }
+                                }
+
+                                if (cell != null)
+                                {
+                                    modifiedBGFiles.Add($@"<tr>{cell}</tr>");
                                 }
                             }
                         }
@@ -1054,10 +1174,21 @@ namespace ME3TweaksCore.Diagnostics
                         if (modifiedBGFiles.Any())
                         {
                             addDiagLine(@"The following basegame files have been modified:");
-                            foreach (var mbgf in modifiedBGFiles)
-                            {
-                                addDiagLine(mbgf);
-                            }
+
+                            // Make table.
+                            var bgtable = $@"
+                [HTML]
+                <table class=""basegametable"">
+                    <thead>
+                        <th>Filename</th>
+                        <th>Tracked modifications</th>
+                    </thead>
+                    <tbody>
+                        {string.Join("\n", modifiedBGFiles)}
+                    </tbody>
+                </table>
+                [/HTML]";
+                            addDiagLine(string.Join("\n", bgtable.SplitLinesAll(options: StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim())));
                         }
                         else
                         {
@@ -1146,6 +1277,7 @@ namespace ME3TweaksCore.Diagnostics
                 var mountPriorities = new Dictionary<int, string>();
 
                 var officialDLC = MEDirectories.OfficialDLC(package.DiagnosticTarget.Game);
+                List<string> dlcRows = new List<string>();
                 foreach (var dlc in installedDLCs)
                 {
                     ME3TweaksLogViewer.InstalledDLCStruct dlcStruct = new ME3TweaksLogViewer.InstalledDLCStruct()
@@ -1173,12 +1305,12 @@ namespace ME3TweaksCore.Diagnostics
 
                         var dlcPath = Path.Combine(package.DiagnosticTarget.GetDLCPath(), dlc.Key);
                         var mount = MELoadedDLC.GetMountPriority(dlcPath, package.DiagnosticTarget.Game);
+                        dlcStruct.MountPriority = mount;
                         if (mount != 0)
                         {
                             if (mountPriorities.TryGetValue(mount, out var existingDLC))
                             {
-                                errorLine =
-                                    $@"   >>> This DLC has the same mount priority ({mount}) as {existingDLC}. This will cause undefined game behavior! Please contact the developers of these mods.";
+                                dlcStruct.AddError($@"This DLC has the same mount priority ({mount}) as {existingDLC}. This will cause undefined game behavior! Please contact the developers of these mods.");
                             }
                             else
                             {
@@ -1191,12 +1323,31 @@ namespace ME3TweaksCore.Diagnostics
                         dlcStruct.IsOfficialDLC = true;
                     }
 
-                    dlcStruct.PrintToDiag(addDiagLine);
-                    if (errorLine != null)
-                    {
-                        addDiagLine(errorLine, ME3TweaksLogViewer.LogSeverity.FATAL);
-                    }
+                    dlcRows.Add(dlcStruct.GetAsDiagTableRow());
                 }
+
+                // Make table.
+                var table = $@"
+                [HTML]
+                <table class=""dlctable"">
+                    <thead>
+                        <th>DLC Folder Name</th>
+                        <th>Mod Name</th>
+                        <th>Version</th>
+                        <th class=""advanced-only"">Mount</th>
+                        <th>Installed By</th>
+                        <th>Install Time</th>
+                        <th>Options</th>
+                        <th>Extra info</th>
+                    </thead>
+                    <tbody>
+                        {string.Join("\n", dlcRows)}
+                    </tbody>
+                </table>
+                [/HTML]";
+
+                // Remove leading whitespace
+                addDiagLine(string.Join("\n", table.SplitLinesAll(options: StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim())));
 
                 if (installedDLCs.Any())
                 {
@@ -1210,23 +1361,33 @@ namespace ME3TweaksCore.Diagnostics
                 {
                     addDiagLine();
                     addDiagLine(@"DLC mod files", ME3TweaksLogViewer.LogSeverity.BOLD);
-                    addDiagLine(@"The following DLC mod files are installed, as well as their supercedances (if any). This may mean the mods are incompatible, or that these files are compatibility patches. This information is for developer use only - DO NOT MODIFY YOUR GAME DIRECTORY MANUALLY.");
+                    addDiagLine(@"The following DLC mod files are installed, as well as their supercedances. This may mean the mods are incompatible, or that these files are compatibility patches. This information is for developer use only - DO NOT MODIFY YOUR GAME DIRECTORY MANUALLY.");
 
                     bool isFirst = true;
                     addDiagLine(@"Click to view list", ME3TweaksLogViewer.LogSeverity.SUB);
+
+                    var supercedanceRows = new List<string>();
                     foreach (var sl in supercedanceList.OrderBy(x => x.Key))
                     {
-                        if (isFirst)
-                            isFirst = false;
-                        else
-                            addDiagLine();
-
-                        addDiagLine(sl.Key, ME3TweaksLogViewer.LogSeverity.SUPERCEDANCE_FILE);
-                        foreach (var dlc in sl.Value)
-                        {
-                            addDiagLine(dlc, ME3TweaksLogViewer.LogSeverity.TPMI);
-                        }
+                        supercedanceRows.Add($@"<tr><td>{sl.Key}</td><td>{string.Join("<br>", sl.Value)}</td></tr>");
                     }
+
+                    var sltable = $@"
+                [HTML]
+                <table class=""supercedancetable"">
+                    <thead>
+                        <th>Filename</th>
+                        <th>Supercedances</th>
+                    </thead>
+                    <tbody>
+                        {string.Join("\n", supercedanceRows)}
+                    </tbody>
+                </table>
+                [/HTML]"; 
+
+                    // Remove leading whitespace
+                    addDiagLine(string.Join("\n", sltable.SplitLinesAll(options: StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim())));
+
                     addDiagLine(END_SUB);
                 }
                 #endregion
@@ -1244,13 +1405,45 @@ namespace ME3TweaksCore.Diagnostics
                     string[] tfcFiles = Directory.GetFiles(bgPath, @"*.tfc", SearchOption.AllDirectories);
                     if (tfcFiles.Any())
                     {
+                        List<string> tfcs = new List<string>();
                         foreach (string tfc in tfcFiles)
                         {
                             FileInfo fi = new FileInfo(tfc);
                             long tfcSize = fi.Length;
                             string tfcPath = tfc.Substring(bgPath.Length + 1);
-                            addDiagLine($@" - {tfcPath}, {FileSize.FormatSize(tfcSize)}"); //do not localize
+
+                            var pathChunks = tfcPath.Split(Path.DirectorySeparatorChar);
+                            var container = @"Unknown";
+                            if (pathChunks[0].CaseInsensitiveEquals(@"CookedPCConsole"))
+                            {
+                                container = "Basegame";
+                            } 
+                            else if (pathChunks.Length > 1)
+                            {
+                                container = pathChunks[1];
+                            }
+
+                            tfcs.Add($@"<tr><td>{container}</td><td>{Path.GetFileName(tfc)}</td><td>{FileSize.FormatSize(tfcSize)}</td></tr>");
                         }
+
+                        // Make table.
+                        var tfctable = $@"
+                [HTML]
+                <table class=""tfctable"">
+                    <thead>
+                        <th>Location</th>
+                        <th>TFC Name</th>
+                        <th>Size</th>
+                    </thead>                        
+                    <tbody>
+                        {string.Join("\n", tfcs)}
+                    </tbody>
+                </table>
+                [/HTML]";
+                        addDiagLine(string.Join("\n", tfctable.SplitLinesAll(options: StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim())));
+
+
+
                     }
                     else
                     {
