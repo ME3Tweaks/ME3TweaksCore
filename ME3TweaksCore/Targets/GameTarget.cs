@@ -1174,6 +1174,14 @@ namespace ME3TweaksCore.Targets
         public bool InstallBinkBypass(bool throwError)
         {
             var destPath = GetVanillaBinkPath();
+            var parent = Directory.GetParent(destPath).FullName;
+            if (!Directory.Exists(parent))
+            {
+                // Nothing to install to!
+                MLog.Warning($@"Bink install folder doesn't exist, skipping: {parent}");
+                return false;
+            }
+
             MLog.Information($@"Installing Bink bypass for {Game} to {destPath}");
             try
             {
