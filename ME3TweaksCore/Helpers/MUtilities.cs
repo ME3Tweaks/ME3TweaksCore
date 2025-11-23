@@ -1,4 +1,13 @@
-﻿using System;
+﻿using LegendaryExplorerCore.GameFilesystem;
+using LegendaryExplorerCore.Gammtek.Collections.Generic;
+using LegendaryExplorerCore.Helpers;
+using LegendaryExplorerCore.Misc;
+using LegendaryExplorerCore.Packages;
+using ME3TweaksCore.Diagnostics;
+using ME3TweaksCore.Misc;
+using ME3TweaksCore.Objects;
+using NickStrupat;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -9,13 +18,6 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Threading;
-using LegendaryExplorerCore.GameFilesystem;
-using LegendaryExplorerCore.Helpers;
-using LegendaryExplorerCore.Misc;
-using LegendaryExplorerCore.Packages;
-using ME3TweaksCore.Diagnostics;
-using ME3TweaksCore.Misc;
-using NickStrupat;
 using ThreadState = System.Diagnostics.ThreadState;
 
 namespace ME3TweaksCore.Helpers
@@ -144,13 +146,14 @@ namespace ME3TweaksCore.Helpers
         /// </summary>
         /// <param name="filename"></param>
         /// <param name="algorithm">Algorithm to use. Use null for MD5.</param>
+        /// <param name="progressDelegate">Delegate to invoke during progress. Will slow hashing a bit.</param>
         /// <returns></returns>
-        public static string CalculateHash(string filename, string algorithm = null)
+        public static string CalculateHash(string filename, string algorithm = null, Action<ProgressInfo> progressDelegate = null)
         {
             try
             {
                 using var stream = File.OpenRead(filename);
-                return CalculateHash(stream, algorithm);
+                return CalculateHash(stream, algorithm, progressDelegate: progressDelegate);
             }
             catch (IOException e)
             {
@@ -177,8 +180,9 @@ namespace ME3TweaksCore.Helpers
         /// <param name="stream">Stream to hash</param>
         /// <param name="algorithm">Algorithm to use. Use null for MD5.</param>
         /// <param name="byteLenToHash">How many bytes to hash. If 0, hash everything in the stream</param>
+        /// <param name="percentComplete">Delegate that is invoked with progress. This uses chunked hashing and may be a bit slower.</param>
         /// <returns></returns>
-        public static string CalculateHash(Stream stream, string algorithm = null, long byteLenToHash = 0)
+        public static string CalculateHash(Stream stream, string algorithm = null, long byteLenToHash = 0, Action<ProgressInfo> progressDelegate = null)
         {
             HashAlgorithm algo = null;
 
@@ -200,7 +204,7 @@ namespace ME3TweaksCore.Helpers
 
                 stream.Position = 0;
                 Stream streamToHash = byteLenToHash > 0 ? new StreamReadLimitLengthWrapper(stream, byteLenToHash) : stream;
-                var hash = algo.ComputeHash(streamToHash);
+                var hash = progressDelegate != null ? computeHashChunked(streamToHash, algo, progressDelegate) : algo.ComputeHash(streamToHash);
                 stream.Position = 0; // reset stream
                 return BitConverter.ToString(hash).Replace(@"-", "").ToLowerInvariant();
             }
@@ -214,6 +218,46 @@ namespace ME3TweaksCore.Helpers
             {
                 algo.Dispose();
             }
+        }
+
+        /// <summary>
+        /// Comutes hash in 4KB chunks and reports progress
+        /// </summary>
+        /// <param name="inputStream"></param>
+        /// <param name="algo"></param>
+        /// <param name="progress"></param>
+        /// <returns></returns>
+        private static byte[] computeHashChunked(Stream inputStream, HashAlgorithm algo, Action<ProgressInfo> progressDelegate)
+        {
+            // Get the total size of the stream for calculating the percentage.
+            long totalBytes = inputStream.Length;
+            long processedBytes = 0;
+
+            byte[] buffer = new byte[4096]; // Read in chunks of 4KB.
+            int bytesRead;
+
+            ProgressInfo pi = new ProgressInfo();
+            pi.Indeterminate = false;
+            while ((bytesRead = inputStream.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                // Feed the chunk into the hash algorithm.
+                algo.TransformBlock(buffer, 0, bytesRead, null, 0);
+
+                // Update the number of processed bytes and report progress.
+                processedBytes += bytesRead;
+                if (totalBytes > 0)
+                {
+                    pi.Value = (double)processedBytes / totalBytes * 100;
+                    progressDelegate(pi);
+                }
+            }
+
+            // Finalize the hash computation.
+            algo.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+            pi.Value = 100;
+            progressDelegate(pi);
+
+            return algo.Hash;
         }
 
         internal static List<string> GetListOfInstalledAV()
