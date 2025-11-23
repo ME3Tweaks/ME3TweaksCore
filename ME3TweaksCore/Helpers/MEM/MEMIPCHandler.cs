@@ -1,5 +1,4 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -10,14 +9,12 @@ using System.Text;
 using System.Threading;
 using CliWrap;
 using CliWrap.EventStream;
-using LegendaryExplorerCore.Gammtek.Extensions;
 using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.Localization;
 using ME3TweaksCore.Misc;
 using ME3TweaksCore.Targets;
-using Serilog;
 
 namespace ME3TweaksCore.Helpers.MEM
 {
@@ -287,8 +284,8 @@ namespace ME3TweaksCore.Helpers.MEM
         public static bool SetGamePath(bool classicMEM, MEGame targetGame, string targetPath)
         {
             int exitcode = 0;
-            string args =
-                $"--set-game-data-path --gameid {targetGame.ToMEMGameNum()} --path \"{targetPath}\""; //do not localize
+
+            string args = $@"--set-game-data-path --gameid {targetGame.ToMEMGameNum()} --path ""{targetPath}""";
             MEMIPCHandler.RunMEMIPCUntilExit(classicMEM, args, false, applicationExited: x => exitcode = x);
             if (exitcode != 0)
             {
@@ -524,7 +521,8 @@ namespace ME3TweaksCore.Helpers.MEM
         /// <param name="currentActionCallback">A delegate to set UI text to inform the user of what is occurring</param>
         /// <param name="progressCallback">Percentage-based progress indicator for the current stage</param>
         /// <param name="setGamePath">If the game path should be set. Setting to false can save a bit of time if you know the path is already correct.</param>
-        public static MEMSessionResult InstallMEMFiles(GameTarget target, string memFileListFile, Action<string> currentActionCallback = null, Action<int> progressCallback = null, bool setGamePath = true)
+        /// <param name="skipMarkers">If the markers step should be skipped in install</param>
+        public static MEMSessionResult InstallMEMFiles(GameTarget target, string memFileListFile, Action<string> currentActionCallback = null, Action<int> progressCallback = null, bool setGamePath = true, bool skipMarkers = false)
         {
             MEMSessionResult result = new MEMSessionResult(); // Install session flag is set during stage context switching
             if (setGamePath)
@@ -533,7 +531,13 @@ namespace ME3TweaksCore.Helpers.MEM
             }
 
             currentActionCallback?.Invoke(LC.GetString(LC.string_preparingToInstallTextures));
-            MEMIPCHandler.RunMEMIPCUntilExit(target.Game.IsOTGame(), $"--install-mods --gameid {target.Game.ToMEMGameNum()} --input \"{memFileListFile}\" --verify --ipc", // do not localize
+            var cmdParams = $@"--install-mods --gameid {target.Game.ToMEMGameNum()} --input ""{memFileListFile}"" --verify --ipc";
+
+            if (skipMarkers) {
+                cmdParams += $@" --skip-markers";
+            }
+
+            MEMIPCHandler.RunMEMIPCUntilExit(target.Game.IsOTGame(), cmdParams,
                 true,
                 LC.GetString(LC.string_dialog_memRunningCloseAttempt),
                 applicationExited: code => { result.ExitCode = code; },
