@@ -2,10 +2,12 @@
 using LegendaryExplorerCore.Misc;
 using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
+using ME3TweaksCore.Objects;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -76,48 +78,17 @@ namespace ME3TweaksCore.TextureOverride
 
         // SERIALIZATION TO BINARY =======================================================
 
-        // BTP - Binary Texture Package (Manifest)
-        public const string EXTENSION_TEXTURE_OVERRIDE_BINARY = @".btp";
-        public const ushort CURRENT_VERSION = 1;
-
-        private static string MANIFEST_HEADER => "LETEXM"; // Must be ASCII
-
         /// <summary>
         /// Serializes this manifest object to its binary form for use by the game.
         /// </summary>
         /// <param name="sourceFolder">The base folder. For DLC this will be DLC_MOD_NAME/CookedPCConsole/</param>
         /// <param name="destFile">Where files are serialized to. For how ASI expects it, it should be DLC_MOD_NAME/TheFile</param>
-        public void CompileBinaryTexturePackage(string sourceFolder, string destFile)
+        public void CompileBinaryTexturePackage(string sourceFolder, string destFile, ProgressInfo pi = null)
         {
             MLog.Information($@"Compiling Texture Override binary package to {destFile} with {Textures.Count} textures");
-            using var outStream = File.Open(destFile, FileMode.Create, FileAccess.ReadWrite);
-            using var dataSegment = new MemoryStream();
 
-            // Write Header.
-            outStream.WriteStringASCII(MANIFEST_HEADER);
-            outStream.WriteUInt16(CURRENT_VERSION);
-            outStream.WriteUInt32(uint.MaxValue); // Not entirely sure what to put here.
-            outStream.WriteInt32(Textures.Count);
-            outStream.WriteZeros(16); // Reserved
-
-            // Write metadata segment
-            foreach (var texture in Textures)
-            {
-                texture.Serialize(sourceFolder, outStream, dataSegment);
-            }
-
-            outStream.SeekEnd();
-
-            // Write out data segment
-            var dataSegmentStart = (int)outStream.Position;
-            dataSegment.SeekBegin();
-            dataSegment.CopyTo(outStream); // Append
-
-            // Go in and update the offsets
-            foreach (var texture in Textures)
-            {
-                texture.SerializeOffsets(outStream, dataSegmentStart);
-            }
+            var btpSerializer = new BTPSerializer();
+            btpSerializer.Serialize(this, sourceFolder, destFile, pi);
         }
     }
 }

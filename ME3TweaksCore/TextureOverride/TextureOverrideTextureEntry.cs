@@ -1,12 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using LegendaryExplorerCore.Compression;
+using LegendaryExplorerCore.Gammtek.Extensions.IO;
 using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Packages;
 using LegendaryExplorerCore.Unreal;
 using LegendaryExplorerCore.Unreal.BinaryConverters;
 using LegendaryExplorerCore.Unreal.ObjectInfo;
 using Newtonsoft.Json;
+using System;
+using System.IO;
+using System.IO.Hashing;
+using System.Linq;
+
 
 namespace ME3TweaksCore.TextureOverride
 {
@@ -75,6 +79,11 @@ namespace ME3TweaksCore.TextureOverride
     public class TextureOverrideTextureEntry
     {
         /// <summary>
+        /// Minimum area of a texture before we oodle compress it in the package
+        /// </summary>
+        private const int COMPRESS_SIZE_MIN = 64 * 64;
+
+        /// <summary>
         /// Maximum length of a name of a TFC in bytes.
         /// </summary>
         private const int TFCNameMaxLength = 64 * 2; // unicode
@@ -100,18 +109,26 @@ namespace ME3TweaksCore.TextureOverride
         public string TextureIFP { get; set; }
 
         /// <summary>
-        /// Maps a mip level's metadata to its position in the manifest stream, and the actual data position in the TFC
+        /// OPTIONAL - The path of the texture in memory, in the event it has a different path than the package (due to non-seek free).
         /// </summary>
-        [JsonIgnore]
-        private Dictionary<int, (int manifestPos, int manifestDataPos)> ManifestOffsetMap = new();
+        [JsonProperty("memorypath", NullValueHandling = NullValueHandling.Ignore)]
+        public string MemoryPath { get; set; }
+
+        /// <summary>
+        /// Maps a mip level's metadata to its position in the manifest stream, and the actual data position in the TFC or BTP data segment
+        /// </summary>
+        //[JsonIgnore]
+        //private Dictionary<int, (int manifestPos, ulong manifestDataPos)> ManifestOffsetMap = new();
 
         /// <summary>
         /// Serializes to binary form
         /// </summary>
-        /// <param name="metadataStreamChunk">Chunk that holds metadata about the mips</param>
-        /// <param name="mipDataStreamChunk">Chunk that contains the actual mip data</param>
-        public void Serialize(string sourceFolder, Stream metadataStreamChunk, Stream mipDataStreamChunk)
+        /// <param name="sourceFolder">Folder used as base path for package lookups when serializing package data to BTP</param>
+        public void Serialize(BTPSerializer serializer, string sourceFolder)
         {
+            // Position for our texture entry
+            var entryPosition = serializer.btpStream.Position;
+
             // Find texture package
             var packagePath = Path.Combine(sourceFolder, CompilingSourcePackage);
             if (!File.Exists(packagePath))
@@ -119,118 +136,185 @@ namespace ME3TweaksCore.TextureOverride
                 throw new Exception($"sourcepackage does not exist at location {packagePath}");
             }
 
-            // Load package anf find texture
-            using var package = MEPackageHandler.UnsafePartialLoad(packagePath, x => x.InstancedFullPath == TextureIFP);
+            // Load package and find texture
+            using var package = MEPackageHandler.UnsafePartialLoad(packagePath, x => x.InstancedFullPath.CaseInsensitiveEquals(TextureIFP));
             var texture = package.FindExport(TextureIFP);
             if (texture == null)
+            {
                 throw new Exception($"Could not find textureifp {TextureIFP} in package {packagePath}");
+            }
 
             // Make sure it's Texture2D
-            if (!texture.IsA("Texture2D"))
+            if (!texture.IsA(@"Texture2D"))
+            {
                 throw new Exception($"{TextureIFP} is not a texture object in {packagePath} ({texture.ClassName})");
+            }
 
             // Read metadata about texture.
             var texBin = ObjectBinary.From<UTexture2D>(texture); // I think everything serializes from here?
-            var tfc = texture.GetProperty<NameProperty>(@"TextureFileCacheName");
-            var tfcGuidProp = texture.GetProperty<StructProperty>(@"TFCFileGuid");
+            var numPopulatedMips = texBin.Mips.Count(x => x.StorageType != StorageTypes.empty);
+            var numEmptyMips = texBin.Mips.Count(x => x.StorageType == StorageTypes.empty);
+
+            var props = texture.GetProperties();
+            var tfc = props.GetProp<NameProperty>(@"TextureFileCacheName");
+            var tfcGuidProp = props.GetProp<StructProperty>(@"TFCFileGuid");
+            var format = props.GetProp<EnumProperty>("Format"); // Default would be PF_Unknown according to enum
+            var lodBias = props.GetProp<IntProperty>(@"InternalFormatLODBias")?.Value ?? 0;
+            var neverStream = props.GetProp<BoolProperty>(@"NeverStream")?.Value ?? false;
+            var srgb = props.GetProp<BoolProperty>(@"sRGB")?.Value ?? true; // Default is true on Texture class
+
+            var tfcTableIndex = 0; // "None" is on index 0
+            if (tfc != null && tfc.Value.Name != null && tfcGuidProp != null)
+            {
+                // Fetch table index, add if not there
+                tfcTableIndex = serializer.GetTFCTableIndex(tfc.Value.Name, CommonStructs.GetGuid(tfcGuidProp), texture);
+            }
+
+
+            // WRITING TEXTURE ENTRY =========================================
 
             // We store as fixed-length strings
             // Write TextureIFP and then pad to fill the remaining space
-            var paddedEndPos = metadataStreamChunk.Position + IFPMaxLength;
-            metadataStreamChunk.WriteStringUnicodeNull(TextureIFP);
-            if (paddedEndPos > metadataStreamChunk.Position)
+            var paddedEndPos = serializer.btpStream.Position + IFPMaxLength;
+            serializer.btpStream.WriteStringUnicodeNull(MemoryPath ?? TextureIFP);
+            if (paddedEndPos > serializer.btpStream.Position)
             {
                 // Pad to struct size
-                metadataStreamChunk.WriteZeros((uint)(paddedEndPos - metadataStreamChunk.Position));
+                serializer.btpStream.WriteZeros((uint)(paddedEndPos - serializer.btpStream.Position));
             }
-            // Write TFC name and then pad to fill the remaining space
-            // Empty means package stored
-            paddedEndPos = metadataStreamChunk.Position + TFCNameMaxLength;
-            metadataStreamChunk.WriteStringUnicodeNull(tfc?.Value.Instanced ?? @"");
-            if (paddedEndPos > metadataStreamChunk.Position)
-            {
-                // Pad to struct size
-                metadataStreamChunk.WriteZeros((uint)(paddedEndPos - metadataStreamChunk.Position));
-            }
-            
-            // Should we check the position is not wrong here? Like too long of IFP
 
-            // Write TFC Guid. Zero Guid = Package Stored.
-            metadataStreamChunk.WriteGuid(tfcGuidProp != null ? CommonStructs.GetGuid(tfcGuidProp) : Guid.Empty); 
-            
+            // Write TFC index for the table
+            serializer.btpStream.WriteInt32(tfcTableIndex);
+
             // Write the number of populated mips.
-            metadataStreamChunk.WriteInt32(texBin.Mips.Count);
+            serializer.btpStream.WriteInt32(texBin.Mips.Count);
             int i = 0;
 
             // Write out populated mips data
-            // The struct size is 13 mips so we then fill it with blanks
-            for(; i < 13; i++)
+            // The struct size is 13 mips. We go from largest mip to smallest mip
+            // We could up from the smallest mip to the biggest
+            for (; i < 13; i++)
             {
                 if (texBin.Mips.Count == i)
                     break;
 
                 var mip = texBin.Mips[i];
+
+                // Oodle compress?
+                bool weCompressedMip = false;
+
+                // Mip lookup for duplicates.
+                SerializedBTPMip sm = null;
+                ulong crc = 0L;
+                if (mip.IsLocallyStored && mip.StorageType != StorageTypes.empty)
+                {
+                    crc = BitConverter.ToUInt64(Crc64.Hash(mip.Mip));
+                    if (serializer.OffsetCrcMap.TryGetValue(crc, out var existing))
+                    {
+                        // We've already serialized identical mip data...
+                        sm = existing;
+                        serializer.DeduplicationSavings += mip.Mip.Length; // Deduplicating mip
+                        // MLog.Information($@"Dedupe occuring for crc {crc}");
+                    }
+
+                    if (sm == null && !mip.IsCompressed)
+                    {
+                        serializer.InDataSize += mip.Mip.Length;
+                        var area = mip.SizeX * mip.SizeY;
+                        if (area >= COMPRESS_SIZE_MIN) // Compress textures that would be big.
+                        {
+                            mip.StorageType = StorageTypes.pccOodle;
+                            mip.Mip = OodleHelper.Compress(mip.Mip);
+                            mip.CompressedSize = mip.Mip.Length;
+                            weCompressedMip = true;
+                        }
+                        serializer.OutDataSize += mip.Mip.Length;
+                    }
+                }
+
                 // Write sizes
-                metadataStreamChunk.WriteInt32(mip.UncompressedSize);
-                metadataStreamChunk.WriteInt32(mip.CompressedSize);
-                
+                serializer.btpStream.WriteInt32(mip.UncompressedSize);
+                serializer.btpStream.WriteInt32(sm?.CompressedSize ?? mip.CompressedSize); // use known compressed size if this is a dedupe
+
                 if (mip.IsLocallyStored)
                 {
                     // Locally stored puts them into the override file itself.
                     // This is non-TFC textures and lower mips of TFC textures
                     // Store where offset maps to manifest data segment position.
-                    ManifestOffsetMap[i] = ((int)metadataStreamChunk.Position, (int)mipDataStreamChunk.Position);
-                    metadataStreamChunk.WriteInt32(0); // Will be updated later
-                    mipDataStreamChunk.Write(mip.Mip);
+
+                    var mipDataOffsetPos = serializer.btpStream.Position;
+                    serializer.btpStream.WriteUInt64(sm?.Offset ?? (ulong)serializer.btpStream.Length);// use known offset if this is a dedupe
+
+                    if (sm == null)
+                    {
+                        // Write mip, this is not a dedupe
+                        if (crc != 0)
+                        {
+                            // record crc for dedupe
+                            sm = new SerializedBTPMip()
+                            {
+                                Offset = (ulong)serializer.btpStream.Length,
+                                CompressedSize = mip.Mip.Length
+                            };
+                            serializer.OffsetCrcMap[crc] = sm;
+                        }
+
+                        // Write mip data and then rewind again.
+                        var oldPos = serializer.btpStream.Position;
+                        serializer.btpStream.Write(mip.Mip);
+                        serializer.btpStream.Seek(oldPos, SeekOrigin.Begin);
+                    }
                 }
                 else
                 {
-                    metadataStreamChunk.WriteInt32(mip.DataOffset); // TFC offset
+                    // It's a TFC offset
+                    // Write 64bit version, it gets downcast later
+                    serializer.btpStream.WriteUInt64((ulong)mip.DataOffset); // TFC offset
                 }
-                metadataStreamChunk.WriteInt16((short)mip.SizeX);
-                metadataStreamChunk.WriteInt16((short)mip.SizeY);
+                serializer.btpStream.WriteInt16((short)mip.SizeX);
+                serializer.btpStream.WriteInt16((short)mip.SizeY);
                 int mipFlag = 0;
                 if (!mip.IsLocallyStored)
                 {
                     // Set mip flag as stored in TFC
-                    mipFlag |=  1 << 2;
+                    mipFlag |= 1 << 2;
                 }
-                metadataStreamChunk.WriteInt32(mipFlag);
+                if (weCompressedMip)
+                {
+                    // Oodle compressed flag.
+                    mipFlag |= 1 << 3;
+                }
+
+                serializer.btpStream.WriteInt32(mipFlag);
             }
 
             // Write out remaining blanks to fill struct
             while (i < 13)
             {
                 // Write out blank data.
-                metadataStreamChunk.WriteZeros(0x14); // null data for undefined mips
+                serializer.btpStream.WriteZeros(0x14); // null data for undefined mips
                 i++;
             }
 
             // Format should always be set, in game defaults to Unknown if not set
-            var format = texture.GetProperty<EnumProperty>("Format");
             if (Enum.TryParse<TOPixelFormat>(format.Value.Instanced, out var fmt))
             {
                 // Write Format Byte
-                metadataStreamChunk.WriteInt32((int)fmt);
+                serializer.btpStream.WriteInt32((int)fmt);
             }
             else
             {
                 throw new Exception($"'Format' property missing on texture {TextureIFP}");
             }
-        }
 
-        /// <summary>
-        /// Serializes the offsets to the target stream
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="dataOffset"></param>
-        public void SerializeOffsets(Stream stream, int dataOffset)
-        {
-            foreach (var entry in ManifestOffsetMap)
-            {
-                stream.Seek(entry.Value.manifestPos, SeekOrigin.Begin);
-                stream.WriteInt32(entry.Value.manifestDataPos + dataOffset);
-            }
+            // Internal LOD Bias
+            serializer.btpStream.WriteInt32(lodBias);
+
+            // NeverStream
+            serializer.btpStream.WriteBoolInt(neverStream);
+
+            //SRGB
+            serializer.btpStream.WriteBoolInt(srgb);
         }
     }
 }
