@@ -48,6 +48,12 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
 
             foreach (var dlc in dlcMountsInOrder)
             {
+                if (!dlc.StartsWith(@"DLC_MOD_"))
+                {
+                    // Do not shader merge non-mod folders
+                    continue;
+                }
+
                 var dlcCookedPath = Path.Combine(target.GetDLCPath(), dlc, target.Game.CookedDirName());
 
                 MLog.Information($@"Looking for GlobalShader-*.m3gs files in {dlcCookedPath}", log);
