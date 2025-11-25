@@ -361,22 +361,22 @@ namespace ME3TweaksCore.TextureOverride
         /// <summary>
         /// Texture format for this entry
         /// </summary>
-        BTPPixelFormat Format { get; set; }
+        public BTPPixelFormat Format { get; set; }
 
         /// <summary>
         /// If texture is sRGB
         /// </summary>
-        bool bSRGB { get; set; }
+        public bool bSRGB { get; set; }
 
         /// <summary>
         /// LOD bias to allow higher mips to load
         /// </summary>
-        int InternalFormatLODBias { get; set; } // Stored as byte
+        public int InternalFormatLODBias { get; set; } // Stored as byte
 
         /// <summary>
         /// If texture should never be streamed, package stored must set this
         /// </summary>
-        bool NeverStream { get; set; }
+        public bool NeverStream { get; set; }
 
         /// <summary>
         /// Number of actual mips over override is using
@@ -462,6 +462,19 @@ namespace ME3TweaksCore.TextureOverride
             if (entrySize != 836)
             {
                 throw new Exception(@"Serializer for texture produced the wrong size!");
+            }
+
+            if (Owner.IsFinalSerialize)
+            {
+                if (Format == BTPPixelFormat.PF_Unknown)
+                {
+                    throw new Exception(@"Serializer for texture reports no format!");
+                }
+
+                if (PopulatedMipCount == 0)
+                {
+                    throw new Exception(@"Serializer for texture reports 0 mips!");
+                }
             }
 #endif
         }

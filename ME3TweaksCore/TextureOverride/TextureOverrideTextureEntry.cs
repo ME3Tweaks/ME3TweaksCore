@@ -1,5 +1,4 @@
 ﻿using LegendaryExplorerCore.Compression;
-using LegendaryExplorerCore.Gammtek.Extensions.IO;
 using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Packages;
 using LegendaryExplorerCore.Unreal;
@@ -96,9 +95,18 @@ namespace ME3TweaksCore.TextureOverride
             var neverStream = props.GetProp<BoolProperty>(@"NeverStream")?.Value ?? false;
             var srgb = props.GetProp<BoolProperty>(@"sRGB")?.Value ?? true; // Default is true on Texture class
 
-            // Set override path and mip counts
+            // Set vlues on the btpEntry
             btpEntry.OverridePath = MemoryPath ?? TextureIFP;
             btpEntry.PopulatedMipCount = (byte)numPopulatedMips;
+            btpEntry.InternalFormatLODBias = lodBias;
+            btpEntry.NeverStream = neverStream;
+            btpEntry.bSRGB = srgb;
+            // Format should always be set, in game defaults to Unknown if not set
+            // this is caught in serialization in debug mode.
+            if (Enum.TryParse<BTPPixelFormat>(format.Value.Instanced, out var fmt))
+            {
+                btpEntry.Format = fmt;
+            }
 
             // Determine TFC index in BTP
             var tfcTableIndex = 0; // "None" is on index 0
@@ -151,16 +159,16 @@ namespace ME3TweaksCore.TextureOverride
                     // texture must have > 64x64 size and not already compressed
                     if (dedupMip == null && !sourceMip.IsCompressed)
                     {
-                        //compiler.InDataSize += sourceMip.Mip.Length; // Stats
-                        //var area = sourceMip.SizeX * sourceMip.SizeY;
-                        //if (area >= COMPRESS_SIZE_MIN)
-                        //{
-                        //    sourceMip.StorageType = StorageTypes.pccOodle;
-                        //    sourceMip.Mip = OodleHelper.Compress(sourceMip.Mip);
-                        //    sourceMip.CompressedSize = sourceMip.Mip.Length;
-                        //    weCompressedMip = true;
-                        //}
-                        //compiler.OutDataSize += sourceMip.Mip.Length; // Stats
+                        compiler.InDataSize += sourceMip.Mip.Length; // Stats
+                        var area = sourceMip.SizeX * sourceMip.SizeY;
+                        if (area >= COMPRESS_SIZE_MIN)
+                        {
+                            sourceMip.StorageType = StorageTypes.pccOodle;
+                            sourceMip.Mip = OodleHelper.Compress(sourceMip.Mip);
+                            sourceMip.CompressedSize = sourceMip.Mip.Length;
+                            weCompressedMip = true;
+                        }
+                        compiler.OutDataSize += sourceMip.Mip.Length; // Stats
                     }
 
                     // Must cache here 

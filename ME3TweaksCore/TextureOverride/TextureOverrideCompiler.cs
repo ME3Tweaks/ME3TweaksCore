@@ -49,9 +49,6 @@ namespace ME3TweaksCore.TextureOverride
             DLCName = dlcName;
             Progress = pi;
 
-            //debug
-            tom.Textures = tom.Textures.Where(x => x.TextureIFP == "BIOG_V_Env_Hologram_Z.Textures.Holomod_07_Tex").ToList();
-
             // Start serialization
             // We use BTP object only for transient data storage,
             // it does not handle actual serialization as we would have to
