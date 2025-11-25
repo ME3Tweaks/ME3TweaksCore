@@ -83,12 +83,12 @@ namespace ME3TweaksCore.TextureOverride
         /// </summary>
         /// <param name="sourceFolder">The base folder. For DLC this will be DLC_MOD_NAME/CookedPCConsole/</param>
         /// <param name="destFile">Where files are serialized to. For how ASI expects it, it should be DLC_MOD_NAME/TheFile</param>
-        public void CompileBinaryTexturePackage(string sourceFolder, string destFile, ProgressInfo pi = null)
+        public void CompileBinaryTexturePackage(string sourceFolder, string destFile, string dlcName, ProgressInfo pi = null)
         {
             MLog.Information($@"Compiling Texture Override binary package to {destFile} with {Textures.Count} textures");
-
-            var btpSerializer = new BTPSerializer();
-            btpSerializer.Serialize(this, sourceFolder, destFile, pi);
+            using var btpStream = new FileStream(destFile, FileMode.Create);
+            var compiler = new TextureOverrideCompiler();
+            compiler.BuildBTPFromTO(this, sourceFolder, btpStream, dlcName, pi);
         }
     }
 }

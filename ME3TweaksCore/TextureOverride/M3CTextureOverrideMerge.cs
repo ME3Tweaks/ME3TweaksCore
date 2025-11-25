@@ -1,5 +1,4 @@
-﻿using LegendaryExplorerCore.Misc;
-using LegendaryExplorerCore.Packages;
+﻿using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.Objects;
 using Newtonsoft.Json;
@@ -63,9 +62,9 @@ namespace ME3TweaksCore.TextureOverride
                 pi?.Status = "Building texture override package";
                 pi?.Value = 0;
                 pi?.OnUpdate(pi);
-                var binPath = Path.Combine(dlcFolderRoot, dlcFolderName, $@"CombinedTextureOverrides{BTPSerializer.EXTENSION_TEXTURE_OVERRIDE_BINARY}");
+                var binPath = Path.Combine(dlcFolderRoot, dlcFolderName, $@"CombinedTextureOverrides{BinaryTexturePackage.EXTENSION_TEXTURE_OVERRIDE_BINARY}");
                 MLog.Information($@"Compiling M3 Texture Override binary package {binPath} for DLC {dlcFolderName}");
-                combinedManifest.CompileBinaryTexturePackage(cookedDir, binPath, pi);
+                combinedManifest.CompileBinaryTexturePackage(cookedDir, binPath, dlcFolderName, pi);
             }
         }
     }
