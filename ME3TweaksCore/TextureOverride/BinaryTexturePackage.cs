@@ -739,11 +739,6 @@ namespace ME3TweaksCore.TextureOverride
                     }
                 }
 
-                var magic = BitConverter.ToUInt32(decompressedData ?? data);
-                if (magic != 0x9E2A83C1) {
-                    Debug.WriteLine("oof");
-                }
-
                 // Return
                 btpStream.Seek(mipEntryEnd, SeekOrigin.Begin);
             }
