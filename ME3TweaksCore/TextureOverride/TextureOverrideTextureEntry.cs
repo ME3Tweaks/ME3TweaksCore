@@ -108,13 +108,15 @@ namespace ME3TweaksCore.TextureOverride
                 btpEntry.Format = fmt;
             }
 
-            // Determine TFC index in BTP
-            var tfcTableIndex = 0; // "None" is on index 0
+            // Default
+            btpEntry.TFC = btpEntry.Owner.TFCTable.GetTFC(null);
             if (tfc != null && tfc.Value.Name != null && tfcGuidProp != null)
             {
                 // Fetch table index, add if not there
-                tfcTableIndex = btpEntry.Owner.TFCTable.GetTFCTableIndex(tfc.Value.Name, CommonStructs.GetGuid(tfcGuidProp), texture);
+                btpEntry.TFC = btpEntry.Owner.TFCTable.GetOrAddTFC(tfc.Value.Name, CommonStructs.GetGuid(tfcGuidProp), texture);
             }
+
+
 
             // WRITING TEXTURE MIPS TO BTP STREAM =========================================
             int mipIndex = 0;

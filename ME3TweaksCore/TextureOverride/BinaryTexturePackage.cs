@@ -475,6 +475,11 @@ namespace ME3TweaksCore.TextureOverride
                 {
                     throw new Exception(@"Serializer for texture reports 0 mips!");
                 }
+
+                if (Mips.Any(x => (x.Flags & BTPMipFlags.External) != 0) && TFC.TableIndex == 0)
+                {
+                    throw new Exception(@"Serializer reports TFC table index is zero but there are external mips.");
+                }
             }
 #endif
         }
@@ -908,6 +913,11 @@ namespace ME3TweaksCore.TextureOverride
         /// <returns></returns>
         internal int GetTFCTableIndex(string tfc, Guid guid, ExportEntry export)
         {
+            if (guid == Guid.Empty && tfc != @"None")
+            {
+                throw new Exception($"Detected invalid TFC reference, empty guid for {tfc}");
+            }
+
             if (TFCTable.TryGetValue(tfc, out var tfcInfo))
             {
                 if (tfcInfo.TFCGuid != guid)
@@ -938,13 +948,35 @@ namespace ME3TweaksCore.TextureOverride
         }
 
         /// <summary>
-        /// Returns the TFC entry for the given TFC name.
+        /// Returns the TFC entry for the given TFC name. Does not create the TFC entry.
         /// </summary>
         /// <param name="tfcName"></param>
         /// <returns></returns>
         internal BTPTFCEntry GetTFC(string tfcName)
         {
+            if (tfcName == null)
+            {
+                // This will always be popuplated
+                return TFCTable[@"None"];
+            }
+
             return TFCTable[tfcName];
+        }
+
+        /// <summary>
+        /// Returns TFC entry for the given TFC name (if null, it returns the None entry). Creates if not found.
+        /// </summary>
+        /// <param name="tfcName"></param>
+        /// <param name="guid"></param>
+        /// <param name="export"></param>
+        /// <returns></returns>
+        internal BTPTFCEntry GetOrAddTFC(string tfcName, Guid guid, ExportEntry export)
+        {
+            if (tfcName != null)
+            {
+                GetTFCTableIndex(tfcName, guid, export);
+            }
+            return GetTFC(tfcName);
         }
     }
 }
