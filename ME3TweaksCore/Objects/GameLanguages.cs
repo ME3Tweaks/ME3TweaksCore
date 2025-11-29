@@ -153,6 +153,7 @@ namespace ME3TweaksCore.Objects
             if (game is MEGame.LE1) return le1languages;
             if (game is MEGame.LE2) return le2languages;
             if (game is MEGame.LE3) return le3languages;
+            if (game is MEGame.LMP) return le3languages;
 
             throw new Exception($@"Cannot get language for game {game}");
         }
