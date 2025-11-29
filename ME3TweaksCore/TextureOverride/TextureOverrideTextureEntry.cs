@@ -1,15 +1,19 @@
-﻿using LegendaryExplorerCore.Compression;
+﻿using CommunityToolkit.HighPerformance.Helpers;
+using LegendaryExplorerCore.Compression;
 using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Packages;
+using LegendaryExplorerCore.Packages.CloningImportingAndRelinking;
 using LegendaryExplorerCore.Unreal;
 using LegendaryExplorerCore.Unreal.BinaryConverters;
 using LegendaryExplorerCore.Unreal.ObjectInfo;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Hashing;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ME3TweaksCore.TextureOverride
 {
@@ -18,7 +22,7 @@ namespace ME3TweaksCore.TextureOverride
         /// <summary>
         /// Minimum area of a texture before we oodle compress it in the package
         /// </summary>
-        private const int COMPRESS_SIZE_MIN = 64 * 64;
+        public const int BTP_COMPRESS_SIZE_MIN = 64 * 64;
 
         /// <summary>
         /// Maximum length of a name of a TFC in bytes.
@@ -60,27 +64,28 @@ namespace ME3TweaksCore.TextureOverride
         /// <param name="btpEntry">The BTP entry for this texture that we will be populating data into</param>
         /// <param name="btpStream">The stream we are serializing mip data to</param>
         /// <param name="sourceFolder">Folder used as base path for package lookups when serializing package data to BTP</param>
-        public void Serialize(TextureOverrideCompiler compiler, BTPTextureEntry btpEntry, Stream btpStream, string sourceFolder)
+        /// <param name="metadataPackage">Optional package for storing the texture metadata when shipping a btp only.</param>
+        public void Serialize(TextureOverrideCompiler compiler, BTPTextureEntry btpEntry, Stream btpStream, IMEPackage package, IMEPackage metadataPackage = null)
         {
             // Find texture package
-            var packagePath = Path.Combine(sourceFolder, CompilingSourcePackage);
-            if (!File.Exists(packagePath))
-            {
-                throw new Exception($"sourcepackage does not exist at location {packagePath}");
-            }
+            //var packagePath = Path.Combine(sourceFolder, CompilingSourcePackage);
+            //if (!File.Exists(packagePath))
+            //{
+            //    throw new Exception($"sourcepackage does not exist at location {packagePath}");
+            //}
 
             // Load package and find texture
-            using var package = MEPackageHandler.UnsafePartialLoad(packagePath, x => x.InstancedFullPath.CaseInsensitiveEquals(TextureIFP));
+            // using var package = MEPackageHandler.UnsafePartialLoad(packagePath, x => x.InstancedFullPath.CaseInsensitiveEquals(TextureIFP));
             var texture = package.FindExport(TextureIFP);
             if (texture == null)
             {
-                throw new Exception($"Could not find textureifp {TextureIFP} in package {packagePath}");
+                throw new Exception($"Could not find textureifp {TextureIFP} in package {package.FilePath}");
             }
 
             // Make sure it's Texture2D
             if (!texture.IsA(@"Texture2D"))
             {
-                throw new Exception($"{TextureIFP} is not a texture object in {packagePath} ({texture.ClassName})");
+                throw new Exception($"{TextureIFP} is not a texture object in {package.FilePath} ({texture.ClassName})");
             }
 
             // Read metadata about texture.
@@ -96,7 +101,7 @@ namespace ME3TweaksCore.TextureOverride
             var neverStream = props.GetProp<BoolProperty>(@"NeverStream")?.Value ?? false;
             var srgb = props.GetProp<BoolProperty>(@"sRGB")?.Value ?? true; // Default is true on Texture class
 
-            // Set vlues on the btpEntry
+            // Set values on the btpEntry
             btpEntry.OverridePath = MemoryPath ?? TextureIFP;
             btpEntry.PopulatedMipCount = (byte)numPopulatedMips;
             btpEntry.InternalFormatLODBias = lodBias;
@@ -117,15 +122,13 @@ namespace ME3TweaksCore.TextureOverride
                 btpEntry.TFC = btpEntry.Owner.TFCTable.GetOrAddTFC(tfc.Value.Name, CommonStructs.GetGuid(tfcGuidProp), texture);
             }
 
-
-
             // WRITING TEXTURE MIPS TO BTP STREAM =========================================
-            int mipIndex = 0;
+            compiler.serializedMipInfo.TryGetValue(TextureIFP, out var smi);
 
             // Write out populated mips data
             // The struct size is 13 mips. We go from largest mip to smallest mip
             // We could up from the smallest mip to the biggest
-            for (; mipIndex < 13; mipIndex++)
+            for (int mipIndex = 0; mipIndex < texBin.Mips.Count; mipIndex++)
             {
                 if (texBin.Mips.Count == mipIndex)
                     break;
@@ -133,74 +136,70 @@ namespace ME3TweaksCore.TextureOverride
                 var sourceMip = texBin.Mips[mipIndex];
                 var btpMip = btpEntry.Mips[mipIndex];
 
+                // See if we already preprocessed this mip
+                SerializedBTPMip serializedInfo = null;
+                if (smi != null)
+                {
+                    smi.TryGetValue(mipIndex, out serializedInfo);
+                }
+                else
+                {
+                    //
+                }
+
+                // Uncompressed size doesn't change from source mip
                 btpMip.UncompressedSize = sourceMip.UncompressedSize;
 
-                // Flag for if we compressed this mip into the BTP
-                bool weCompressedMip = false;
-
-                SerializedBTPMip dedupMip = null;
                 if (sourceMip.IsLocallyStored && sourceMip.StorageType != StorageTypes.empty)
                 {
-                    // Mip lookup for duplicates.
-                    ulong crc = BitConverter.ToUInt64(Crc64.Hash(sourceMip.Mip));
-                    if (compiler.DedupCrcMap.TryGetValue(crc, out var existing))
-                    {
-                        // We've already serialized identical mip data...
-                        dedupMip = existing;
-                        compiler.DeduplicationSavings += sourceMip.Mip.Length; // Deduplicating mip
-                        // MLog.Information($@"Dedupe occuring for crc {crc}");
-                    }
-
+                    // Will be prepared already so we must set matching size.
                     if (!sourceMip.IsCompressed)
                     {
                         // BTP mip will set compressed and uncompresed size equal,
-                        // this will change if texture gets compressed
+                        // this will change if texture was oodle compressed
                         btpMip.CompressedSize = sourceMip.UncompressedSize;
                     }
 
-                    // Compress textures that would be big for space savings
-                    // texture must have > 64x64 size and not already compressed
-                    if (dedupMip == null && !sourceMip.IsCompressed)
+                    // Are we a dedup mip?
+                    bool isDedupMip = false;
+                    if (serializedInfo == null)
                     {
-                        compiler.InDataSize += sourceMip.Mip.Length; // Stats
-                        var area = sourceMip.SizeX * sourceMip.SizeY;
-                        if (area >= COMPRESS_SIZE_MIN)
+                        serializedInfo = new SerializedBTPMip();
+                        // Was not compressed, so just set the size the same.
+                        serializedInfo.CompressedSize = sourceMip.Mip.Length;
+                    }
+
+                    if (serializedInfo.Offset == 0)
+                    {
+                        if (serializedInfo.Crc == 0)
                         {
-                            sourceMip.StorageType = StorageTypes.pccOodle;
-                            sourceMip.Mip = OodleHelper.Compress(sourceMip.Mip);
-                            sourceMip.CompressedSize = sourceMip.Mip.Length;
-                            weCompressedMip = true;
+                            serializedInfo.Crc = BitConverter.ToUInt64(Crc64.Hash(sourceMip.Mip));
                         }
-                        compiler.OutDataSize += sourceMip.Mip.Length; // Stats
+
+                        // we're going to write to end of the btp stream
+                        serializedInfo.Offset = (ulong)btpStream.Length;
                     }
-
-                    // Must cache here 
-                    var isDuplicateMip = dedupMip != null;
-
-                    // Update dedup map before writing 
-                    // if we computed a crc for it and
-                    // it's not a dedupe already
-                    if (crc != 0 && !isDuplicateMip)
+                    else
                     {
-                        // record crc for future dedupe
-                        btpStream.SeekEnd(); // Make sure we're at the end where we're going to append
-                        dedupMip = new SerializedBTPMip()
-                        {
-                            Offset = (ulong)btpStream.Length,
-                            CompressedSize = sourceMip.Mip.Length,
-                            OodleCompressed = weCompressedMip
-                        };
-                        compiler.DedupCrcMap[crc] = dedupMip;
+                        // offset was previously set; we're already serialized into btp
+                        isDedupMip = true;
                     }
+
+
+                    if (serializedInfo.Crc == 0)
+                        Debugger.Break();
+
+                    // record crc for future dedupe
+                    compiler.DedupCrcMap[serializedInfo.Crc] = serializedInfo;
+
+                    btpMip.CompressedSize = serializedInfo.CompressedSize;
 
                     // Serialize the mip data (if unique) and update the entry.
-                    var offset = (long?)dedupMip?.Offset ?? btpStream.Length;
-                    var compressedSize = (int?)(dedupMip?.CompressedSize) ?? sourceMip.CompressedSize;
-                    var data = isDuplicateMip ? null : sourceMip.Mip;
-                    Debug.WriteLine($@"Serializing {btpEntry.OverridePath} mip {mipIndex} so: {offset}, cs: {compressedSize}, data: {data?.Length}");
+                    var data = isDedupMip ? null : sourceMip.Mip;
+                    // Debug.WriteLine($@"Serializing {btpEntry.OverridePath} mip {mipIndex} so: {offset}, cs: {compressedSize}, data: {data?.Length}");
                     btpMip.SerializeData(btpStream,
-                        offset, // Dedup offset or end of stream
-                        compressedSize, // Dedup compressed size or our mip's size
+                        (long)serializedInfo.Offset, // Dedup offset or end of stream
+                        serializedInfo.CompressedSize, // Dedup compressed size or our mip's size
                         data // Only pass mip data if not a dedupe
                     );
                 }
@@ -211,7 +210,7 @@ namespace ME3TweaksCore.TextureOverride
                     btpMip.CompressedOffset = sourceMip.DataOffset;
                 }
 
-                btpMip.CompressedSize = dedupMip?.CompressedSize ?? sourceMip.CompressedSize;
+                btpMip.CompressedSize = serializedInfo?.CompressedSize ?? sourceMip.CompressedSize;
                 btpMip.Width = (short)sourceMip.SizeX;
                 btpMip.Height = (short)sourceMip.SizeY;
                 btpMip.Flags = 0;
@@ -220,12 +219,20 @@ namespace ME3TweaksCore.TextureOverride
                     // Set mip flag as stored in TFC
                     btpMip.Flags |= BTPMipFlags.External;
                 }
-                if (weCompressedMip || dedupMip?.OodleCompressed == true)
+                if (serializedInfo?.OodleCompressed == true)
                 {
                     // Custom oodle compressed flag
                     // for the ASI.
                     btpMip.Flags |= BTPMipFlags.OodleCompressed;
                 }
+            }
+
+
+            if (metadataPackage != null)
+            {
+                // Write out metadata - texture export, stubbed
+                texture.WriteBinary([]); // Hope this works...
+                EntryExporter.ExportExportToPackage(texture, package, out _);
             }
         }
     }

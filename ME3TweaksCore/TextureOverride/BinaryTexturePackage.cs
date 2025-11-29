@@ -20,8 +20,20 @@ namespace ME3TweaksCore.TextureOverride
     /// </summary>
     public class SerializedBTPMip
     {
+        /// <summary>
+        /// The offset in the BTP where the mip data resides. If zero, it is not set yet.
+        /// </summary>
         public ulong Offset;
+
+        /// <summary>
+        /// The compressed size of the mip (either oodle or original)
+        /// </summary>
         public int CompressedSize;
+
+        /// <summary>
+        /// Computed CRC64 for this mip
+        /// </summary>
+        public ulong Crc;
 
         /// <summary>
         /// If mip was oodle compressed
@@ -346,6 +358,8 @@ namespace ME3TweaksCore.TextureOverride
     /// <summary>
     /// Information about a single texture override in the BTP
     /// </summary>
+    [DebuggerDisplay(@"BTPTextureEntry | {OverridePath} | {Mips.Count} mips")]
+
     public class BTPTextureEntry
     {
         /// <summary>
@@ -457,9 +471,10 @@ namespace ME3TweaksCore.TextureOverride
             btpStream.WriteByte(PopulatedMipCount);
 
             // Write out all 13 mip header structs now, from largest to smallest
-            foreach (var mip in Mips)
+            for(int i = 0; i < Mips.Count; i++)
             {
-                mip.Serialize(btpStream);
+                var mip = Mips[i];
+                mip.Serialize(btpStream, i >= PopulatedMipCount);
             }
 
 #if DEBUG
@@ -510,8 +525,6 @@ namespace ME3TweaksCore.TextureOverride
             PopulatedMipCount = (byte)btpStream.ReadByte();
             for (var i = 0; i < 13; i++)
             {
-                // If 2 items in list, 0,1 are used, index 2 is invalid
-                // so >=
                 var mip = new BTPMipEntry(this, btpStream, i >= PopulatedMipCount);
                 Mips.Add(mip);
             }
@@ -529,6 +542,7 @@ namespace ME3TweaksCore.TextureOverride
     /// <summary>
     /// Information about a mip in the BTP
     /// </summary>
+    [DebuggerDisplay(@"BTPMipEntry {Width}x{Height}, UC: {UncompressedSize}, CS: {CompressedSize}, Flags: {Flags}")]
     public class BTPMipEntry
     {
         /// <summary>
@@ -600,7 +614,7 @@ namespace ME3TweaksCore.TextureOverride
         /// Serializes the mip header to the stream. This does NOT serialize data!
         /// </summary>
         /// <param name="btpStream">Stream to serialize to</param>
-        public void Serialize(Stream btpStream, bool noDataChecks = false)
+        public void Serialize(Stream btpStream, bool isUnused, bool forceTest = false)
         {
             EntryOffset = btpStream.Position;
             btpStream.WriteInt32(UncompressedSize);
@@ -617,7 +631,7 @@ namespace ME3TweaksCore.TextureOverride
                 throw new Exception(@"Serializer for mip produced the wrong size!");
             }
 
-            if (Owner.Owner.IsFinalSerialize && (Width > 0 || Height > 0))
+            if ((Owner.Owner.IsFinalSerialize || forceTest) && !isUnused)
             {
                 if (UncompressedSize == 0)
                 {
@@ -658,9 +672,6 @@ namespace ME3TweaksCore.TextureOverride
                 btpStream.Seek(offset, SeekOrigin.Begin);
                 btpStream.Write(data);
                 CompressedSize = compressedSize;
-            } else
-            {
-                Debug.WriteLine("hi");
             }
 
 #if DEBUG
@@ -684,7 +695,7 @@ namespace ME3TweaksCore.TextureOverride
             SeekTo(btpStream);
 
             // Rewrite entry data with updated information.
-            Serialize(btpStream);
+            Serialize(btpStream, false, true);
         }
 
         /// <summary>
@@ -744,11 +755,7 @@ namespace ME3TweaksCore.TextureOverride
                 if ((Flags & BTPMipFlags.OodleCompressed) != 0)
                 {
                     decompressedData = new byte[UncompressedSize];
-                    var res = OodleHelper.Decompress(data, decompressedData);
-                    if (res == 0)
-                    {
-                        Debug.WriteLine("darn");
-                    }
+                    OodleHelper.Decompress(data, decompressedData);
                 }
 
                 // Return

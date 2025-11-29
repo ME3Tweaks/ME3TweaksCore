@@ -75,7 +75,6 @@ namespace ME3TweaksCore.TextureOverride
             return true;
         }
 
-
         // SERIALIZATION TO BINARY =======================================================
 
         /// <summary>
@@ -86,9 +85,12 @@ namespace ME3TweaksCore.TextureOverride
         public void CompileBinaryTexturePackage(string sourceFolder, string destFile, string dlcName, ProgressInfo pi = null)
         {
             MLog.Information($@"Compiling Texture Override binary package to {destFile} with {Textures.Count} textures");
+
+            var metadataPackage = MEPackageHandler.CreateAndOpenPackage(Path.Combine(Directory.GetParent(destFile).FullName, @"BTPMetadata.btm"), Game);
             using var btpStream = new FileStream(destFile, FileMode.Create);
             var compiler = new TextureOverrideCompiler();
-            compiler.BuildBTPFromTO(this, sourceFolder, btpStream, dlcName, pi);
+            compiler.BuildBTPFromTO(this, sourceFolder, btpStream, dlcName, pi, metadataPackage);
+            metadataPackage.Save();
         }
     }
 }
