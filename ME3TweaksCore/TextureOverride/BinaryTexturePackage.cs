@@ -22,6 +22,11 @@ namespace ME3TweaksCore.TextureOverride
     {
         public ulong Offset;
         public int CompressedSize;
+
+        /// <summary>
+        /// If mip was oodle compressed
+        /// </summary>
+        public bool OodleCompressed { get; internal set; }
     }
 
     /// <summary>
@@ -653,6 +658,9 @@ namespace ME3TweaksCore.TextureOverride
                 btpStream.Seek(offset, SeekOrigin.Begin);
                 btpStream.Write(data);
                 CompressedSize = compressedSize;
+            } else
+            {
+                Debug.WriteLine("hi");
             }
 
 #if DEBUG
@@ -726,6 +734,9 @@ namespace ME3TweaksCore.TextureOverride
                 // you must check for oodle compression flag.
                 var mipEntryEnd = btpStream.Position;
                 btpStream.Seek(CompressedOffset, SeekOrigin.Begin);
+                if (btpStream.Position + CompressedSize > btpStream.Length) {
+                    throw new Exception(@"The requested mip data is out of bounds of the BTP stream! We are overreading");
+                }
                 var data = Data = btpStream.ReadToBuffer(CompressedSize);
 
                 // Verify decompression
@@ -737,10 +748,6 @@ namespace ME3TweaksCore.TextureOverride
                     if (res == 0)
                     {
                         Debug.WriteLine("darn");
-                    }
-                    else
-                    {
-                        Debug.WriteLine("hi");
                     }
                 }
 

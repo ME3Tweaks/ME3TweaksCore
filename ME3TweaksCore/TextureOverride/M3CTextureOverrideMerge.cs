@@ -1,6 +1,8 @@
 ﻿using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
+using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Objects;
+using ME3TweaksCore.Targets;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
@@ -13,6 +15,18 @@ namespace ME3TweaksCore.TextureOverride
     /// </summary>
     public class M3CTextureOverrideMerge
     {
+        /// <summary>
+        /// Gets path to BTP for given target and DLC name
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="dlcFolderName"></param>
+        /// <returns></returns>
+        public static string GetCombinedTexturePackagePath(GameTarget target, string dlcFolderName)
+        {
+            return Path.Combine(target.GetDLCPath(), dlcFolderName, $@"CombinedTextureOverrides{BinaryTexturePackage.EXTENSION_TEXTURE_OVERRIDE_BINARY}");
+        }
+
+
         // One consideration: Delete the texture packages in the DLC after merge is complete
         // This way we don't store redundant data in the DLC cooked folder as these aren't used by game
         // Probably will require some changes to installer or something... ugh
@@ -20,12 +34,11 @@ namespace ME3TweaksCore.TextureOverride
         /// <summary>
         /// Performs a texture merge on the given game's DLC folder, on the given DLC
         /// </summary>
-        /// <param name="game">Which game we are working on</param>
-        /// <param name="dlcFolderRoot">Path to DLC folder (contains DLC folders)</param>
+        /// <param name="target">Target we are merging</param>
         /// <param name="dlcFolderName">Name of the DLC folder we are merging on</param>
-        public static void PerformDLCMerge(MEGame game, string dlcFolderRoot, string dlcFolderName, ProgressInfo pi = null)
+        public static void PerformDLCMerge(GameTarget target, string dlcFolderName, ProgressInfo pi = null)
         {
-            var cookedDir = Path.Combine(dlcFolderRoot, dlcFolderName, game.CookedDirName());
+            var cookedDir = Path.Combine(target.GetDLCPath(), dlcFolderName, target.Game.CookedDirName());
             if (!Directory.Exists(cookedDir))
             {
                 MLog.Error($@"Cannot TextureOverride DLC merge {dlcFolderName}, cooked directory doesn't exist: {cookedDir}");
@@ -39,7 +52,7 @@ namespace ME3TweaksCore.TextureOverride
             // Generate combined/override list in order of found files.
             var combinedManifest = new TextureOverrideManifest
             {
-                Game = game,
+                Game = target.Game,
                 Textures = new List<TextureOverrideTextureEntry>()
             };
 
@@ -48,9 +61,9 @@ namespace ME3TweaksCore.TextureOverride
                 MLog.Information($@"Merging M3 Texture Override {m3to} in {dlcFolderName}");
                 var manifestText = File.ReadAllText(m3to);
                 var manifest = JsonConvert.DeserializeObject<TextureOverrideManifest>(manifestText);
-                if (manifest.Game != game)
+                if (manifest.Game != target.Game)
                 {
-                    MLog.Error($@"Texture Override manifest game mismatch in {m3to} (file targets {manifest.Game}, we are merging {game}), skipping this file.");
+                    MLog.Error($@"Texture Override manifest game mismatch in {m3to} (file targets {manifest.Game}, we are merging {target.Game}), skipping this file.");
                     continue;
                 }
                 var errorText = manifest.MergeInto(combinedManifest);
@@ -62,7 +75,7 @@ namespace ME3TweaksCore.TextureOverride
                 pi?.Status = "Building texture override package";
                 pi?.Value = 0;
                 pi?.OnUpdate(pi);
-                var binPath = Path.Combine(dlcFolderRoot, dlcFolderName, $@"CombinedTextureOverrides{BinaryTexturePackage.EXTENSION_TEXTURE_OVERRIDE_BINARY}");
+                var binPath = GetCombinedTexturePackagePath(target, dlcFolderName);
                 MLog.Information($@"Compiling M3 Texture Override binary package {binPath} for DLC {dlcFolderName}");
                 combinedManifest.CompileBinaryTexturePackage(cookedDir, binPath, dlcFolderName, pi);
             }

@@ -6,6 +6,7 @@ using LegendaryExplorerCore.Unreal.BinaryConverters;
 using LegendaryExplorerCore.Unreal.ObjectInfo;
 using Newtonsoft.Json;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Hashing;
 using System.Linq;
@@ -137,10 +138,10 @@ namespace ME3TweaksCore.TextureOverride
                 // Flag for if we compressed this mip into the BTP
                 bool weCompressedMip = false;
 
+                SerializedBTPMip dedupMip = null;
                 if (sourceMip.IsLocallyStored && sourceMip.StorageType != StorageTypes.empty)
                 {
                     // Mip lookup for duplicates.
-                    SerializedBTPMip dedupMip = null;
                     ulong crc = BitConverter.ToUInt64(Crc64.Hash(sourceMip.Mip));
                     if (compiler.DedupCrcMap.TryGetValue(crc, out var existing))
                     {
@@ -179,22 +180,28 @@ namespace ME3TweaksCore.TextureOverride
                     // Update dedup map before writing 
                     // if we computed a crc for it and
                     // it's not a dedupe already
-                    if (crc != 0 && dedupMip == null)
+                    if (crc != 0 && !isDuplicateMip)
                     {
                         // record crc for future dedupe
+                        btpStream.SeekEnd(); // Make sure we're at the end where we're going to append
                         dedupMip = new SerializedBTPMip()
                         {
                             Offset = (ulong)btpStream.Length,
-                            CompressedSize = sourceMip.Mip.Length
+                            CompressedSize = sourceMip.Mip.Length,
+                            OodleCompressed = weCompressedMip
                         };
                         compiler.DedupCrcMap[crc] = dedupMip;
                     }
 
                     // Serialize the mip data (if unique) and update the entry.
+                    var offset = (long?)dedupMip?.Offset ?? btpStream.Length;
+                    var compressedSize = (int?)(dedupMip?.CompressedSize) ?? sourceMip.CompressedSize;
+                    var data = isDuplicateMip ? null : sourceMip.Mip;
+                    Debug.WriteLine($@"Serializing {btpEntry.OverridePath} mip {mipIndex} so: {offset}, cs: {compressedSize}, data: {data?.Length}");
                     btpMip.SerializeData(btpStream,
-                        (long?)dedupMip?.Offset ?? btpStream.Length, // Dedup offset or end of stream
-                        dedupMip?.CompressedSize ?? sourceMip.CompressedSize, // Dedup compressed size or our mip's size
-                        isDuplicateMip ? null : sourceMip.Mip // Only pass mip data if not a dedupe
+                        offset, // Dedup offset or end of stream
+                        compressedSize, // Dedup compressed size or our mip's size
+                        data // Only pass mip data if not a dedupe
                     );
                 }
                 else
@@ -204,7 +211,7 @@ namespace ME3TweaksCore.TextureOverride
                     btpMip.CompressedOffset = sourceMip.DataOffset;
                 }
 
-                btpMip.CompressedSize = sourceMip.CompressedSize;
+                btpMip.CompressedSize = dedupMip?.CompressedSize ?? sourceMip.CompressedSize;
                 btpMip.Width = (short)sourceMip.SizeX;
                 btpMip.Height = (short)sourceMip.SizeY;
                 btpMip.Flags = 0;
@@ -213,7 +220,7 @@ namespace ME3TweaksCore.TextureOverride
                     // Set mip flag as stored in TFC
                     btpMip.Flags |= BTPMipFlags.External;
                 }
-                if (weCompressedMip)
+                if (weCompressedMip || dedupMip?.OodleCompressed == true)
                 {
                     // Custom oodle compressed flag
                     // for the ASI.
