@@ -404,9 +404,9 @@ namespace ME3TweaksCore.NativeMods
                                         }).OrderBy(x => x.Version).ToList()
                                     }).ToList();
 
-#if DEBUG
                 // Add some transient ASIs for now
                 // Todo: Put into server manifest
+                // once we have unveiled things.
 
                 // Add AutoTOC
                 updateGroups.Add(new ASIMod()
@@ -441,7 +441,7 @@ namespace ME3TweaksCore.NativeMods
                         Version = 1,
                         Description = "MilanHost adds required functionality to the game to allow Project Milan to work properly.",
                         Hash = "9c8b72297757886998a21ab29194eccf",
-                        SourceCodeLink = "https://github.com/d00telemental/MilanClientServer",
+                        SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
                         DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/MilanHost.asi",
                         IsBeta = false,
                         Hidden = false,
@@ -458,7 +458,6 @@ namespace ME3TweaksCore.NativeMods
 
                 //    }]
                 //});
-#endif
 
 
                 foreach (var v in updateGroups)
