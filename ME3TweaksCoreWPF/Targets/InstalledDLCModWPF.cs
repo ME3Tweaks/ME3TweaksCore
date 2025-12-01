@@ -18,7 +18,8 @@ namespace ME3TweaksCoreWPF.Targets
         public GenericCommand DeleteCommand { get; set; }
 
 
-        public InstalledDLCModWPF(string dlcFolderPath, MEGame game, Func<InstalledDLCMod, bool> deleteConfirmationCallback, Action notifyDeleted, Action notifyToggled, bool modNamePrefersTPMI) : base(dlcFolderPath, game, deleteConfirmationCallback, notifyDeleted, notifyToggled, modNamePrefersTPMI)
+        public InstalledDLCModWPF(string dlcFolderPath, MEGame game, Func<InstalledDLCMod, bool> deleteConfirmationCallback, Action<InstalledDLCMod> notifyDeleted, Action<InstalledDLCMod> notifyToggled, bool modNamePrefersTPMI) 
+            : base(dlcFolderPath, game, deleteConfirmationCallback, notifyDeleted, notifyToggled, modNamePrefersTPMI)
         {
             DeleteCommand = new GenericCommand(DeleteDLCMod, CanDeleteDLCMod);
             EnableDisableCommand = new GenericCommand(ToggleDLC, CanToggleDLC);
@@ -40,7 +41,7 @@ namespace ME3TweaksCoreWPF.Targets
                 {
                     DeleteText = LC.GetString(LC.string_deleting);
                     MUtilities.DeleteFilesAndFoldersRecursively(dlcFolderPath);
-                    notifyDeleted?.Invoke();
+                    notifyDeleted?.Invoke(this);
                 }
                 catch (Exception e)
                 {
@@ -63,7 +64,7 @@ namespace ME3TweaksCoreWPF.Targets
         /// <param name="notifytoggled"></param>
         /// <param name="modnamepreferstpmi"></param>
         /// <returns></returns>
-        private static InstalledDLCMod GenerateInstalledDLCModObject(string dlcfolderpath, MEGame game, Func<InstalledDLCMod, bool> deleteconfirmationcallback, Action notifydeleted, Action notifytoggled, bool modnamepreferstpmi)
+        private static InstalledDLCMod GenerateInstalledDLCModObject(string dlcfolderpath, MEGame game, Func<InstalledDLCMod, bool> deleteconfirmationcallback, Action<InstalledDLCMod> notifydeleted, Action<InstalledDLCMod> notifytoggled, bool modnamepreferstpmi)
         {
             return new InstalledDLCModWPF(dlcfolderpath, game, deleteconfirmationcallback, notifydeleted, notifytoggled, modnamepreferstpmi);
         }

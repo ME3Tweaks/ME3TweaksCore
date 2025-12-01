@@ -41,11 +41,16 @@ namespace ME3TweaksCore.Targets
         private MEGame game;
 
         protected Func<InstalledDLCMod, bool> deleteConfirmationCallback;
-        protected Action notifyDeleted;
-        private Action notifyToggled;
 
+        /// <summary>
+        /// Listener to invoke when this item has been deleted
+        /// </summary>
+        protected Action<InstalledDLCMod> notifyDeleted;
 
-
+        /// <summary>
+        /// Listener to invoke when enabling/disabling
+        /// </summary>
+        private Action<InstalledDLCMod> notifyToggled;
 
         /// <summary>
         /// Indicates that this mod was installed by ALOT Installer or Mod Manager.
@@ -57,7 +62,7 @@ namespace ME3TweaksCore.Targets
             parseMetaCmm(DLCFolderName.StartsWith('x'), false);
         }
 
-        public InstalledDLCMod(string dlcFolderPath, MEGame game, Func<InstalledDLCMod, bool> deleteConfirmationCallback, Action notifyDeleted, Action notifyToggled, bool modNamePrefersTPMI)
+        public InstalledDLCMod(string dlcFolderPath, MEGame game, Func<InstalledDLCMod, bool> deleteConfirmationCallback, Action<InstalledDLCMod> notifyDeleted, Action<InstalledDLCMod> notifyToggled, bool modNamePrefersTPMI)
         {
             this.dlcFolderPath = dlcFolderPath;
             this.game = game;
@@ -141,7 +146,7 @@ namespace ME3TweaksCore.Targets
                 DLCFolderName = newdlcname;
                 dlcFolderPath = target;
                 EnableDisableTooltip = LC.GetString(isBecomingDisabled ? LC.string_tooltip_enableDLC : LC.string_tooltip_disableDLC);
-                notifyToggled?.Invoke();
+                notifyToggled?.Invoke(this);
             }
             catch (Exception e)
             {
@@ -164,7 +169,7 @@ namespace ME3TweaksCore.Targets
                 try
                 {
                     MUtilities.DeleteFilesAndFoldersRecursively(dlcFolderPath);
-                    notifyDeleted?.Invoke();
+                    notifyDeleted?.Invoke(this);
                 }
                 catch (Exception e)
                 {

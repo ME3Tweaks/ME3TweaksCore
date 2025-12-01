@@ -15,7 +15,7 @@ namespace ME3TweaksCore.Helpers
     /// </summary>
     public class MExtendedClassGenerators
     {
-        public delegate InstalledDLCMod GenerateInstalledDLCModDelegate(string dlcFolderPath, MEGame game, Func<InstalledDLCMod, bool> deleteConfirmationCallback, Action notifyDeleted, Action notifyToggled, bool modNamePrefersTPMI);
+        public delegate InstalledDLCMod GenerateInstalledDLCModDelegate(string dlcFolderPath, MEGame game, Func<InstalledDLCMod, bool> deleteConfirmationCallback, Action<InstalledDLCMod> notifyDeleted, Action<InstalledDLCMod> notifyToggled, bool modNamePrefersTPMI);
         public static GenerateInstalledDLCModDelegate GenerateInstalledDlcModObject { get; set; } = InternalGenerateInstalledDLCModObject;
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace ME3TweaksCore.Helpers
         /// <param name="notifytoggled"></param>
         /// <param name="modnamepreferstpmi"></param>
         /// <returns></returns>
-        private static InstalledDLCMod InternalGenerateInstalledDLCModObject(string dlcfolderpath, MEGame game, Func<InstalledDLCMod, bool> deleteconfirmationcallback, Action notifydeleted, Action notifytoggled, bool modnamepreferstpmi)
+        private static InstalledDLCMod InternalGenerateInstalledDLCModObject(string dlcfolderpath, MEGame game, Func<InstalledDLCMod, bool> deleteconfirmationcallback, Action<InstalledDLCMod> notifydeleted, Action<InstalledDLCMod> notifytoggled, bool modnamepreferstpmi)
         {
             return new InstalledDLCMod(dlcfolderpath, game, deleteconfirmationcallback, notifydeleted, notifytoggled, modnamepreferstpmi);
         }

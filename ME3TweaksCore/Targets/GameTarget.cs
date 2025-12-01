@@ -518,7 +518,7 @@ namespace ME3TweaksCore.Targets
         /// <param name="notifyDeleted"></param>
         /// <param name="notifyToggled"></param>
         /// <param name="modNamePrefersTPMI"></param>
-        public virtual void PopulateDLCMods(bool includeDisabled, Func<InstalledDLCMod, bool> deleteConfirmationCallback = null, Action notifyDeleted = null, Action notifyToggled = null, bool modNamePrefersTPMI = false)
+        public virtual void PopulateDLCMods(bool includeDisabled, Func<InstalledDLCMod, bool> deleteConfirmationCallback = null, Action<InstalledDLCMod> notifyDeleted = null, Action<InstalledDLCMod> notifyToggled = null, bool modNamePrefersTPMI = false)
         {
             if (Game == MEGame.LELauncher) return; // LE Launcher doesn't have DLC mods
             var dlcDir = M3Directories.GetDLCPath(this);
