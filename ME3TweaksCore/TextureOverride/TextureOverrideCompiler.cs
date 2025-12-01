@@ -185,7 +185,11 @@ namespace ME3TweaksCore.TextureOverride
 #if DEBUG
             MLog.Information($@"BTP build: Beginning deserialization verification");
             btpStream.SeekBegin();
-            var verifyBTP = new BinaryTexturePackage(btpStream, true);
+
+            pi?.Status = @"Verifying BTP";
+            pi?.Value = 0;
+            pi?.OnUpdate(pi);
+            var verifyBTP = new BinaryTexturePackage(btpStream, true, pi);
 #endif
 
             btpStream.Close();
@@ -212,7 +216,7 @@ namespace ME3TweaksCore.TextureOverride
         {
             // For every loaded object...
             var loadedItems = currentSourcePackage.Exports.Where(x => x.IsDataLoaded());
-            Parallel.ForEach(loadedItems, texture =>
+            Parallel.ForEach(loadedItems, new ParallelOptions() { MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount - 2, 1, 6) }, texture =>
             {
                 var compressedAny = false;
                 var texBin = ObjectBinary.From<UTexture2D>(texture);

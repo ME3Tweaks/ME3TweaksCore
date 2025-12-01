@@ -232,12 +232,12 @@ namespace ME3TweaksCore.TextureOverride
         /// </summary>
         /// <param name="btpStream"></param>
         /// <param name="loadMips">If mip data should be also loaded. This can use a lot of memory.</param>
-        public BinaryTexturePackage(Stream btpStream, bool loadMips = false)
+        public BinaryTexturePackage(Stream btpStream, bool loadMips = false, ProgressInfo pi = null)
         {
             if (btpStream != null)
             {
                 LoadMips = loadMips;
-                Deserialize(btpStream);
+                Deserialize(btpStream, pi);
             }
             else
             {
@@ -278,7 +278,7 @@ namespace ME3TweaksCore.TextureOverride
         /// Generates BTP object from BTP stream. Without source data, this isn't that useful, but is good for verification
         /// </summary>
         /// <param name="btpStream">Input stream to construct BTP object from</param>
-        private void Deserialize(Stream btpStream)
+        private void Deserialize(Stream btpStream, ProgressInfo pi = null)
         {
             Header = new BTPHeader(this, btpStream);
             var textureTableStart = btpStream.Position;
@@ -288,10 +288,16 @@ namespace ME3TweaksCore.TextureOverride
             TFCTable = new BTPTFCTable(this, btpStream);
 
             // Deserialize texture table
+
+            uint textureCount = Header.TextureCount;
+            
             btpStream.Seek(textureTableStart, SeekOrigin.Begin);
             TextureOverrides = new List<BTPTextureEntry>((int)Header.TextureCount);
             for (var i = 0; i < Header.TextureCount; i++)
             {
+                pi?.Value = i * 100 / Header.TextureCount;
+                pi?.OnUpdate(pi);
+
                 var btpOverride = new BTPTextureEntry(this, btpStream);
                 TextureOverrides.Add(btpOverride);
             }
