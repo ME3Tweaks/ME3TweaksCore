@@ -22,6 +22,7 @@ namespace ME3TweaksCore.Targets
     public class InstalledDLCMod
     {
         protected string dlcFolderPath;
+        /// </summary>
         public bool IsEnabled => DLCFolderName.StartsWith(@"DLC_");
         public string EnableDisableText => IsEnabled ? LC.GetString(LC.string_disable) : LC.GetString(LC.string_enable);
         public string DeleteText { get; set; } = LC.GetString(LC.string_delete);
@@ -83,7 +84,8 @@ namespace ME3TweaksCore.Targets
 
         private void parseMetaCmm(bool disabled, bool modNamePrefersTPMI)
         {
-            DLCFolderNameString = DLCFolderName.TrimStart('x'); //this string is not to show M3L.GetString(M3L.string_disabled)
+            // Get name of DLC folder, removing beginning x if any.
+            DLCFolderNameString = DLCFolderName.TrimStart('x');
             var metaFile = Path.Combine(dlcFolderPath, @"_metacmm.txt");
             if (File.Exists(metaFile))
             {
