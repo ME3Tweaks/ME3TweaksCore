@@ -1,11 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net.Mime;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Input;
 using LegendaryExplorerCore.Misc;
 using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
@@ -14,7 +8,6 @@ using ME3TweaksCore.Helpers;
 using ME3TweaksCore.Localization;
 using ME3TweaksCore.Services.ThirdPartyModIdentification;
 using PropertyChanged;
-using Serilog;
 
 namespace ME3TweaksCore.Targets
 {
@@ -22,6 +15,8 @@ namespace ME3TweaksCore.Targets
     public class InstalledDLCMod
     {
         protected string dlcFolderPath;
+        /// <summary>
+        /// If DLC is enabled
         /// </summary>
         public bool IsEnabled => DLCFolderName.StartsWith(@"DLC_");
         public string EnableDisableText => IsEnabled ? LC.GetString(LC.string_disable) : LC.GetString(LC.string_enable);
@@ -152,7 +147,6 @@ namespace ME3TweaksCore.Targets
             {
                 MLog.Error(@"Unable to toggle DLC: " + e.Message);
             }
-            //TriggerPropertyChangedFor(nameof(DLCFolderName));
         }
 
         public bool CanToggleDLC() => (game is MEGame.ME3 || game.IsLEGame() || DLCFolderName.StartsWith('x')) && !MUtilities.IsGameRunning(game);
