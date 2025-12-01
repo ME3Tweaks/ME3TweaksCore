@@ -54,20 +54,23 @@ namespace ME3TweaksCore.TextureOverride
         /// <param name="tom">Manifest to convert</param>
         /// <param name="sourceFolder">Source folder that contains the packages. This is the DLC cooked directory.</param>
         /// <param name="btpStream">The destination stream to write to. This should be the start of a stream.</param>
-        /// <param name="metadataFilePath">The file location of where to put the BTM file which can be used to convert back to package format</param>
         /// <param name="pi">Progress interop</param>
         public void BuildBTPFromTO(TextureOverrideManifest tom, string sourceFolder, Stream btpStream, string dlcName, ProgressInfo pi, IMEPackage metadataPackage = null)
         {
+            MLog.Information($@"BTP build: Initializing");
+
             // Setup variables!
             DLCName = dlcName;
             Progress = pi;
 
             // DEBUG ONLY
             // Filter for testing
-            // tom.Textures = tom.Textures.Where(x => x.TextureIFP == "BIOG_HMF_HED_PROMorph_R.PROMiranda.Textures.HMF_HED_PROMiranda_Face_Diff").ToList();
+            // tom.Textures = tom.Textures.Where(x => x.TextureIFP.Contains(@"BIOG_HMM_HED_PROMorph.Eye.EYE_Diff", StringComparison.OrdinalIgnoreCase)).ToList(); // == "BIOG_Humanoid_MASTER_MTR_R.Eye.HMM_EYE_MASTER_Diffuse").ToList();
 
             // Prepare for performance by serializing in-order of source package
             tom.Textures = tom.Textures.OrderBy(t => t.CompilingSourcePackage).ToList();
+
+            MLog.Information($@"BTP build: Building for {dlcName} with {tom.Textures.Count} overrides");
 
             // Start serialization
             // We use BTP object only for transient data storage,
@@ -93,6 +96,8 @@ namespace ME3TweaksCore.TextureOverride
             pi?.OnUpdate(pi);
 
             // Preallocate space for texture entries
+            MLog.Information($@"BTP build: Preallocating texture entry table");
+
             var textureEntryTableStart = btpStream.Position;
             BTP.TextureOverrides = new(total);
             for (var i = 0; i < total; i++)
@@ -114,6 +119,8 @@ namespace ME3TweaksCore.TextureOverride
             // Serialize texture entries and mip data
             IMEPackage currentSourcePackage = null;
             done = 0;
+            MLog.Information($@"BTP build: Beginning texture override serializations");
+
             for (done = 0; done < BTP.TextureOverrides.Count; done++)
             {
                 // Update progress to user
@@ -130,6 +137,8 @@ namespace ME3TweaksCore.TextureOverride
                 {
                     // Load new source package
                     var newPath = Path.Combine(sourceFolder, texture.CompilingSourcePackage);
+                    MLog.Information($@"BTP build: Switching to new source package {newPath}");
+
                     currentSourcePackage = MEPackageHandler.UnsafePartialLoad(newPath, x =>
                     {
                         var ifp = x.MemoryFullPath;
@@ -147,7 +156,10 @@ namespace ME3TweaksCore.TextureOverride
                     // Dump old package.
                     GC.Collect();
 
+                    // Now compress textures in the package in parallel to speed things along.
+                    MLog.Information($@"BTP build: Compressing package stored mips in parallel");
                     PrepareTextureCompression(currentSourcePackage);
+                    MLog.Information($@"BTP build: Serializing {currentSourcePackage.Exports.Count(x=>x.IsDataLoaded())} package stored texture overrides");
                 }
 
                 // Serialize the texture
@@ -155,7 +167,7 @@ namespace ME3TweaksCore.TextureOverride
                 currentSourcePackage.FindExport(btpEntry.OverridePath)?.Data = Array.Empty<byte>(); // This will allow deallocation of memory as we progress
 
 #if DEBUG
-                pi?.Status = $"Serializing In: {FileSize.FormatSize(InDataSize)} Out: {FileSize.FormatSize(OutDataSize)} Dedup: -{FileSize.FormatSize(DeduplicationSavings)} {pi.Value:0.00}%";
+                // pi?.Status = $"Serializing In: {FileSize.FormatSize(InDataSize)} Out: {FileSize.FormatSize(OutDataSize)} Dedup: -{FileSize.FormatSize(DeduplicationSavings)} {pi.Value:0.00}%";
 #endif
             }
 
@@ -164,40 +176,19 @@ namespace ME3TweaksCore.TextureOverride
 
             // Log statistics
             var ratio = InDataSize > 0 ? (OutDataSize * 100.0 / InDataSize).ToString() : @"N/A";
-            MLog.Information($@"Mip serialization complete: Stats: Input data size: {FileSize.FormatSize(InDataSize)} Output data size: {FileSize.FormatSize(OutDataSize)}, Deduplicated: {FileSize.FormatSize(DeduplicationSavings)}, compression ratio: {ratio:0.00}%");
-
+            MLog.Information($@"BTP build: Mip data serialization complete: Stats: Input data size: {FileSize.FormatSize(InDataSize)} Output data size: {FileSize.FormatSize(OutDataSize)}, Deduplicated: {FileSize.FormatSize(DeduplicationSavings)}, compression ratio: {ratio:F2}%");
+            MLog.Information($@"BTP build: Performing final serialization");
             BTP.FinalSerialize(btpStream);
+            MLog.Information($@"BTP build: Completed");
 
             // Done
 #if DEBUG
+            MLog.Information($@"BTP build: Beginning deserialization verification");
             btpStream.SeekBegin();
             var verifyBTP = new BinaryTexturePackage(btpStream, true);
 #endif
 
             btpStream.Close();
-            MLog.Information($@"BTP serialization completed");
-
-
-            //// Go in and update the offsets
-            //pi.Status = "Finalizing texture override package";
-            //done = 0;
-            //foreach (var texture in tom.Textures)
-            //{
-            //    done++;
-            //    if (total > 0)
-            //    {
-            //        pi?.Value = 100.0 * done / total;
-            //        pi?.OnUpdate(pi);
-            //    }
-            //    try
-            //    {
-            //        texture.SerializeOffsets(btpStream, dataSegmentStart);
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        Debug.WriteLine("hi");
-            //    }
-            //}
         }
 
         /// <summary>
@@ -220,7 +211,8 @@ namespace ME3TweaksCore.TextureOverride
         private void PrepareTextureCompression(IMEPackage currentSourcePackage)
         {
             // For every loaded object...
-            foreach (var texture in currentSourcePackage.Exports.Where(x => x.IsDataLoaded()))
+            var loadedItems = currentSourcePackage.Exports.Where(x => x.IsDataLoaded());
+            Parallel.ForEach(loadedItems, texture =>
             {
                 var compressedAny = false;
                 var texBin = ObjectBinary.From<UTexture2D>(texture);
@@ -232,20 +224,29 @@ namespace ME3TweaksCore.TextureOverride
 
                     // Mip lookup for duplicates.
                     ulong crc = BitConverter.ToUInt64(Crc64.Hash(sourceMip.Mip));
-                    if (DedupCrcMap.TryGetValue(crc, out var existing))
+
+                    // Small textures can have a 0 crc
+                    if (crc != 0)
                     {
-                        // We've already serialized identical mip data...
-                        DeduplicationSavings += sourceMip.Mip.Length; // Deduplicating mip
-                        SetSerializationInfo(texture.InstancedFullPath, i, existing);
-                        return; // nothing left to do
+                        if (DedupCrcMap.TryGetValue(crc, out var existing))
+                        {
+                            // We've already serialized identical mip data...
+                            DeduplicationSavings += sourceMip.Mip.Length; // Deduplicating mip
+                            SetSerializationInfo(texture.InstancedFullPath, i, existing);
+                            continue; // nothing left to do
+                        }
+                    }
+                    else
+                    {
+                        crc = ulong.MaxValue;
                     }
 
                     var serializationInfo = new SerializedBTPMip();
                     serializationInfo.Crc = crc;
-                    serializationInfo.CompressedSize = sourceMip.CompressedSize;
+                    serializationInfo.CompressedSize = sourceMip.CompressedSize; // Copy original value
 
                     // Compress textures that would be big for space savings
-                    // texture must have > 64x64 size and not already compressed
+                    // texture must have >= 64x64 size and not already compressed
                     if (!sourceMip.IsCompressed)
                     {
                         InDataSize += sourceMip.Mip.Length; // Stats
@@ -253,21 +254,25 @@ namespace ME3TweaksCore.TextureOverride
                         if (area >= TextureOverrideTextureEntry.BTP_COMPRESS_SIZE_MIN)
                         {
                             sourceMip.StorageType = StorageTypes.pccOodle;
-                            sourceMip.Mip = OodleHelper.Compress(sourceMip.Mip);
-                            serializationInfo.CompressedSize = sourceMip.CompressedSize = sourceMip.Mip.Length;
-                            serializationInfo.OodleCompressed = true;
+                            sourceMip.Mip = OodleHelper.Compress(sourceMip.Mip); // compress mip and store it back
+                            serializationInfo.CompressedSize = sourceMip.CompressedSize = sourceMip.Mip.Length; // Now set the new compressed size so we can use it later
+                            serializationInfo.OodleCompressed = true; // Flag that makes it think its compressed.
+#if DEBUG
+                            serializationInfo.DebugSource = $@"{currentSourcePackage.FilePath} {texture.InstancedFullPath} mip {i}";
+#endif
+                            SetSerializationInfo(texture.InstancedFullPath, i, serializationInfo); // cache the serialization info for compression
                             compressedAny = true;
                         }
                         OutDataSize += sourceMip.Mip.Length; // Stats
-                        SetSerializationInfo(texture.InstancedFullPath, i, serializationInfo);
                     }
+
                 }
-            
+
                 if (compressedAny)
                 {
                     texture.WriteBinary(texBin);
                 }
-            }
+            });
         }
     }
 }
