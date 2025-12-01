@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Hashing;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
 namespace ME3TweaksCore.TextureOverride
@@ -63,7 +64,6 @@ namespace ME3TweaksCore.TextureOverride
         /// <param name="compiler">The compiler that holds stats and other transient compile-time info</param>
         /// <param name="btpEntry">The BTP entry for this texture that we will be populating data into</param>
         /// <param name="btpStream">The stream we are serializing mip data to</param>
-        /// <param name="sourceFolder">Folder used as base path for package lookups when serializing package data to BTP</param>
         /// <param name="metadataPackage">Optional package for storing the texture metadata when shipping a btp only.</param>
         public void Serialize(TextureOverrideCompiler compiler, BTPTextureEntry btpEntry, Stream btpStream, IMEPackage package, IMEPackage metadataPackage = null)
         {
@@ -137,20 +137,17 @@ namespace ME3TweaksCore.TextureOverride
                 var btpMip = btpEntry.Mips[mipIndex];
 
                 // See if we already preprocessed this mip
+                // in the texture compression step
                 SerializedBTPMip serializedInfo = null;
                 if (smi != null)
                 {
                     smi.TryGetValue(mipIndex, out serializedInfo);
                 }
-                else
-                {
-                    //
-                }
 
                 // Uncompressed size doesn't change from source mip
                 btpMip.UncompressedSize = sourceMip.UncompressedSize;
 
-                if (sourceMip.IsLocallyStored && sourceMip.StorageType != StorageTypes.empty)
+                if (sourceMip.IsLocallyStored && !sourceMip.IsEmpty)
                 {
                     // Will be prepared already so we must set matching size.
                     if (!sourceMip.IsCompressed)
@@ -164,20 +161,60 @@ namespace ME3TweaksCore.TextureOverride
                     bool isDedupMip = false;
                     if (serializedInfo == null)
                     {
-                        serializedInfo = new SerializedBTPMip();
-                        // Was not compressed, so just set the size the same.
-                        serializedInfo.CompressedSize = sourceMip.Mip.Length;
+                        serializedInfo = new SerializedBTPMip(sourceMip
+#if DEBUG
+                            ,
+                            package,
+                            texture,
+                            mipIndex
+#endif
+                            );
+
+                    }
+                    else
+                    {
+
+                        if (serializedInfo.CompressedSize != sourceMip.Mip.Length)
+                        {
+                            serializedInfo = new SerializedBTPMip(sourceMip
+#if DEBUG
+                            ,
+                            package,
+                            texture,
+                            mipIndex
+#endif
+                            );
+                        }
                     }
 
                     if (serializedInfo.Offset == 0)
                     {
+                        // We haven't serialized to BTP yet
                         if (serializedInfo.Crc == 0)
                         {
                             serializedInfo.Crc = BitConverter.ToUInt64(Crc64.Hash(sourceMip.Mip));
+                            if (serializedInfo.Crc == 0)
+                            {
+                                // Mip was too small to properly crc
+                                serializedInfo.Crc = ulong.MaxValue;
+                            }
+                            else
+                            {
+                                // Try global dedup map to see if we already serialized this mip then.
+                                if (compiler.DedupCrcMap.TryGetValue(serializedInfo.Crc, out var test))
+                                {
+                                    // This is a duplicate mip
+                                    isDedupMip = true;
+                                    serializedInfo = test;
+                                }
+                            }
                         }
 
-                        // we're going to write to end of the btp stream
-                        serializedInfo.Offset = (ulong)btpStream.Length;
+                        if (!isDedupMip)
+                        {
+                            // we're going to write to end of the btp stream
+                            serializedInfo.Offset = (ulong)btpStream.Length;
+                        }
                     }
                     else
                     {
@@ -189,8 +226,11 @@ namespace ME3TweaksCore.TextureOverride
                     if (serializedInfo.Crc == 0)
                         Debugger.Break();
 
-                    // record crc for future dedupe
-                    compiler.DedupCrcMap[serializedInfo.Crc] = serializedInfo;
+                    // record crc for future dedupe, but it must be 4x4 or larger since tiny textures have crc collisions
+                    if (sourceMip.SizeX > 4 || sourceMip.SizeY > 4)
+                    {
+                        compiler.DedupCrcMap[serializedInfo.Crc] = serializedInfo;
+                    }
 
                     btpMip.CompressedSize = serializedInfo.CompressedSize;
 

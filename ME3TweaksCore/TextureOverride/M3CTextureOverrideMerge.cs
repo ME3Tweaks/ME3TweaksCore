@@ -45,8 +45,8 @@ namespace ME3TweaksCore.TextureOverride
                 return; // Cannot asset merge
             }
 
-            var m3tos = Directory.GetFiles(cookedDir, @"*" + TextureOverrideManifest.EXTENSION_TEXTURE_OVERRIDE_MANIFEST, SearchOption.TopDirectoryOnly)
-                .Where(x => Path.GetFileName(x).StartsWith(TextureOverrideManifest.PREFIX_TEXTURE_OVERRIDE_MANIFEST))
+            var m3tos = Directory.GetFiles(cookedDir, @"*" + TextureOverrideManifest.EXTENSION_TEXTURE_OVERRIDE_MANIFEST, SearchOption.TopDirectoryOnly);
+            var matchingOverrides = m3tos.Where(x => Path.GetFileName(x).StartsWith(TextureOverrideManifest.PREFIX_TEXTURE_OVERRIDE_MANIFEST))
                 .ToList(); // Find TextureOverride-*.m3to files
 
             // Generate combined/override list in order of found files.
@@ -56,7 +56,7 @@ namespace ME3TweaksCore.TextureOverride
                 Textures = new List<TextureOverrideTextureEntry>()
             };
 
-            foreach (var m3to in m3tos)
+            foreach (var m3to in matchingOverrides)
             {
                 MLog.Information($@"Merging M3 Texture Override {m3to} in {dlcFolderName}");
                 var manifestText = File.ReadAllText(m3to);

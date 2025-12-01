@@ -4,6 +4,8 @@ using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Misc;
 using LegendaryExplorerCore.Packages;
 using LegendaryExplorerCore.Unreal;
+using LegendaryExplorerCore.Unreal.BinaryConverters;
+using LegendaryExplorerCore.Unreal.Classes;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.Objects;
 using System;
@@ -35,10 +37,51 @@ namespace ME3TweaksCore.TextureOverride
         /// </summary>
         public ulong Crc;
 
+        public SerializedBTPMip()
+        {
+
+        }
+
+        /// <summary>
+        /// Contains transient information about a mip being serialized into a BTP.
+        /// </summary>
+        /// <param name="sourceMip"></param>
+        /// <param name="package"></param>
+        /// <param name="texture"></param>
+        /// <param name="mipIndex"></param>
+        public SerializedBTPMip(UTexture2D.Texture2DMipMap sourceMip
+#if DEBUG
+            ,
+            IMEPackage package,
+            ExportEntry texture,
+            int mipIndex
+#endif
+            )
+        {
+            // Was not compressed, so just set the size the same.
+            CompressedSize = sourceMip.Mip.Length;
+#if DEBUG
+            SizeX = sourceMip.SizeX;
+            SizeY = sourceMip.SizeY;
+            DebugSource = $@"{package.FilePath} {texture.InstancedFullPath} mip {mipIndex}";
+#endif
+        }
+
         /// <summary>
         /// If mip was oodle compressed
         /// </summary>
         public bool OodleCompressed { get; internal set; }
+
+#if DEBUG
+        // Used to determine if we can trust crc
+        public int SizeY { get; internal set; }
+        public int SizeX { get; internal set; }
+
+        /// <summary>
+        /// Where this serialization info was generated from
+        /// </summary>
+        public string DebugSource { get; internal set; }
+#endif
     }
 
     /// <summary>
@@ -585,7 +628,7 @@ namespace ME3TweaksCore.TextureOverride
         /// <summary>
         /// Offset of the entry when serialized/deserialized
         /// </summary>
-        private long EntryOffset { get; set; }
+        public long EntryOffset { get; set; }
 
         /// <summary>
         /// Seeks the stream to the start of the entry where it was serialized
