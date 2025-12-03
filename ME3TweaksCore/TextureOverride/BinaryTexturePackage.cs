@@ -350,7 +350,12 @@ namespace ME3TweaksCore.TextureOverride
         /// </summary>
         public ulong TFCTableOffset { get; set; }
 
-        // 4 bytes reserved currently
+        /// <summary>
+        /// The CRC of the BTP metadata file that is associated with this BTP.
+        /// </summary>
+        public uint MetadataCRC { get; set; }
+
+        // 16 bytes reserved currently
 
 
         public BTPHeader(BinaryTexturePackage owner, Stream btpStream)
@@ -381,11 +386,12 @@ namespace ME3TweaksCore.TextureOverride
             btpStream.WriteUInt32(TextureCount);
             btpStream.WriteUInt32(TFCTableCount);
             btpStream.WriteUInt64(TFCTableOffset);
-            btpStream.WriteInt32(0); // Unused for now
+            btpStream.WriteUInt32(MetadataCRC);
+            btpStream.WriteZeros(0x10); // Unused for now
 
 #if DEBUG
             var entrySize = btpStream.Position - headerStartPos;
-            if (entrySize != 32)
+            if (entrySize != 48)
             {
                 throw new Exception(@"Serializer for header produced the wrong size!");
             }
@@ -394,13 +400,25 @@ namespace ME3TweaksCore.TextureOverride
 
         private void Deserialize(Stream btpStream)
         {
+#if DEBUG
+            var entryStart = btpStream.Position;
+#endif
             Magic = btpStream.ReadStringASCII(6);
             Version = btpStream.ReadUInt16();
             TargetHash = btpStream.ReadUInt32();
             TextureCount = btpStream.ReadUInt32();
             TFCTableCount = btpStream.ReadUInt32();
             TFCTableOffset = btpStream.ReadUInt64();
-            btpStream.ReadInt32(); // Reserved - 4 bytes
+            MetadataCRC = btpStream.ReadUInt32();
+            btpStream.Skip(0x10); // Reserved - 16 bytes
+
+#if DEBUG
+            var entrySize = btpStream.Position - entryStart;
+            if (entrySize != 48)
+            {
+                throw new Exception(@"Deserializer for header produced the wrong size!");
+            }
+#endif
         }
     }
 
