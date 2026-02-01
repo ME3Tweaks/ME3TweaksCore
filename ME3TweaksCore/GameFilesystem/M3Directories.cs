@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using LegendaryExplorerCore.GameFilesystem;
@@ -62,6 +63,7 @@ namespace ME3TweaksCore.GameFilesystem
             if (target.Game != MEGame.ME3) throw new Exception(@"Cannot fetch TestPatch SFAR for games that are not ME3");
             return ME3Directory.GetTestPatchSFARPath(target.TargetPath);
         }
+        public static ReadOnlyCollection<string> GetExecutableNames(this GameTarget target) => MEDirectories.ExecutableNames(target.Game);
 
         /// <summary>
         /// Fetches the INT coalesced file path from the target. ME1 is not supported as it does not have a single file path

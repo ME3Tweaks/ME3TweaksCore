@@ -5,8 +5,11 @@ using System.Linq;
 using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.Helpers;
+using ME3TweaksCore.Targets;
+using ME3TweaksCore.GameFilesystem;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Threading.Tasks;
 
 namespace ME3TweaksCore.Services.Symbol
 {
@@ -16,7 +19,7 @@ namespace ME3TweaksCore.Services.Symbol
     public class SymbolService
     {
         /// <summary>
-        /// Database of game symbols indexed by game
+        /// Database of game symbols indexed by game then by a list of symbol records
         /// </summary>
         private static Dictionary<MEGame, List<SymbolRecord>> Database = new Dictionary<MEGame, List<SymbolRecord>>();
 
@@ -70,22 +73,24 @@ namespace ME3TweaksCore.Services.Symbol
                     {
                         if (!database.TryGetValue(onlineRecord.Game, out var gameRecords))
                         {
+                            // Use a list of records per game
                             gameRecords = new List<SymbolRecord>();
                             database[onlineRecord.Game] = gameRecords;
                         }
 
-                        // Check if this record already exists (matching game and game hash - case insensitive)
-                        var existingRecord = gameRecords.FirstOrDefault(r => 
-                            string.Equals(r.GameHash, onlineRecord.GameHash, StringComparison.OrdinalIgnoreCase));
-
+                        // Try find existing record by GameHash (case-insensitive)
+                        var key = onlineRecord.GameHash ?? string.Empty;
+                        var existingRecord = gameRecords.FirstOrDefault(r => string.Equals(r.GameHash ?? string.Empty, key, StringComparison.OrdinalIgnoreCase));
                         if (existingRecord != null)
                         {
                             // Update if PDB hash changed (case insensitive comparison)
                             if (!string.Equals(existingRecord.PdbHash, onlineRecord.PdbHash, StringComparison.OrdinalIgnoreCase))
                             {
-                                // Remove old record and add updated one to maintain immutability
-                                gameRecords.Remove(existingRecord);
-                                gameRecords.Add(onlineRecord);
+                                var idx = gameRecords.IndexOf(existingRecord);
+                                if (idx >= 0)
+                                    gameRecords[idx] = onlineRecord;
+                                else
+                                    gameRecords.Add(onlineRecord);
                                 updated = true;
                             }
                         }
@@ -123,20 +128,17 @@ namespace ME3TweaksCore.Services.Symbol
             {
                 try
                 {
-                    var db = JsonConvert.DeserializeObject<Dictionary<MEGame, List<SymbolRecord>>>(File.ReadAllText(file));
-                    if (db != null)
+                    var fileText = File.ReadAllText(file);
+                    var dbNew = JsonConvert.DeserializeObject<Dictionary<MEGame, List<SymbolRecord>>>(fileText);
+                    if (dbNew != null)
                     {
                         database.Clear();
-                        foreach (var kvp in db)
+                        foreach (var kvp in dbNew)
                         {
-                            database[kvp.Key] = kvp.Value;
+                            database[kvp.Key] = kvp.Value ?? new List<SymbolRecord>();
                         }
                         MLog.Information($@"Loaded local {ServiceLoggingName}");
-                    }
-                    else
-                    {
-                        MLog.Warning($@"Local {ServiceLoggingName} file deserialized to null");
-                        database.Clear();
+                        return;
                     }
                 }
                 catch (Exception e)
@@ -183,9 +185,11 @@ namespace ME3TweaksCore.Services.Symbol
                 if (!ServiceLoaded || Database == null)
                     return new List<SymbolRecord>();
 
-                return Database.TryGetValue(game, out var records) 
-                    ? new List<SymbolRecord>(records) 
-                    : new List<SymbolRecord>();
+                if (Database.TryGetValue(game, out var records))
+                {
+                    return new List<SymbolRecord>(records);
+                }
+                return new List<SymbolRecord>();
             }
         }
 
@@ -199,6 +203,150 @@ namespace ME3TweaksCore.Services.Symbol
             InternalLoadService(data);
             ServiceLoaded = true;
             return true;
+        }
+
+        private static (SymbolRecord match, string exePath, string exeHash) FindMatchingSymbolRecord(GameTarget target)
+        {
+            if (target == null) return (null, null, null);
+
+            var exePath = M3Directories.GetExecutablePath(target);
+            if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
+            {
+                MLog.Error($@"Executable not found for target: {target.TargetPath}");
+                return (null, exePath, null);
+            }
+
+            var exeFileInfo = new FileInfo(exePath);
+            long exeSize = exeFileInfo.Length;
+
+            // Find if any symbol record matches the executable size first to avoid
+            // hashing large files unnecessarily.
+            var candidates = GetSymbolsForGame(target.Game);
+            if (!candidates.Any(r => r != null && r.GameSize == (int)exeSize))
+            {
+                // No symbols for game.
+                return (null, exePath, null);
+            }
+
+            var exeHash = MUtilities.CalculateHash(exePath);
+
+            // Find matching SymbolRecord by size then hash
+            SymbolRecord match = null;
+            foreach (var rec in candidates)
+            {
+                if (rec.GameSize != (int)exeSize)
+                    continue;
+                if (rec.GameHash == exeHash)
+                {
+                    match = rec;
+                    break;
+                }
+            }
+
+            return (match, exePath, exeHash);
+        }
+
+
+        /// <summary>
+        /// Attempts to apply matching PDB symbols for the specified game target by
+        /// locating a matching SymbolRecord in the database and copying the matching
+        /// PDB from the shared ME3Tweaks cache Symbols folder into the game's
+        /// executable folder.
+        /// </summary>
+        /// <param name="target">Game target to apply symbols for</param>
+        public static async Task ApplySymbols(GameTarget target)
+        {
+            try
+            {
+                if (target == null) return;
+                if (!target.Game.IsLEGame()) return; // Only supported on LE 
+                var (match, exePath, exeHash) = FindMatchingSymbolRecord(target);
+                if (match == null)
+                {
+                    return;
+                }
+
+                // Check if game already has the correct PDB installed in the executable folder
+                var destDir = Path.GetDirectoryName(exePath);
+                var destPath = Path.Combine(destDir, Path.GetFileNameWithoutExtension(target.GetExecutableNames()[0]) + @".pdb");
+                if (File.Exists(destPath))
+                {
+                    try
+                    {
+                        var installedFi = new FileInfo(destPath);
+                        if (installedFi.Length == match.PdbSize)
+                        {
+                            var installedHash = MUtilities.CalculateHash(destPath);
+                            if (installedHash == match.PdbHash)
+                            {
+                                MLog.Information($@"PDB already installed and up to date at {destPath}");
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            MLog.Information($@"Installed PDB size mismatch: {installedFi.Length} != {match.PdbSize}, will attempt to update");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MLog.Warning($@"Failed to verify existing PDB at {destPath}: {ex.Message}");
+                    }
+                }
+
+                var cachedPdbPath = match.GetCachedPath();
+
+                // If the PDB isn't cached locally, try to download it using the SymbolRecord helper
+                if (!File.Exists(cachedPdbPath))
+                {
+                    MLog.Information($@"PDB not found in cache, attempting download for {match.GetStoredPDBName()}");
+                    try
+                    {
+                        var downloaded = await match.DownloadPDBAsync();
+                        if (!downloaded)
+                        {
+                            MLog.Warning($@"Failed to download PDB for {match.GetStoredPDBName()}");
+                            return;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MLog.Warning($@"Exception downloading PDB for {match.GetStoredPDBName()}: {ex.Message}");
+                        return;
+                    }
+                }
+
+                // Verify PDB size and hash
+                var fi = new FileInfo(cachedPdbPath);
+                if (fi.Length != match.PdbSize)
+                {
+                    MLog.Warning($@"Cached PDB size mismatch: {fi.Length} != {match.PdbSize}");
+                    return;
+                }
+
+                var pdbHash = MUtilities.CalculateHash(cachedPdbPath);
+                if (!string.Equals(pdbHash ?? string.Empty, match.PdbHash ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+                {
+                    MLog.Warning($@"Cached PDB hash mismatch: {pdbHash} != {match.PdbHash}");
+                    return;
+                }
+
+                // Copy to executable folder
+                Directory.CreateDirectory(destDir);
+                try
+                {
+                    File.Copy(cachedPdbPath, destPath, true);
+                    MLog.Information($@"Copied symbols to {destPath}");
+                }
+                catch (Exception ex)
+                {
+                    MLog.Error($@"Failed to copy PDB to game folder: {ex.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                MLog.Error($@"Error applying symbols: {ex.Message}");
+            }
         }
     }
 }
