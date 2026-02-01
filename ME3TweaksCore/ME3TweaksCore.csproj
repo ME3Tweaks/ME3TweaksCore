@@ -5,7 +5,7 @@
 		<Company>ME3Tweaks</Company>
 		<Authors>ME3Tweaks</Authors>
 		<Version>9.2</Version>
-		<TargetFrameworks>net10.0-windows</TargetFrameworks>
+		<TargetFrameworks>net10.0</TargetFrameworks>
 		<Platforms>x64</Platforms>
 		<Copyright>2021-2026 ME3Tweaks</Copyright>
 		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>

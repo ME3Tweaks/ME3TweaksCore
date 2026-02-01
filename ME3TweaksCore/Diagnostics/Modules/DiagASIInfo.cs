@@ -1,4 +1,5 @@
-﻿using LegendaryExplorerCore.Helpers;
+﻿using Flurl.Util;
+using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics.Support;
 using ME3TweaksCore.GameFilesystem;
@@ -18,8 +19,11 @@ namespace ME3TweaksCore.Diagnostics.Modules
     {
         // ASIs began changing over to .log 03/17/2022
         // KismetLogger uses .txt still (we don't care)
+        // 01/30/2026 - Kismet logger on new SDK now uses .log extension
+        // We will manually filter it out.
         private static readonly string[] asilogExtensions = [@".log"];
 
+#if FALSE
         private void WriteASIInfoOld(LogUploadPackage package)
         {
             var diag = package.DiagnosticWriter;
@@ -84,8 +88,8 @@ namespace ME3TweaksCore.Diagnostics.Modules
             }
 
             #endregion
-
         }
+#endif
 
         internal override void RunModule(LogUploadPackage package)
         {
@@ -140,10 +144,20 @@ namespace ME3TweaksCore.Diagnostics.Modules
                         cell += $@"<td>Unknown</td>";
 
                         // Version
-                        cell += $@"<td>Unknown</td>";
+                        var version = @"Unknown";
+                        if (unknownAsiMod.DllVersionInfo != null)
+                        {
+                            version = unknownAsiMod.DllVersionInfo.FileVersion;
+                        }
+                        cell += $@"<td>{version}</td> ";
 
-                        // The description of the ASI... not sure how useful this is
-                        cell += $@"<td>Unknown ASI - use with caution</td>";
+                        // The description of the ASI, if available
+                        var desc = @"Unknown ASI - use with caution";
+                        if (unknownAsiMod.DllVersionInfo != null && !string.IsNullOrWhiteSpace(unknownAsiMod.DllVersionInfo.FileDescription))
+                        {
+                            desc += $@"<br/>{unknownAsiMod.DllVersionInfo.FileDescription}";
+                        }
+                        cell += $@"<td>{desc}</td>";
 
                         // Add the row
                         asiRows.Add($@"<tr class=""unknown-asi"">{cell}</tr>");
@@ -245,7 +259,8 @@ namespace ME3TweaksCore.Diagnostics.Modules
         {
             if (!target.Game.IsLEGame()) return null;
             var logs = new Dictionary<string, string>();
-            var directory = target.GetExecutableDirectory();
+            // 01/30/2026 - Read logs from Logs directory instead
+            var directory = Path.Combine(target.GetExecutableDirectory(), @"Logs");
             if (Directory.Exists(directory))
             {
                 foreach (var f in Directory.GetFiles(directory, "*"))
@@ -254,6 +269,9 @@ namespace ME3TweaksCore.Diagnostics.Modules
                     {
                         if (!asilogExtensions.Contains(Path.GetExtension(f)))
                             continue; // Not parsable
+
+                        if (Path.GetFileName(f).Equals(@"KismetLogger.log", StringComparison.OrdinalIgnoreCase))
+                            continue; // We don't care about this one.
 
                         var fi = new FileInfo(f);
                         var timeDelta = DateTime.Now - fi.LastWriteTime;

@@ -773,6 +773,10 @@ namespace ME3TweaksCore.Diagnostics.Modules
                     addDiagLine($@"Error checking LOD settings: {e.Message}", LogSeverity.INFO);
                 }
             }
+            else if (!leInvalidLodsFound)
+            {
+                addDiagLine($@"LODs are not modified (and should not be)", LogSeverity.GOOD);
+            }
         }
     }
 }

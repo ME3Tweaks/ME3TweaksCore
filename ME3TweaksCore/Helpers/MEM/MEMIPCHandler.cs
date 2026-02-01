@@ -12,6 +12,7 @@ using CliWrap;
 using CliWrap.EventStream;
 using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Packages;
+using LegendaryExplorerCore.Gammtek.Extensions;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.Localization;
 using ME3TweaksCore.Misc;
@@ -570,7 +571,8 @@ namespace ME3TweaksCore.Helpers.MEM
             return result;
         }
 
-#if !WINDOWS
+        // This was when this project could run on Linux. Leaving for reference.
+#if ALOT && !WINDOWS
         /// <summary>
         /// Sets the configuration path for a game (Linux only).
         /// Only works on Linux builds of MEM.
@@ -581,8 +583,7 @@ namespace ME3TweaksCore.Helpers.MEM
         public static bool SetConfigPath(MEGame game, string itemValue)
         {
             int exitcode = 0;
-            string args =
- $"--set-game-user-path --gameid {game.ToGameNum()} --path \"{itemValue}\""; //do not localize
+            string args = $"--set-game-user-path --gameid {game.ToGameNum()} --path \"{itemValue}\""; //do not localize
             MEMIPCHandler.RunMEMIPCUntilExit(args, applicationExited: x => exitcode = x);
             if (exitcode != 0)
             {

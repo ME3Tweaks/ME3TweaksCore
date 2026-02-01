@@ -50,7 +50,7 @@ namespace ME3TweaksCore.Misc
                     catch (Exception e)
                     {
                         // in case two full paths are tried to be set this will probably throw invalid path exception.
-                        MLog.Error($@"Error combining paths: {RootPath}, {packagePath}");
+                        MLog.Error($@"Error combining paths: {RootPath}, {packagePath}: {e.Message}");
                     }
                 }
 

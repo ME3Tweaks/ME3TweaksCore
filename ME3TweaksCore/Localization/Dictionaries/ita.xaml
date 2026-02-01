@@ -41,6 +41,9 @@
 	<system:String x:Key="string_interp_productNameX">Prodotto: {0}</system:String>
 	<system:String x:Key="string_interp_descriptionX">Descrizione: {0}</system:String>
 	<system:String x:Key="string_interp_companyX">Compagnia: {0}</system:String>
+	<system:String x:Key="string_interp_versionX">Versione: {0}</system:String>
+	<system:String x:Key="string_interp_failedToDownloadASIDependency">Impossibile scaricare la dipendenza ASI: {0}</system:String>
+	<system:String x:Key="string_interp_asiDependencyNotAvailable">La dipendenza ASI {0} non è disponibile</system:String>
 	<system:String x:Key="string_validatingBackupSource">Validamento della sorgente del backup</system:String>
 	<system:String x:Key="string_waitingForUserInput">In attesa dell'input utente</system:String>
 	<system:String x:Key="string_directoryIsNotEmptyMustBeEmpty">La cartella non è vuota. La destinazione di un backup deve essere vuota.</system:String>
@@ -257,6 +260,7 @@
 	<system:String x:Key="string_interp_plotManagerSyncForX">Sincronizzazione PlotManager per {0}</system:String>
 	<system:String x:Key="string_interp_errorCompilingFunctionReason" xml:space="preserve">Errore nella compilazione della funzione {0}: {1}</system:String>
 	<system:String x:Key="string_interp_fileLibInitFailedPlotManager">Impossibile inizializzare il FileLib per PlotManagerSync: {0}</system:String>
+	<system:String x:Key="string_dialog_invalidConditionalNumberSourceMod">Il Condizionale {0} non è un numero valido per l'utilizzo. Mod sorgente: {1}</system:String>
 	<system:String x:Key="string_insufficientDiskSpace">Spazio su disco insufficiente</system:String>
 	<system:String x:Key="string_interp_restoringXpercent">Ripristino {0}%</system:String>
 	<system:String x:Key="string_interp_restoringX">Ripristino di {0}</system:String>

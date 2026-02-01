@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<!--Version info-->
-		<Description>Core library for ME3Tweaks software - UI extensions</Description>
+		<Description>Core library for ME3Tweaks software - Windows Presentation Foundation (WPF) extensions</Description>
 		<Company>ME3Tweaks</Company>
 		<Authors>ME3Tweaks</Authors>
 		<Version>10.0</Version>

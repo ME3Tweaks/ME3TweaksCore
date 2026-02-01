@@ -16,7 +16,7 @@ namespace ME3TweaksCore.Targets
         internal const string ME1ASILoaderHash = @"30660f25ab7f7435b9f3e1a08422411a";
         internal const string ME2ASILoaderHash = @"a5318e756893f6232284202c1196da13";
         internal const string ME3ASILoaderHash = @"1acccbdae34e29ca7a50951999ed80d5";
-        internal const string LEASILoaderHash =  @"e09cb8c2db540e55e24fb58a8151c2ae"; // bink 2.0.0.13 by ME3Tweaks 12/01/2025
+        internal const string LEASILoaderHash = @"9bc6b4cb7ca29909c65f6b31a56f6b28"; // bink 2.0.0.14 by ME3Tweaks 01/31/2026
 
 
         /// <summary>

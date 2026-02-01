@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<!-- Windows 2004 -->
-		<TargetFrameworks>net10.0-windows</TargetFrameworks>
+		<TargetFrameworks>net10.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 

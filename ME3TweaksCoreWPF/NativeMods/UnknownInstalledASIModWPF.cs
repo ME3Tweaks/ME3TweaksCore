@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Diagnostics;
+using System;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Media;
 using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.NativeMods;
@@ -21,11 +18,13 @@ namespace ME3TweaksCoreWPF.NativeMods
         /// </summary>
         private static Brush brush = new SolidColorBrush(Color.FromArgb(0x88, 0xFF, 0x10, 0x10));
         public override Brush BackgroundColor => brush;
+        public FileVersionInfo DllVersionInfo { get; init; }
 
         public UnknownInstalledASIModWPF(string filepath, string hash, MEGame game) : base(filepath, hash, game)
         {
+            DllVersionInfo = FileVersionInfo.GetVersionInfo(filepath);
             UnmappedFilename = Path.GetFileNameWithoutExtension(filepath);
-            DllDescription = UnknownInstalledASIMod.ReadDllDescription(filepath);
+            DllDescription = UnknownInstalledASIMod.ReadDllDescription(DllVersionInfo);
         }
 
         /// <summary>

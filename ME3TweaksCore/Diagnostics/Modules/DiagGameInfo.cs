@@ -19,6 +19,12 @@ namespace ME3TweaksCore.Diagnostics.Modules
     /// </summary>
     internal class DiagGameInfo : DiagModuleBase
     {
+        public record DiskInfo(
+            long Size,           // 64-bit signed integer
+            int DiskType,        // 32-bit signed integer
+            string FriendlyName // string
+        );
+
         internal override void RunModule(LogUploadPackage package)
         {
             var diag = package.DiagnosticWriter;
@@ -45,29 +51,12 @@ namespace ME3TweaksCore.Diagnostics.Modules
                 pathroot = pathroot.Substring(0, 1);
                 if (pathroot == @"\")
                 {
-                    diag.AddDiagLine(@"Installation appears to be on a network drive (first character in path is \)", LogSeverity.WARN);
+                    diag.AddDiagLine(@"Installation appears to be on UNC network drive (first character in path is \)", LogSeverity.WARN);
                 }
                 else
                 {
-                    if (MUtilities.IsWindows10OrNewer())
-                    {
-                        int backingType = GetPartitionDiskBackingType(pathroot);
-                        string type = @"Unknown type";
-                        switch (backingType)
-                        {
-                            case 3:
-                                type = @"Hard disk drive";
-                                break;
-                            case 4:
-                                type = @"Solid state drive";
-                                break;
-                            default:
-                                type += @": " + backingType;
-                                break;
-                        }
-
-                        diag.AddDiagLine(@"Installed on disk type: " + type);
-                    }
+                    // This should probably not be run if on Wine, but maybe somehow WMI works?
+                    diag.AddDiagLine(@"Disk type: " + GetDiskTypeString(pathroot));
                 }
 
                 if (package.DiagnosticTarget.Supported)
@@ -203,7 +192,6 @@ namespace ME3TweaksCore.Diagnostics.Modules
             }
         }
 
-
         private static string getSignerSubject(string subject)
         {
             // Get Common Name (CN)
@@ -236,8 +224,20 @@ namespace ME3TweaksCore.Diagnostics.Modules
         }
 
 
-        private static int GetPartitionDiskBackingType(string partitionLetter)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="partitionLetter"></param>
+        /// <returns></returns>
+        private static string GetDiskTypeString(string partitionLetter)
         {
+            if (WineWorkarounds.WineDetected)
+            {
+                MLog.Information($@"Skipping disk type detection on Wine for partition {partitionLetter}");
+                return @"Unknown (running on Wine)";
+            }
+
+#pragma warning disable CA1416 // Validate platform compatibility
             using (var partitionSearcher = new ManagementObjectSearcher(
                 @"\\localhost\ROOT\Microsoft\Windows\Storage",
                 $@"SELECT DiskNumber FROM MSFT_Partition WHERE DriveLetter='{partitionLetter}'"))
@@ -247,18 +247,32 @@ namespace ME3TweaksCore.Diagnostics.Modules
                     var partition = partitionSearcher.Get().Cast<ManagementBaseObject>().Single();
                     using (var physicalDiskSearcher = new ManagementObjectSearcher(
                         @"\\localhost\ROOT\Microsoft\Windows\Storage",
-                        $@"SELECT Size, Model, MediaType FROM MSFT_PhysicalDisk WHERE DeviceID='{partition[@"DiskNumber"]}'")) //do not localize
+                        $@"SELECT MediaType, FriendlyName FROM MSFT_PhysicalDisk WHERE DeviceID='{partition[@"DiskNumber"]}'")) //do not localize
+                                                                                                                                //$@"SELECT Size, Model, MediaType FROM MSFT_PhysicalDisk WHERE DeviceID='{partition[@"DiskNumber"]}'")) //do not localize
                     {
                         var physicalDisk = physicalDiskSearcher.Get().Cast<ManagementBaseObject>().Single();
-                        return (UInt16)physicalDisk[@"MediaType"];
+                        var mediaType = (UInt16)physicalDisk[@"MediaType"];
+                        if (mediaType == 3)
+                        {
+                            return @"Hard Disk Drive";
+                        }
+                        else if (mediaType == 4)
+                        {
+                            return @"Solid State Drive";
+                        }
+                        else
+                        {
+                            return (string)physicalDisk[@"FriendlyName"];
+                        }
                     }
                 }
                 catch (Exception e)
                 {
                     MLog.Warning($@"Error reading partition type on {partitionLetter}: {e.Message}. This may be an expected error due to how WMI works");
-                    return -1;
+                    return @"Unknown (WMI error)";
                 }
             }
+#pragma warning restore CA1416 // Validate platform compatibility
         }
     }
 }

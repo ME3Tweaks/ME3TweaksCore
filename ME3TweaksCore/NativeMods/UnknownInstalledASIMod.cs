@@ -17,23 +17,25 @@ namespace ME3TweaksCore.NativeMods
     /// </summary>
     public class UnknownInstalledASIMod : InstalledASIMod, IUnknownInstalledASIMod
     {
-        public UnknownInstalledASIMod(string filepath, string hash, MEGame game) : base(filepath, hash, game)
-        {
-            UnmappedFilename = Path.GetFileNameWithoutExtension(filepath);
-            DllDescription = ReadDllDescription(filepath);
-        }
+        public FileVersionInfo DllVersionInfo { get; init; }
         public string UnmappedFilename { get; set; }
         public string DllDescription { get; set; }
+
+        public UnknownInstalledASIMod(string filepath, string hash, MEGame game) : base(filepath, hash, game)
+        {
+            DllVersionInfo = FileVersionInfo.GetVersionInfo(filepath);
+            UnmappedFilename = Path.GetFileNameWithoutExtension(filepath);
+            DllDescription = ReadDllDescription(DllVersionInfo);
+        }
 
         /// <summary>
         /// Reads dll information for display of this file
         /// </summary>
         /// <param name="filepath"></param>
         /// <returns></returns>
-        public static string ReadDllDescription(string filepath)
+        public static string ReadDllDescription(FileVersionInfo info)
         {
             string retInfo = LC.GetString(LC.string_unknownASIDescription) + "\n";
-            var info = FileVersionInfo.GetVersionInfo(filepath);
             if (!string.IsNullOrWhiteSpace(info.ProductName))
             {
                 retInfo += '\n' + LC.GetString(LC.string_interp_productNameX, info.ProductName.Trim());

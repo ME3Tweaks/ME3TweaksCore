@@ -264,6 +264,12 @@ namespace ME3TweaksCore.Helpers
 
         internal static List<string> GetListOfInstalledAV()
         {
+            if (WineWorkarounds.WineDetected)
+            {
+                // No AV on Wine
+                return new List<string>();
+            }
+
             List<string> av = new List<string>();
             // for Windows Vista and above '\root\SecurityCenter2'
             using (var searcher = new ManagementObjectSearcher(@"\\" +
@@ -279,111 +285,6 @@ namespace ME3TweaksCore.Helpers
             }
 
             return av;
-        }
-
-        public static bool IsWindows10OrNewer()
-        {
-            var os = Environment.OSVersion;
-            return os.Platform == PlatformID.Win32NT &&
-                   (os.Version.Major >= 10);
-        }
-
-        /// <summary>
-        /// Checks if Wine is present
-        /// </summary>
-        /// <returns>True if Wine is detected, false otherwise</returns>
-        public static bool IsWineDetected()
-        {
-            // these values are normally set whenever in a wine prefix
-            using (RegistryKey WineDbgCrashDialog = Registry.CurrentUser.OpenSubKey(@"Software\Wine\WineDbg"))
-            using (RegistryKey DebugRelayExclude = Registry.CurrentUser.OpenSubKey(@"Software\Wine\Debug"))
-            {
-                Version WineVersion = WineGetVersion();
-                // None of these should be set if running in a real Windows environment
-                return WineVersion != null || WineDbgCrashDialog != null || DebugRelayExclude != null;
-            }
-        }
-
-        [DllImport(@"ntdll.dll", SetLastError = true, CharSet = CharSet.Ansi)]
-        private static extern IntPtr wine_get_version();
-
-        [DllImport(@"kernel32.dll", SetLastError = true)]
-        private static extern IntPtr LoadLibrary(string lpFileName);
-
-        [DllImport(@"kernel32.dll", SetLastError = true)]
-        private static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
-
-        [DllImport(@"kernel32.dll", SetLastError = true)]
-        private static extern bool FreeLibrary(IntPtr hModule);
-
-        /// <summary>
-        /// Get Wine version
-        /// </summary>
-        /// <returns>Version if available, otherwise null</returns>
-        public static Version WineGetVersion()
-        {
-            try
-            {
-#if DEBUG
-                // This is in if debug so it doesn't breakpoint in debug builds on Windows 
-                // First check if the wine_get_version function exists in ntdll.dll
-                IntPtr ntdllModule = LoadLibrary(@"ntdll.dll");
-                if (ntdllModule == IntPtr.Zero)
-                    return null;
-#endif
-                try
-                {
-#if DEBUG
-                    IntPtr procAddress = GetProcAddress(ntdllModule, @"wine_get_version");
-                    if (procAddress == IntPtr.Zero)
-                    {
-                        // Function doesn't exist (not running under Wine)
-                        return null;
-                    }
-#endif
-                    var v = new Version(Marshal.PtrToStringAnsi(wine_get_version()));
-                    return v;
-                }
-                finally
-                {
-#if DEBUG
-                    FreeLibrary(ntdllModule);
-#endif
-                }
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-
-        [DllImport(@"ntdll.dll", SetLastError = true, CharSet = CharSet.Ansi)]
-        private static extern void wine_get_host_version(out IntPtr sysname, out IntPtr release);
-
-        /// <summary>
-        /// Gets both host kernel name and version
-        /// <para>
-        ///     Parameters will be set to null if function is not available.<br />
-        ///     This generally means the host is Windows, or Wine is hiding its version.
-        /// </para>
-        /// </summary>
-        /// <param name="sysname">"Linux" if host is Linux, "Darwin" if host is MacOS.</param>
-        /// <param name="release">Kernel version if host is Linux, untested for MacOS.</param>
-        public static void WineGetHostVersion(out string sysname, out Version release)
-        {
-            try
-            {
-                wine_get_host_version(out IntPtr systemName, out IntPtr releaseName);
-                sysname = Marshal.PtrToStringAnsi(systemName);
-                release = new Version(Marshal.PtrToStringAnsi(releaseName));
-            }
-            catch
-            {
-                sysname = null;
-                release = null;
-            }
-
         }
 
         public static Stream GetResourceStream(string assemblyResource, Assembly assembly = null)
