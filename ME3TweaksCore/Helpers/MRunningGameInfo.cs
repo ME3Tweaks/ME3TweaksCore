@@ -16,6 +16,7 @@ namespace ME3TweaksCore.Helpers
         private static (bool isRunning, DateTime lastChecked) le1RunningInfo = (false, DateTime.MinValue.AddSeconds(5));
         private static (bool isRunning, DateTime lastChecked) le2RunningInfo = (false, DateTime.MinValue.AddSeconds(5));
         private static (bool isRunning, DateTime lastChecked) le3RunningInfo = (false, DateTime.MinValue.AddSeconds(5));
+        private static (bool isRunning, DateTime lastChecked) lmpRunningInfo = (false, DateTime.MinValue.AddSeconds(5));
         private static (bool isRunning, DateTime lastChecked) me1RunningInfo = (false, DateTime.MinValue.AddSeconds(5));
         private static (bool isRunning, DateTime lastChecked) me2RunningInfo = (false, DateTime.MinValue.AddSeconds(5));
         private static (bool isRunning, DateTime lastChecked) me3RunningInfo = (false, DateTime.MinValue.AddSeconds(5));
@@ -30,7 +31,9 @@ namespace ME3TweaksCore.Helpers
         private static object gameRunningSyncObjLE1 = new object();
         private static object gameRunningSyncObjLE2 = new object();
         private static object gameRunningSyncObjLE3 = new object();
+        private static object gameRunningSyncObjLMP = new object();
         private static object gameRunningSyncObjLEL = new object();
+
 
         /// <summary>
         /// Returns the object used to enforce concurrency when checking if a game is running
@@ -45,6 +48,7 @@ namespace ME3TweaksCore.Helpers
             MEGame.LE1 => gameRunningSyncObjLE1,
             MEGame.LE2 => gameRunningSyncObjLE2,
             MEGame.LE3 => gameRunningSyncObjLE3,
+            MEGame.LMP => gameRunningSyncObjLMP,
             MEGame.LELauncher => gameRunningSyncObjLEL,
         };
 
@@ -76,6 +80,9 @@ namespace ME3TweaksCore.Helpers
                         break;
                     case MEGame.ME3:
                         runningInfo = me3RunningInfo;
+                        break;
+                    case MEGame.LMP:
+                        runningInfo = lmpRunningInfo;
                         break;
                     case MEGame.LELauncher:
                         runningInfo = leLauncherRunningInfo;
