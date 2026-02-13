@@ -262,46 +262,6 @@ namespace ME3TweaksCore.Helpers
             return algo.Hash;
         }
 
-        /// <summary>
-        /// Comutes hash in 4KB chunks and reports progress
-        /// </summary>
-        /// <param name="inputStream"></param>
-        /// <param name="algo"></param>
-        /// <param name="progress"></param>
-        /// <returns></returns>
-        private static byte[] computeHashChunked(Stream inputStream, HashAlgorithm algo, Action<ProgressInfo> progressDelegate)
-        {
-            // Get the total size of the stream for calculating the percentage.
-            long totalBytes = inputStream.Length;
-            long processedBytes = 0;
-
-            byte[] buffer = new byte[4096]; // Read in chunks of 4KB.
-            int bytesRead;
-
-            ProgressInfo pi = new ProgressInfo();
-            pi.Indeterminate = false;
-            while ((bytesRead = inputStream.Read(buffer, 0, buffer.Length)) > 0)
-            {
-                // Feed the chunk into the hash algorithm.
-                algo.TransformBlock(buffer, 0, bytesRead, null, 0);
-
-                // Update the number of processed bytes and report progress.
-                processedBytes += bytesRead;
-                if (totalBytes > 0)
-                {
-                    pi.Value = (double)processedBytes / totalBytes * 100;
-                    progressDelegate(pi);
-                }
-            }
-
-            // Finalize the hash computation.
-            algo.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-            pi.Value = 100;
-            progressDelegate(pi);
-
-            return algo.Hash;
-        }
-
         internal static List<string> GetListOfInstalledAV()
         {
             if (WineWorkarounds.WineDetected)
