@@ -33,6 +33,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
         /// File extension suffix for Bio2DA merge manifest files.
         /// </summary>
         private const string BIO2DA_MERGE_FILE_SUFFIX = @".m3da";
+        private const string BIO2DA_BGFIS_DATA_BLOCK = @"BGFIS-Bio2DAMerge";
 
         /// <summary>
         /// Block identifier for Bio2DA merge data in the Basegame File Identification Service.
@@ -227,19 +228,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
             return false;
         }
 
-        /// <summary>
-        /// Creates a Basegame File Identification Service record for a merged package file.
-        /// Checks if the file is vanilla after removing LECL tags and handles vanilla/modified file tracking.
-        /// </summary>
-        /// <param name="target">The game installation being modified.</param>
-        /// <param name="packageContainer">Container managing all open packages and their original hashes.</param>
-        /// <param name="finalPackage">The package that has been modified by merging.</param>
-        /// <param name="finalPackageStream">Stream containing the saved package data.</param>
-        /// <param name="recordedMerges">List of .m3da manifest filenames that were applied to this package.</param>
-        /// <param name="localize">Whether to localize messages for user display.</param>
-        /// <param name="savedVanilla">Output parameter indicating if the file was determined to be vanilla and saved as such.</param>
-        /// <returns>A <see cref="BasegameFileRecord"/> for BGFIS tracking, or null if the file is vanilla.</returns>
-        private static BasegameFileRecord CreateRecord(GameTarget target, Bio2DAMergePackageContainer packageContainer, IMEPackage finalPackage, MemoryStream finalPackageStream, List<string> recordedMerges, bool localize, out bool savedVanilla)
+        private static BasegameFileRecord CreateRecord(GameTarget target, Bio2DAMergePackageContainer packageContainer, IMEPackage finalPackage, MemoryStream finalPackageStream, List<string> recordedMerges, out bool savedVanilla)
         {
             savedVanilla = false;
 
@@ -289,14 +278,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                 // Unfortunately we have no way to reset this because we have no idea what names were 
                 // added unless we compared to something else and figured out if any were
                 // still in use, and that would be slow. So that's not really helpful here...
-                if (localize)
-                {
-                    newInfoString = LC.GetString(LC.string_vanillaAllM3DAsReverted);
-                }
-                else
-                {
-                    newInfoString = @"(Vanilla - all M3DAs reverted)"; // This is not localized as it will show in diagnostics.
-                }
+                newInfoString = @"(Vanilla - all M3DAs reverted)"; // This is not localized as it will show in diagnostics.
             }
 
             return new BasegameFileRecord(target.GetRelativePath(finalPackage.FilePath), (int)finalPackageStream.Length, target.Game, newInfoString, finalHash);
@@ -433,27 +415,6 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
             }
 
             return mergedResult;
-        }
-
-        /// <summary>
-        /// Gets a list of Bio2DA merges into the given basegame file record
-        /// </summary>
-        /// <param name="info">The basegame file record to extract merge information from.</param>
-        /// <returns>A list of .m3da manifest filenames that were applied to the file, or an empty list if none were applied.</returns>
-        internal static List<string> GetMergedFilenames(BasegameFileRecord info)
-        {
-            List<string> merges = new List<string>(0);
-            foreach (var source in info.sourceLines)
-            {
-                var blockText = info.GetBlock(BIO2DA_BGFIS_DATA_BLOCK, source);
-
-                if (blockText != null)
-                {
-                    merges = blockText.Split(BasegameFileRecord.BLOCK_SEPARATOR).ToList();
-                }
-            }
-
-            return merges;
         }
     }
 }

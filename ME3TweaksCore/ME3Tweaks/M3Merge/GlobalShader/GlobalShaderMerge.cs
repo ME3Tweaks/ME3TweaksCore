@@ -68,19 +68,6 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
 
             foreach (var dlc in dlcMountsInOrder)
             {
-                if (!dlc.StartsWith(@"DLC_MOD_"))
-                {
-                    // Do not shader merge non-mod folders
-                    continue;
-                }
-
-                var metaCmm = target.GetMetaCMMForDLC(dlc);
-                if (metaCmm == null || metaCmm.ModDescFeatureLevel < ModDescConsts.MODDESC_VERSION_9_2)
-                {
-                    // Requires 9.2 moddesc
-                    continue;
-                }
-
                 var dlcCookedPath = Path.Combine(target.GetDLCPath(), dlc, target.Game.CookedDirName());
 
                 MLog.Debug($@"Looking for {SHADER_MERGE_PATTERN} files in {dlcCookedPath}", log);
