@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using LegendaryExplorerCore.Gammtek.Extensions;
 using LegendaryExplorerCore.Helpers;
@@ -26,7 +27,7 @@ namespace ME3TweaksCore.NativeMods
     [AddINotifyPropertyChangedInterface]
     public static class ASIManager
     {
-        public static readonly string CachedASIsFolder = Directory.CreateDirectory(Path.Combine(MCoreFilesystem.GetAppDataFolder(), @"CachedASIs")).FullName;
+        public static readonly string CachedASIsFolder = Directory.CreateDirectory(Path.Combine(MCoreFilesystem.GetSharedME3TweaksDataFolder(), @"CachedASIs")).FullName;
 
         public static readonly string ManifestLocation = Path.Combine(CachedASIsFolder, @"manifest.xml");
         public static readonly string StagedManifestLocation = Path.Combine(CachedASIsFolder, @"manifest_staged.xml");
@@ -160,7 +161,6 @@ namespace ME3TweaksCore.NativeMods
             var resource = MUtilities.ExtractInternalFileToStream(@"ME3TweaksCore.NativeMods.CachedASI.asimanifest.xml");
             var embeddedManifest = new StreamReader(resource).ReadToEnd();
             ParseManifest(embeddedManifest, false);
-
         }
 
         private static void logManifestInfo()
@@ -175,6 +175,7 @@ namespace ME3TweaksCore.NativeMods
             for (int i = 0; i < masterGroups.Length; i++)
             {
                 MLog.Information($@"{GameNumConversion.FromGameNum(i + 1).ToGameName(true)} has ASI groups {string.Join(',', masterGroups[i].Select(x => x.UpdateGroupId))} available");
+#if DEBUG
                 foreach (var asiversions in masterGroups[i])
                 {
                     MLog.Debug($@"ASI Update Group {asiversions.UpdateGroupId} IsHidden: {asiversions.IsHidden} ---------------");
@@ -183,7 +184,7 @@ namespace ME3TweaksCore.NativeMods
                         MLog.Debug($@"   {asi.Name} v{asi.Version} IsBetaOnly: {asi.IsBeta}");
                     }
                 }
-
+#endif
             }
         }
 
@@ -398,6 +399,20 @@ namespace ME3TweaksCore.NativeMods
                                             IsBeta = TryConvert.ToBoolFromInt(version.Element(@"beta")?.Value),
                                             Hidden = TryConvert.ToBoolFromInt(version.Element(@"hidden")?.Value),
                                             DevModeOnly = TryConvert.ToBoolFromInt(version.Element(@"devsonly")?.Value),
+                                            Dependencies = version.Element(@"dependencies") != null ?
+                                                (from dep in version.Element(@"dependencies").Elements(@"dependency")
+                                                 select new ASIDependency
+                                                 {
+                                                     Filename = (string)dep.Element(@"filename"),
+                                                     StorageFilename = (string)dep.Element(@"storagefilename"),
+                                                     Filesize = TryConvert.ToInt32(dep.Element(@"size")?.Value, -1), // -1 will ensure validation always fails
+                                                     Hash = (string)dep.Element(@"hash"),
+
+                                                     ServerAssetCompressed = TryConvert.ToBoolFromInt(dep.Element(@"serverassetcompressed")?.Value), // If data is .lzma on server
+                                                     CompressedFilesize = TryConvert.ToInt32(dep.Element(@"compressedsize")?.Value, -1), // -1 will ensure validation always fails
+                                                     CompressedHash = (string)dep.Element(@"compressedhash"), // will be null if ServerAssetCompressed is false
+                                                 }).ToArray()
+                                                : new ASIDependency[] { },
                                             _otherGroupsToDeleteOnInstallInternal = version.Element(@"autoremovegroups")?.Value,
 
                                             Game = intToGame((int)ugroup.Attribute(@"game")), // use ugroup element to pull from outer group
@@ -540,7 +555,7 @@ namespace ME3TweaksCore.NativeMods
         /// <param name="target"></param>
         /// <param name="forceSource">Null to let application choose the source, true to force online, false to force local cache. This parameter is used for testing</param>
         /// <returns></returns>
-        public static bool InstallASIToTarget(ASIModVersion asi, GameTarget target, bool? forceSource = null)
+        public static async Task<bool> InstallASIToTarget(ASIModVersion asi, GameTarget target, bool? forceSource = null)
         {
             if (asi.Game != target.Game) throw new Exception($@"ASI {asi.Name} cannot be installed to game {target.Game}");
             MLog.Information($@"Processing ASI installation request: {asi.Name} v{asi.Version} -> {target.TargetPath}");
@@ -553,6 +568,20 @@ namespace ME3TweaksCore.NativeMods
                 Directory.CreateDirectory(destinationDirectory);
             }
             string finalPath = Path.Combine(destinationDirectory, destinationFilename);
+
+            // 02/07/2026 - Install VC++ 14.50 dlls if on linux
+            if (WineWorkarounds.WineDetected)
+            {
+                if (await ASIWine.EnsureVC145ZipDownloadedAsync())
+                {
+                    await ASIWine.ExtractVC145ToTargetAsync(target);
+                }
+                else
+                {
+                    // Required dlls are missing for ASIs that do logging.........
+                    MLog.Error($@"Required dlls for ASIs to work could not be downloaded. The file should be downloaded from {ASIWine.VC145_DOWNLOAD_URL} and placed at {ASIWine.GetVC145ZipPath()}");
+                }
+            }
 
             var installedASIs = target.GetInstalledASIs();
             // Delete existing ASIs from the same group to ensure we don't install the same mod
@@ -614,6 +643,9 @@ namespace ME3TweaksCore.NativeMods
                     TelemetryInterposer.TrackEvent(@"Installed ASI", new Dictionary<string, string>() {
                                 { @"Filename", Path.GetFileNameWithoutExtension(finalPath)}
                             });
+
+                    await asi.InstallDependencies(target);
+
                     return true;
                 }
             }
@@ -672,6 +704,9 @@ namespace ME3TweaksCore.NativeMods
                         {
                             //ERROR!
                             MLog.Error(@"Downloaded ASI did not match the manifest! It has the wrong hash.");
+#if DEBUG
+                            MLog.Warning($@"Downloaded hash: {md5} Manifest hash: {asi.Hash}");
+#endif
                             return false;
                         }
 
@@ -696,6 +731,9 @@ namespace ME3TweaksCore.NativeMods
 
                     MLog.Information(@"Caching ASI to local ASI library: " + cachedPath);
                     downloadStream.WriteToFile(cachedPath);
+
+                    await asi.InstallDependencies(target);
+
                     return true;
                 }
                 catch (Exception e)
@@ -716,7 +754,7 @@ namespace ME3TweaksCore.NativeMods
         /// <param name="version">The version to install. The default is 0, which means the latest</param>
         /// <param name="includeHiddenASIVersions">If hidden ASI mod versions should be included.</param>
         /// <returns></returns>
-        public static bool InstallASIToTarget(ASIMod mod, GameTarget target, int version = 0, bool includeHiddenASIVersions = false)
+        public static async Task<bool> InstallASIToTarget(ASIMod mod, GameTarget target, int version = 0, bool includeHiddenASIVersions = false)
         {
             ASIModVersion modV = null;
             if (version == 0)
@@ -731,7 +769,7 @@ namespace ME3TweaksCore.NativeMods
             if (modV == null)
                 return false; // Did not install
 
-            return InstallASIToTarget(modV, target);
+            return await InstallASIToTarget(modV, target);
         }
 
         /// <summary>
@@ -741,9 +779,9 @@ namespace ME3TweaksCore.NativeMods
         /// <param name="nameForLogging"></param>
         /// <param name="gameTarget"></param>
         /// <param name="version">The versio nto install. The default is 0, which means the latest</param>
-        public static bool InstallASIToTargetByGroupID(ASIModUpdateGroupID updateGroup, string nameForLogging, GameTarget gameTarget, int version = 0, bool includeHiddenASIs = false)
+        public static async Task<bool> InstallASIToTargetByGroupID(ASIModUpdateGroupID updateGroup, string nameForLogging, GameTarget gameTarget, int version = 0, bool includeHiddenASIs = false)
         {
-            return InstallASIToTargetByGroupID((int)updateGroup, nameForLogging, gameTarget, version, includeHiddenASIs);
+            return await InstallASIToTargetByGroupID((int)updateGroup, nameForLogging, gameTarget, version, includeHiddenASIs);
         }
 
         /// <summary>
@@ -753,7 +791,7 @@ namespace ME3TweaksCore.NativeMods
         /// <param name="nameForLogging"></param>
         /// <param name="gameTarget"></param>
         /// <param name="version">The versio nto install. The default is 0, which means the latest</param>
-        public static bool InstallASIToTargetByGroupID(int updateGroup, string nameForLogging, GameTarget gameTarget, int version = 0, bool includeHiddenASIs = false)
+        public static async Task<bool> InstallASIToTargetByGroupID(int updateGroup, string nameForLogging, GameTarget gameTarget, int version = 0, bool includeHiddenASIs = false)
         {
             var group = GetASIModsByGame(gameTarget.Game).FirstOrDefault(x => x.UpdateGroupId == updateGroup);
             if (group == null)
@@ -763,7 +801,7 @@ namespace ME3TweaksCore.NativeMods
                 return false;
             }
 
-            return InstallASIToTarget(group, gameTarget, version, includeHiddenASIs);
+            return await InstallASIToTarget(group, gameTarget, version, includeHiddenASIs);
         }
 
         /// <summary>
@@ -829,6 +867,31 @@ namespace ME3TweaksCore.NativeMods
             }
             return result;
 
+        }
+
+        /// <summary>
+        /// Shared method for verifying dependencies of a known ASI mod
+        /// </summary>
+        /// <param name="associatedManifestItem"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public static bool VerifyDependenciesShared(ASIModVersion associatedManifestItem, GameTarget target)
+        {
+            if (associatedManifestItem != null && associatedManifestItem.Dependencies != null && associatedManifestItem.Dependencies.Length > 0)
+            {
+                foreach (var a in associatedManifestItem.Dependencies)
+                {
+                    if (!a.IsInstalled(target))
+                    {
+                        // Dependency is missing.
+                        MLog.Warning($@"ASI {associatedManifestItem.Name} v{associatedManifestItem.Version} is installed but is missing/has incorrect dependency {a.Filename}");
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
     }
 }

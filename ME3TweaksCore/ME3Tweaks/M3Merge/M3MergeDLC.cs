@@ -210,6 +210,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
             configBundle.CommitDLCAssets();
         }
 
+        // Is this run on other projects besides M3?
         /// <summary>
         /// Runs a full merge (via MergeDLC) on the specific target.
         /// </summary>

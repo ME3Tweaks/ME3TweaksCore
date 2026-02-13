@@ -48,6 +48,7 @@ namespace ME3TweaksCore.Localization
 		public const string string_interp_backingUpSinglePercentage = "string_interp_backingUpSinglePercentage";
 		public const string string_errorCreatingBackup = "string_errorCreatingBackup";
 		public const string string_interp_errorCreatingBackupX = "string_interp_errorCreatingBackupX";
+		public const string string_dialog_backupUnableToDetermineFreeSpace = "string_dialog_backupUnableToDetermineFreeSpace";
 		public const string string_installedByModManager = "string_installedByModManager";
 		public const string string_interp_installedByX = "string_interp_installedByX";
 		public const string string_notInstalledByModManager = "string_notInstalledByModManager";
@@ -138,6 +139,9 @@ namespace ME3TweaksCore.Localization
 		public const string string_interp_productNameX = "string_interp_productNameX";
 		public const string string_interp_descriptionX = "string_interp_descriptionX";
 		public const string string_interp_companyX = "string_interp_companyX";
+		public const string string_interp_versionX = "string_interp_versionX";
+		public const string string_interp_failedToDownloadASIDependency = "string_interp_failedToDownloadASIDependency";
+		public const string string_interp_asiDependencyNotAvailable = "string_interp_asiDependencyNotAvailable";
 		public const string string_upd_betaBuildNotificationString = "string_upd_betaBuildNotificationString";
 		public const string string_upd_1DayAgo = "string_upd_1DayAgo";
 		public const string string_upd_today = "string_upd_today";
@@ -263,6 +267,7 @@ namespace ME3TweaksCore.Localization
 		public const string string_interp_plotManagerSyncForX = "string_interp_plotManagerSyncForX";
 		public const string string_interp_errorCompilingFunctionReason = "string_interp_errorCompilingFunctionReason";
 		public const string string_interp_fileLibInitFailedPlotManager = "string_interp_fileLibInitFailedPlotManager";
+		public const string string_dialog_invalidConditionalNumberSourceMod = "string_dialog_invalidConditionalNumberSourceMod";
 		public const string string_buildNotSigned = "string_buildNotSigned";
 		public const string string_interp_dok_mustContainDescriptorX = "string_interp_dok_mustContainDescriptorX";
 		public const string string_interp_dok_withOptionXInstalled = "string_interp_dok_withOptionXInstalled";
@@ -275,5 +280,23 @@ namespace ME3TweaksCore.Localization
 		public const string string_interp_2damerge_invalidSourceObjectIsNot2DA = "string_interp_2damerge_invalidSourceObjectIsNot2DA";
 		public const string string_interp_2damerge_invalidCouldNotFindTargetTable = "string_interp_2damerge_invalidCouldNotFindTargetTable";
 		public const string string_interp_2damerge_invalidNotAVanillaTable = "string_interp_2damerge_invalidNotAVanillaTable";
+		public const string string_interp_bio2daMerge_incompatibleModDetected = "string_interp_bio2daMerge_incompatibleModDetected";
+		public const string string_vanillaAllM3DAsReverted = "string_vanillaAllM3DAsReverted";
+		public const string string_testingPackageDecompression = "string_testingPackageDecompression";
+		public const string string_interp_mismatchedBTMBTP = "string_interp_mismatchedBTMBTP";
+		public const string string_interp_btpInvalidTFCReference = "string_interp_btpInvalidTFCReference";
+		public const string string_interp_btpTFCNameTooLong = "string_interp_btpTFCNameTooLong";
+		public const string string_buildingTextureOverridePackage = "string_buildingTextureOverridePackage";
+		public const string string_interp_buildingTextureOverridePackage = "string_interp_buildingTextureOverridePackage";
+		public const string string_interp_btpBuildFailedSourceTextureMissing = "string_interp_btpBuildFailedSourceTextureMissing";
+		public const string string_interp_toCouldNotFindIFP = "string_interp_toCouldNotFindIFP";
+		public const string string_interp_toInvalidTexture = "string_interp_toInvalidTexture";
+		public const string string_interp_toManifestGameMismatch1 = "string_interp_toManifestGameMismatch1";
+		public const string string_interp_toManifestGameMismatch2 = "string_interp_toManifestGameMismatch2";
+		public const string string_interp_toInvalidSourcePackageName = "string_interp_toInvalidSourcePackageName";
+		public const string string_interp_gsInvalidHeader = "string_interp_gsInvalidHeader";
+		public const string string_interp_gsNotValidShader = "string_interp_gsNotValidShader";
+		public const string string_installingMicrosoftVisualCPPRedistributable = "string_installingMicrosoftVisualCPPRedistributable";
+		public const string string_downloadingMicrosoftVisualCPPRedistributable = "string_downloadingMicrosoftVisualCPPRedistributable";
 	}
 }

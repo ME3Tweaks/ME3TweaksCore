@@ -55,6 +55,25 @@ namespace ME3TweaksCore.Services
         }
 
         /// <summary>
+        /// Fetches a remote string, aware of its encoding.
+        /// </summary>
+        /// <param name="url">FallbackLink to fetch data on</param>
+        /// <param name="authorizationToken"></param>
+        /// <returns></returns>
+        public static string FetchRemoteString(FallbackLink url, string authorizationToken = null)
+        {
+            foreach (var fbUrl in url.GetAllLinks())
+            {
+                var result = FetchRemoteString(fbUrl, authorizationToken);
+                if (result != null)
+                {
+                    return result;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Downloads from a URL to memory. This is a blocking call and must be done on a background thread.
         /// </summary>
         /// <param name="url">URL to download from</param>

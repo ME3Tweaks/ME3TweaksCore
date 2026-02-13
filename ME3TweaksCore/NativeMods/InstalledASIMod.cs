@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using LegendaryExplorerCore.Packages;
@@ -17,14 +18,12 @@ namespace ME3TweaksCore.NativeMods
         public MEGame Game { get; init; }
         public string Hash { get; init; }
         public string InstalledPath { get; init; }
-
         protected InstalledASIMod(string asiFile, string hash, MEGame game)
         {
             Game = game;
             InstalledPath = asiFile;
             Hash = hash;
         }
-
 
         ///// <summary>
         ///// Deletes the backing file for this ASI

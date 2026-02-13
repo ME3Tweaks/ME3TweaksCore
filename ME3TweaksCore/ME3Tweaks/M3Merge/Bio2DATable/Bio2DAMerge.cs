@@ -18,6 +18,7 @@ using ME3TweaksCore.Localization;
 using ME3TweaksCore.Misc;
 using ME3TweaksCore.Services;
 using ME3TweaksCore.Services.Shared.BasegameFileIdentification;
+using ME3TweaksCore.Services.ThirdPartyModIdentification;
 using ME3TweaksCore.Targets;
 using Newtonsoft.Json;
 
@@ -28,10 +29,21 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
     /// </summary>
     public class Bio2DAMerge
     {
+        /// <summary>
+        /// File extension suffix for Bio2DA merge manifest files.
+        /// </summary>
         private const string BIO2DA_MERGE_FILE_SUFFIX = @".m3da";
+
+        /// <summary>
+        /// Block identifier for Bio2DA merge data in the Basegame File Identification Service.
+        /// </summary>
         public const string BIO2DA_BGFIS_DATA_BLOCK = @"BGFIS-Bio2DAMerge";
 
-        private static readonly string[] Mergable2DAFiles = new[]
+        /// <summary>
+        /// Array of package file names that are permitted to be modified by the Bio2DA merge system.
+        /// Includes basegame files (Engine.pcc, SFXGame.pcc, EntryMenu.pcc) and Bring Down The Sky DLC 2DA files.
+        /// </summary>
+        public static readonly string[] Mergable2DAFiles = new[]
         {
             @"Engine.pcc",
             @"SFXGame.pcc",
@@ -49,6 +61,11 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
         };
 
 #if DEBUG
+        /// <summary>
+        /// Development utility that builds a package containing all vanilla Bio2DA tables from the specified game target.
+        /// This method is only available in DEBUG builds and is used to create the embedded VanillaTables.pcc resource.
+        /// </summary>
+        /// <param name="target">The game installation to extract vanilla tables from.</param>
         public static void BuildVanillaTables(GameTarget target)
         {
             var vPackage = MEPackageHandler.CreateAndOpenPackage(@"B:\UserProfile\source\repos\ME3Tweaks\MassEffectModManager\submodules\ME3TweaksCore\ME3TweaksCore\ME3Tweaks\M3Merge\Bio2DATable\VanillaTables.pcc", MEGame.LE1);
@@ -69,19 +86,18 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
         }
 #endif
 
+        /// <summary>
+        /// Executes the complete Bio2DA merge operation for the specified game target.
+        /// This process loads all mergeable packages, resets tables to vanilla state, applies all .m3da manifests
+        /// from installed DLCs in mount order, and records the changes in the Basegame File Identification Service.
+        /// </summary>
+        /// <param name="target">The game installation to perform merging on.</param>
+        /// <returns>True if any merges were successfully applied; false if no changes were made.</returns>
+        /// <exception cref="Exception">Thrown when an incompatible mod with DLC overrides of merge target files is detected.</exception>
         public static bool RunBio2DAMerge(GameTarget target)
         {
             MLog.Information($@"Performing Bio2DA Merge for game: {target.TargetPath}");
-
-            //var coalescedStream = MUtilities.ExtractInternalFileToStream(@"ME3TweaksCore.ME3Tweaks.M3Merge.LE1Config.Coalesced_INT.bin");
-            //var configBundle = ConfigAssetBundle.FromSingleStream(MEGame.LE1, coalescedStream);
-
             var dlcMountsInOrder = MELoadedDLC.GetDLCNamesInMountOrder(target.Game, target.TargetPath);
-
-            // For BGFIS
-            bool mergedAny = false;
-            string recordedMergeName = @"";
-
 
             // Map: Filepath -> list of applied m3da filenames
             var recordedApplications = new CaseInsensitiveDictionary<List<string>>();
@@ -101,12 +117,24 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
 
 
             // Step 1: Load all modifiable packages
+            // 12/14/2025 - Align to only work on basegame as a later step
+            // only looks at basegame paths which is confusing to debug
             var loadedFiles = target.GetFilesLoadedInGame();
             var packageContainer = new Bio2DAMergePackageContainer();
             foreach (var file in Mergable2DAFiles)
             {
                 if (loadedFiles.TryGetValue(file, out var filepath))
                 {
+                    var basegamePath = Path.Combine(target.GetCookedPath(), file);
+                    if (!basegamePath.CaseInsensitiveEquals(filepath))
+                    {
+                        // Incompatible mod is installed which is breaking Bio2DA Merge.
+                        var incompatDLC = filepath.DetermineDLCNameFromPath();
+                        var tpmi = TPMIService.GetThirdPartyModInfo(incompatDLC, target.Game);
+                        MLog.Error($@"Incompatible mod detected for Bio2DA Merge: {incompatDLC} overrides 2DA merge file {file} at path {filepath}. Bio2DA Merge only can modify basegame files and will not modify DLC files. This mod is breaking the Bio2DA merge system.");
+                        throw new Exception(LC.GetString(LC.string_interp_bio2daMerge_incompatibleModDetected, tpmi?.modname ?? incompatDLC));
+                    }
+
                     // Hash the files before we open them so we can pull the information from Basegame File Identification Service.
                     var packageData = MEPackageHandler.ReadAllFileBytesIntoMemoryStream(filepath);
                     packageContainer.OriginalHashes[target.GetRelativePath(filepath)] =
@@ -133,10 +161,12 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                         EntryImporter.ImportAndRelinkEntries(EntryImporter.PortingOption.ReplaceSingularWithRelink, exp,
                             file, matchingExp, true, new RelinkerOptionsPackage(), out _);
 
+#if DEBUG
                         if (matchingExp.DataChanged)
                         {
                             Debug.WriteLine($@"Reset table: {matchingExp.InstancedFullPath} in {file.FileNameNoExtension}");
                         }
+#endif
                     }
                 }
             }
@@ -197,6 +227,18 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
             return false;
         }
 
+        /// <summary>
+        /// Creates a Basegame File Identification Service record for a merged package file.
+        /// Checks if the file is vanilla after removing LECL tags and handles vanilla/modified file tracking.
+        /// </summary>
+        /// <param name="target">The game installation being modified.</param>
+        /// <param name="packageContainer">Container managing all open packages and their original hashes.</param>
+        /// <param name="finalPackage">The package that has been modified by merging.</param>
+        /// <param name="finalPackageStream">Stream containing the saved package data.</param>
+        /// <param name="recordedMerges">List of .m3da manifest filenames that were applied to this package.</param>
+        /// <param name="localize">Whether to localize messages for user display.</param>
+        /// <param name="savedVanilla">Output parameter indicating if the file was determined to be vanilla and saved as such.</param>
+        /// <returns>A <see cref="BasegameFileRecord"/> for BGFIS tracking, or null if the file is vanilla.</returns>
         private static BasegameFileRecord CreateRecord(GameTarget target, Bio2DAMergePackageContainer packageContainer, IMEPackage finalPackage, MemoryStream finalPackageStream, List<string> recordedMerges, bool localize, out bool savedVanilla)
         {
             savedVanilla = false;
@@ -226,9 +268,10 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
             var originalInfo = BasegameFileIdentificationService.GetBasegameFileSource(target, finalPackage.FilePath, originalHash);
             var newInfoString = @"";
 
+            // We need to handle this for multiple lines.
             if (originalInfo != null)
             {
-                newInfoString = originalInfo.GetWithoutBlock(BIO2DA_BGFIS_DATA_BLOCK);
+                newInfoString = originalInfo.GetWithoutBlock(BIO2DA_BGFIS_DATA_BLOCK, originalInfo.source);
             }
 
             if (recordedMerges != null && recordedMerges.Any())
@@ -248,7 +291,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                 // still in use, and that would be slow. So that's not really helpful here...
                 if (localize)
                 {
-                    newInfoString = "(Vanilla - all M3DAs reverted)";
+                    newInfoString = LC.GetString(LC.string_vanillaAllM3DAsReverted);
                 }
                 else
                 {
@@ -263,13 +306,13 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
         /// <summary>
         /// Merges a single manifest file (can contain multiple files to merge)
         /// </summary>
-        /// <param name="dlcCookedPath"></param>
-        /// <param name="mergeFilePath"></param>
-        /// <param name="target"></param>
-        /// <param name="recordMerge"></param>
-        /// <param name="packageContainer"></param>
+        /// <param name="dlcCookedPath">The path to the DLC's cooked content directory.</param>
+        /// <param name="mergeFilePath">The full path to the .m3da manifest file to process.</param>
+        /// <param name="target">The game installation being modified.</param>
+        /// <param name="recordMerge">Callback action to record that a merge was applied to a package.</param>
+        /// <param name="packageContainer">Container managing all open packages for caching and retrieval.</param>
         /// <exception cref="Exception">When there's an error in input. Error applying data itself will not throw.</exception>
-        /// <returns></returns>
+        /// <returns>True if the merge was successful and at least one row was merged; false if the merge failed or no data was merged.</returns>
         private static bool MergeManifest(string dlcCookedPath, string mergeFilePath, GameTarget target, Action<IMEPackage, string> recordMerge, Bio2DAMergePackageContainer packageContainer)
         {
             var mergeData = File.ReadAllText(mergeFilePath);
@@ -326,7 +369,6 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                     {
                         MLog.Error($@"Bio2DA merge 'mergetables' value is invalid: {table} - base name of object does not end with _part");
                         throw new Exception(LC.GetString(LC.string_interp_2damerge_invalidTableNameMissingPart, table));
-                        return false;
                     }
 
                     var tableName = objName.Name.Substring(0, objName.Name.Length - 5); // Remove _part. The table name should not be indexed... probably
@@ -336,20 +378,18 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                     {
                         MLog.Error($@"Bio2DA merge 'mergetables' value is invalid: {table} - could not find table with that instanced full path in package '{modPackagePath}'");
                         throw new Exception(LC.GetString(LC.string_interp_2damerge_invalidCouldNotFindSourceTableExport, table, modPackagePath));
-                        return false;
                     }
 
                     if (!modTable.IsA(@"Bio2DA"))
                     {
                         MLog.Error($@"Bio2DA merge 'mergetables' value is invalid: {table} - export is not a Bio2DA or subclass. It was: {modTable.ClassName}");
                         throw new Exception(LC.GetString(LC.string_interp_2damerge_invalidSourceObjectIsNot2DA, table, modTable.ClassName));
-                        return false;
                     }
 
                     var baseTable = baseFile.Exports.FirstOrDefault(x => !x.IsDefaultObject && x.IsA(@"Bio2DA") &&
                                                                          (x.ObjectName.Instanced.CaseInsensitiveEquals(tableName) || // Direct name
-                                                                          //10/31/2024 - Fix targetting _part tables in BDTS tables that we reset
-                                                                         (x.ObjectName.Name.Length > 5 && x.ObjectName.Name.StartsWith(tableName, StringComparison.CurrentCultureIgnoreCase) && x.ObjectName.Name.EndsWith("_part")) // Targetting _part table in BDTS tables
+                                                                                                                                     //10/31/2024 - Fix targetting _part tables in BDTS tables that we reset
+                                                                         (x.ObjectName.Name.Length > 5 && x.ObjectName.Name.StartsWith(tableName, StringComparison.CurrentCultureIgnoreCase) && x.ObjectName.Name.EndsWith(@"_part")) // Targetting _part table in BDTS tables
                                                                          ));
                     if (baseTable == null)
                     {
@@ -359,7 +399,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
 
                     // Check basetable is actually a vanilla table
                     // 10/31/2024 - Strip _part so we can successfully target BDTS tables
-                    var baseTableName = baseTable.ObjectName.Name.EndsWith("_part") ? baseTable.ObjectName.Name[..^5] : baseTable.ObjectName.Instanced;
+                    var baseTableName = baseTable.ObjectName.Name.EndsWith(@"_part") ? baseTable.ObjectName.Name[..^5] : baseTable.ObjectName.Instanced;
                     if (!packageContainer.VanillaTableNames.Contains(baseTableName, StringComparer.InvariantCultureIgnoreCase))
                     {
                         MLog.Error($@"Bio2DA merge 'mergetables' value is invalid: {table} - this is not a vanilla table. Bio2DA merge does not work with non-vanilla tables.");
@@ -398,15 +438,19 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
         /// <summary>
         /// Gets a list of Bio2DA merges into the given basegame file record
         /// </summary>
-        /// <returns></returns>
+        /// <param name="info">The basegame file record to extract merge information from.</param>
+        /// <returns>A list of .m3da manifest filenames that were applied to the file, or an empty list if none were applied.</returns>
         internal static List<string> GetMergedFilenames(BasegameFileRecord info)
         {
             List<string> merges = new List<string>(0);
-            var blockText = info.GetBlock(BIO2DA_BGFIS_DATA_BLOCK);
-
-            if (blockText != null)
+            foreach (var source in info.sourceLines)
             {
-                merges = blockText.Split(BasegameFileRecord.BLOCK_SEPARATOR).ToList();
+                var blockText = info.GetBlock(BIO2DA_BGFIS_DATA_BLOCK, source);
+
+                if (blockText != null)
+                {
+                    merges = blockText.Split(BasegameFileRecord.BLOCK_SEPARATOR).ToList();
+                }
             }
 
             return merges;

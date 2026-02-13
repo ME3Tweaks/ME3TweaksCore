@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ME3TweaksCore.Misc
 {
@@ -22,18 +23,12 @@ namespace ME3TweaksCore.Misc
         public List<string> GetAllLinks()
         {
             var urls = new List<string>();
-            if(LoadBalancing && new Random().Next(2) == 0)
+            if (MainURL != null) urls.Add(MainURL);
+            if (FallbackURL != null) urls.Add(FallbackURL);
+            if (LoadBalancing)
             {
-                // Load balance - swap url order
-                if (FallbackURL != null) urls.Add(FallbackURL);
-                if (MainURL != null) urls.Add(MainURL);
+                urls = urls.Shuffle().ToList();
             }
-            else
-            {
-                if (MainURL != null) urls.Add(MainURL);
-                if (FallbackURL != null) urls.Add(FallbackURL);
-            }
-
             return urls;
         }
     }

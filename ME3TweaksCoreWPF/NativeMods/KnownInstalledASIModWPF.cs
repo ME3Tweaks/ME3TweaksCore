@@ -8,6 +8,7 @@ using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Localization;
 using ME3TweaksCore.NativeMods;
 using ME3TweaksCore.NativeMods.Interfaces;
+using ME3TweaksCore.Targets;
 
 namespace ME3TweaksCoreWPF.NativeMods
 {
@@ -64,6 +65,11 @@ namespace ME3TweaksCoreWPF.NativeMods
         public static KnownInstalledASIModWPF GenerateKnownInstalledASIModWPF(string asiFile, string hash, MEGame game, ASIModVersion mappedVersion)
         {
             return new KnownInstalledASIModWPF(asiFile, hash, game, mappedVersion);
+        }
+
+        public bool VerifyDependencies(GameTarget target)
+        {
+            return ASIManager.VerifyDependenciesShared(AssociatedManifestItem, target);
         }
     }
 }

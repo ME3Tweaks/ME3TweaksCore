@@ -79,9 +79,6 @@ namespace ME3TweaksCore.Objects
             if (keyMap.Count == 0)
                 throw new Exception(LC.GetString(LC.string_interp_drb_malformedDR, openingChar, closingChar, inputString));
 
-            // Defaults
-            List<PlusMinusKey> dlcOptionKeys = null;
-
             // Read values
             foreach (var key in keyMap)
             {
@@ -309,7 +306,7 @@ namespace ME3TweaksCore.Objects
                 dlcText += $@"{info.modname}";
                 if (showDLCModName)
                 {
-                    dlcText += $@" {DLCFolderName.Key}";
+                    dlcText += $@" ({DLCFolderName.Key})";
                 }
             }
             else

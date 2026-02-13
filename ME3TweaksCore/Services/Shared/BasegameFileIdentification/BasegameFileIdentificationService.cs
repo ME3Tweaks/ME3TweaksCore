@@ -8,13 +8,15 @@ using LegendaryExplorerCore.Misc;
 using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.Helpers;
-using ME3TweaksCore.Misc;
 using ME3TweaksCore.Targets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace ME3TweaksCore.Services.Shared.BasegameFileIdentification
 {
+    /// <summary>
+    /// Service for identifying basegame file changes based on a shared database
+    /// </summary>
     public class BasegameFileIdentificationService
     {
         /// <summary>
@@ -33,6 +35,9 @@ namespace ME3TweaksCore.Services.Shared.BasegameFileIdentification
         /// </summary>
         private const string ServiceLoggingName = @"Basegame File Identification Service";
 
+        /// <summary>
+        /// Loads the shared Basegame File Identification Service database from disk
+        /// </summary>
         private static void LoadSharedBasegameIdentificationService()
         {
             if (Database != null) return;
@@ -40,7 +45,11 @@ namespace ME3TweaksCore.Services.Shared.BasegameFileIdentification
             LoadDatabase(Database);
         }
 
-
+        /// <summary>
+        /// Loads a Basegame File Identification Service database from disk
+        /// </summary>
+        /// <param name="database"></param>
+        /// <param name="serverData"></param>
         private static void LoadDatabase(Dictionary<string, CaseInsensitiveDictionary<List<BasegameFileRecord>>> database, JToken serverData = null)
         {
             var file = MCoreFilesystem.GetSharedBasegameIdentificationServiceFile();
@@ -306,6 +315,12 @@ namespace ME3TweaksCore.Services.Shared.BasegameFileIdentification
             return new CaseInsensitiveDictionary<List<BasegameFileRecord>>(0); // Return nothing.
         }
 
+        /// <summary>
+        /// Returns all entries for a given list of files for a game
+        /// </summary>
+        /// <param name="game"></param>
+        /// <param name="files"></param>
+        /// <returns></returns>
         public static CaseInsensitiveDictionary<List<BasegameFileRecord>> GetEntriesForFiles(MEGame game, List<string> files)
         {
             CaseInsensitiveDictionary<List<BasegameFileRecord>> records = new(files.Count);

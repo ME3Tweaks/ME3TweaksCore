@@ -19,6 +19,7 @@ using LegendaryExplorerCore.UnrealScript.Compiling.Errors;
 using LegendaryExplorerCore.Helpers;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.Localization;
+using ME3TweaksCore.ME3Tweaks.ModManager;
 
 namespace ME3TweaksCore.ME3Tweaks.M3Merge.PlotManager
 {
@@ -35,7 +36,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.PlotManager
         public const string PLOT_MANAGER_UPDATE_FILENAME = @"PlotManagerUpdate.pmu";
 
         /// <summary>
-        /// Returns if the specified target has any email merge files.
+        /// Returns if the specified target has any plot manager merge files.
         /// </summary>
         /// <param name="target"></param>
         public static bool NeedsMerged(GameTarget target)
@@ -43,9 +44,17 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.PlotManager
             if (!target.Game.IsGame1() && !target.Game.IsGame2()) return false;
             try
             {
-                var emailSupercedances = target.GetFileSupercedances(new[] { PLOT_MANAGER_UPDATE_EXTENSION });
-                return emailSupercedances.TryGetValue(PLOT_MANAGER_UPDATE_FILENAME, out var infoList) &&
+                var pmuSupercedances = target.GetFileSupercedances(new[] { PLOT_MANAGER_UPDATE_EXTENSION });
+                // Check V1
+                var needsMerged = pmuSupercedances.TryGetValue(PLOT_MANAGER_UPDATE_FILENAME, out var infoList) &&
                        infoList.Count > 0;
+                if (!needsMerged)
+                {
+                    // Check V2
+                    needsMerged = pmuSupercedances.Any(x => Path.GetExtension(x.Key) == PLOT_MANAGER_UPDATE_EXTENSION);
+                }
+
+                return needsMerged;
             }
             catch (Exception e)
             {
@@ -55,100 +64,59 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.PlotManager
             return false;
         }
 
+        /// <summary>
+        /// Runs plot manager merge. Throws exceptions on errors!
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="verboseLogging"></param>
+        /// <returns>True on success. Does not return false.</returns>
+        /// <exception cref="Exception">If invalid function names are found, file lib fails, or export compilation fails</exception>
         public static bool RunPlotManagerMerge(GameTarget target, bool verboseLogging = false)
         {
             MLog.Information($@"Updating PlotManager for game: {target.TargetPath}");
-            var allSupercedances = M3Directories.GetFileSupercedances(target, new[] { PLOT_MANAGER_UPDATE_EXTENSION });
             Dictionary<string, string> funcMap = new();
+            Dictionary<string, string> sourceMap = new();
             List<string> combinedNames = new List<string>();
 
-            // Todo: Change this to allow multiple PMU files.
-            if (allSupercedances.TryGetValue(@"PlotManagerUpdate.pmu", out var pmuSupercedances))
+            var dlcs = target.GetInstalledDLCByMountPriority();
+            dlcs.Reverse();
+
+            foreach (var dlc in dlcs)
             {
-                pmuSupercedances.Reverse(); // list goes from highest to lowest. We want to build in lowest to highest
-                StringBuilder sb = null;
-                string currentFuncNum = null;
-                var metaMaps = target.GetMetaMappedInstalledDLC(false);
-                foreach (var pmuDLCName in pmuSupercedances)
+                var dlcCookedPath = Path.Combine(target.GetDLCPath(), dlc, target.Game.CookedDirName());
+                if (!Directory.Exists(dlcCookedPath))
+                    continue;
+
+                var dlcFiles = Directory.GetFiles(dlcCookedPath, @"*", SearchOption.TopDirectoryOnly);
+                var metacmm = target.GetMetaCMMForDLC(dlc);
+                var manifestFiles = new List<string>();
+
+                // Find manifest files in the DLC files list
+                foreach (var f in dlcFiles)
                 {
-                    var uiName = metaMaps[pmuDLCName]?.ModName ??
-                                 TPMIService.GetThirdPartyModInfo(pmuDLCName, target.Game)?.modname ?? pmuDLCName;
-                    combinedNames.Add(uiName);
-                    var text = File.ReadAllLines(Path.Combine(M3Directories.GetDLCPath(target), pmuDLCName,
-                        target.Game.CookedDirName(), PLOT_MANAGER_UPDATE_FILENAME));
-                    foreach (var line in text)
+                    var fname = Path.GetFileName(f);
+                    if (fname == PLOT_MANAGER_UPDATE_FILENAME)
                     {
-                        if (line.StartsWith(@"public function bool F"))
-                        {
-                            if (sb != null)
-                            {
-                                funcMap[currentFuncNum] = sb.ToString();
-                                MLog.Information($@"PlotSync: Adding function {currentFuncNum} from {pmuDLCName}");
-                                currentFuncNum = null;
-                            }
-
-                            sb = new StringBuilder();
-                            sb.AppendLine(line);
-
-                            // Method name
-                            currentFuncNum = line.Substring(22);
-                            currentFuncNum = currentFuncNum.Substring(0, currentFuncNum.IndexOf('('));
-                            if (int.TryParse(currentFuncNum, out var num))
-                            {
-                                if (num <= 0)
-                                {
-                                    MLog.Error(
-                                        $@"Skipping plot manager update: Conditional {num} is not a valid number for use. Values must be greater than 0 and less than 2 billion.");
-                                    TelemetryInterposer.TrackEvent(@"Bad plot manager function",
-                                        new Dictionary<string, string>()
-                                        {
-                                            { @"FunctionName", $@"F{currentFuncNum}" },
-                                            { @"DLCName", pmuDLCName }
-                                        });
-                                    sb = null;
-                                    return false;
-                                }
-
-                                if (num.ToString().Length != currentFuncNum.Length)
-                                {
-                                    MLog.Error(
-                                        $@"Skipping plot manager update: Conditional {currentFuncNum} is not a valid number for use. Values must not contain leading zeros");
-                                    TelemetryInterposer.TrackEvent(@"Bad plot manager function",
-                                        new Dictionary<string, string>()
-                                        {
-                                            { @"FunctionName", $@"F{currentFuncNum}" },
-                                            { @"DLCName", pmuDLCName }
-                                        });
-                                    sb = null;
-                                    return false;
-                                }
-                            }
-                            else
-                            {
-                                MLog.Error(
-                                    $@"Skipping plot manager update: Conditional {currentFuncNum} is not a valid number for use. Values must be greater than 0 and less than 2 billion.");
-                                TelemetryInterposer.TrackEvent(@"Bad plot manager function",
-                                    new Dictionary<string, string>()
-                                    {
-                                        { @"FunctionName", $@"F{currentFuncNum}" },
-                                        { @"DLCName", pmuDLCName }
-                                    });
-                                sb = null;
-                                return false;
-                            }
-                        }
-                        else
-                        {
-                            sb?.AppendLine(line);
-                        }
+                        // This is a manifest file (v1)
+                        manifestFiles.Add(f);
+                        continue;
                     }
 
-                    // Add final, if any was found
-                    if (sb != null)
+                    if (metacmm != null && metacmm.ModDescFeatureLevel >= ModDescConsts.MODDESC_VERSION_9_2)
                     {
-                        funcMap[currentFuncNum] = sb.ToString();
-                        MLog.Information($@"PlotSync: Adding function {currentFuncNum} from {pmuDLCName}");
+                        // 9.2 and above: Support extra pmu files.
+                        if (Path.GetExtension(fname) == PLOT_MANAGER_UPDATE_EXTENSION)
+                        {
+                            manifestFiles.Add(f);
+                            continue;
+                        }
                     }
+                }
+
+                foreach (var manifestFile in manifestFiles)
+                {
+                    MLog.Information($@"PlotSync: Processing {manifestFile}");
+                    ProcessManifest(target, dlc, manifestFile, funcMap, sourceMap, combinedNames);
                 }
             }
 
@@ -231,9 +199,10 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.PlotManager
                             MLog.Error(l.Message);
                         }
 
-                        throw new Exception(LC.GetString(LC.string_interp_errorCompilingFunctionReason, exp,
+
+                        var source = $@"{v.Key} from {sourceMap[v.Key]}";
+                        throw new Exception(LC.GetString(LC.string_interp_errorCompilingFunctionReason, source,
                             string.Join('\n', log.AllErrors.Select(x => x.Message))));
-                        return false;
                     }
                 }
 
@@ -256,6 +225,109 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.PlotManager
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Processes a single PMU manifest file and adds its functions to the funcMap and sourceMap.
+        /// </summary>
+        /// <param name="target">The game target</param>
+        /// <param name="dlc">The DLC name</param>
+        /// <param name="manifestFile">The full path to the manifest file</param>
+        /// <param name="funcMap">Dictionary mapping function numbers to their source code</param>
+        /// <param name="sourceMap">Dictionary mapping function numbers to their source DLC</param>
+        /// <param name="combinedNames">List of UI names for all processed DLCs</param>
+        /// <exception cref="Exception">If invalid function names are found</exception>
+        private static void ProcessManifest(GameTarget target, string dlc, string manifestFile,
+            Dictionary<string, string> funcMap, Dictionary<string, string> sourceMap, List<string> combinedNames)
+        {
+            var metaMaps = target.GetMetaMappedInstalledDLC(false);
+            var uiName = metaMaps[dlc]?.ModName ??
+                         TPMIService.GetThirdPartyModInfo(dlc, target.Game)?.modname ?? dlc;
+
+            if (!combinedNames.Contains(uiName))
+            {
+                combinedNames.Add(uiName);
+            }
+
+            var text = File.ReadAllLines(manifestFile);
+            StringBuilder sb = null;
+            string currentFuncNum = null;
+
+            foreach (var line in text)
+            {
+                if (line.StartsWith(@"public function bool F"))
+                {
+                    if (sb != null)
+                    {
+                        funcMap[currentFuncNum] = sb.ToString();
+                        sourceMap[currentFuncNum] = dlc;
+                        MLog.Information($@"PlotSync: Adding function {currentFuncNum} from {dlc}");
+                        currentFuncNum = null;
+                    }
+
+                    sb = new StringBuilder();
+                    sb.AppendLine(line);
+
+                    // Method name
+                    currentFuncNum = line.Substring(22);
+                    currentFuncNum = currentFuncNum.Substring(0, currentFuncNum.IndexOf('('));
+                    if (int.TryParse(currentFuncNum, out var num))
+                    {
+                        if (num <= 0)
+                        {
+                            MLog.Error($@"Skipping plot manager update: Conditional {num} is not a valid number for use. Values must be greater than 0 and less than 2 billion.");
+                            TelemetryInterposer.TrackEvent(@"Bad plot manager function",
+                                new Dictionary<string, string>()
+                                {
+                                    { @"FunctionName", $@"F{currentFuncNum}" },
+                                    { @"DLCName", dlc }
+                                });
+                            sb = null;
+                            throw new Exception(LC.GetString(LC.string_dialog_invalidConditionalNumberSourceMod, num, uiName));
+                        }
+
+                        if (num.ToString().Length != currentFuncNum.Length)
+                        {
+                            MLog.Error($@"Skipping plot manager update: Conditional {currentFuncNum} is not a valid number for use. Values must not contain leading zeros");
+                            TelemetryInterposer.TrackEvent(@"Bad plot manager function",
+                                new Dictionary<string, string>()
+                                {
+                                    { @"FunctionName", $@"F{currentFuncNum}" },
+                                    { @"DLCName", dlc }
+                                });
+
+                            sb = null;
+                            throw new Exception(LC.GetString(LC.string_dialog_invalidConditionalNumberSourceMod, num, uiName));
+                        }
+                    }
+                    else
+                    {
+                        // Not an integer somehow
+                        MLog.Error(
+                            $@"Skipping plot manager update: Conditional {currentFuncNum} is not a valid number for use. Values must be greater than 0 and less than 2 billion.");
+                        TelemetryInterposer.TrackEvent(@"Bad plot manager function",
+                            new Dictionary<string, string>()
+                            {
+                                { @"FunctionName", $@"F{currentFuncNum}" },
+                                { @"DLCName", dlc }
+                            });
+                        sb = null;
+                        throw new Exception(LC.GetString(LC.string_dialog_invalidConditionalNumberSourceMod, num, uiName));
+                    }
+                }
+                else
+                {
+                    sb?.AppendLine(line);
+                }
+            }
+
+            // Add final, if any was found
+            if (sb != null)
+            {
+                funcMap[currentFuncNum] = sb.ToString();
+                sourceMap[currentFuncNum] = dlc;
+                MLog.Information($@"PlotSync: Adding function {currentFuncNum} from {dlc}");
+            }
         }
     }
 }

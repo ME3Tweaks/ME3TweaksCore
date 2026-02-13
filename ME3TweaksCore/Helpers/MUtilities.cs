@@ -6,6 +6,7 @@ using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.Misc;
 using ME3TweaksCore.Objects;
+using Microsoft.Win32;
 using NickStrupat;
 using System;
 using System.Collections.Generic;
@@ -15,6 +16,7 @@ using System.IO;
 using System.Linq;
 using System.Management;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Threading;
@@ -31,7 +33,7 @@ namespace ME3TweaksCore.Helpers
         //Step 1: https://stackoverflow.com/questions/2435894/net-how-do-i-check-for-illegal-characters-in-a-path
         private static string RemoveSpecialCharactersUsingCustomMethod(this string expression, bool removeSpecialLettersHavingASign = true, bool allowPeriod = false)
         {
-            var newCharacterWithSpace = " ";
+            var newCharacterWithSpace = @" ";
             var newCharacter = "";
 
             // Return carriage handling
@@ -260,8 +262,54 @@ namespace ME3TweaksCore.Helpers
             return algo.Hash;
         }
 
+        /// <summary>
+        /// Comutes hash in 4KB chunks and reports progress
+        /// </summary>
+        /// <param name="inputStream"></param>
+        /// <param name="algo"></param>
+        /// <param name="progress"></param>
+        /// <returns></returns>
+        private static byte[] computeHashChunked(Stream inputStream, HashAlgorithm algo, Action<ProgressInfo> progressDelegate)
+        {
+            // Get the total size of the stream for calculating the percentage.
+            long totalBytes = inputStream.Length;
+            long processedBytes = 0;
+
+            byte[] buffer = new byte[4096]; // Read in chunks of 4KB.
+            int bytesRead;
+
+            ProgressInfo pi = new ProgressInfo();
+            pi.Indeterminate = false;
+            while ((bytesRead = inputStream.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                // Feed the chunk into the hash algorithm.
+                algo.TransformBlock(buffer, 0, bytesRead, null, 0);
+
+                // Update the number of processed bytes and report progress.
+                processedBytes += bytesRead;
+                if (totalBytes > 0)
+                {
+                    pi.Value = (double)processedBytes / totalBytes * 100;
+                    progressDelegate(pi);
+                }
+            }
+
+            // Finalize the hash computation.
+            algo.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+            pi.Value = 100;
+            progressDelegate(pi);
+
+            return algo.Hash;
+        }
+
         internal static List<string> GetListOfInstalledAV()
         {
+            if (WineWorkarounds.WineDetected)
+            {
+                // No AV on Wine
+                return new List<string>();
+            }
+
             List<string> av = new List<string>();
             // for Windows Vista and above '\root\SecurityCenter2'
             using (var searcher = new ManagementObjectSearcher(@"\\" +
@@ -279,14 +327,7 @@ namespace ME3TweaksCore.Helpers
             return av;
         }
 
-        public static bool IsWindows10OrNewer()
-        {
-            var os = Environment.OSVersion;
-            return os.Platform == PlatformID.Win32NT &&
-                   (os.Version.Major >= 10);
-        }
-
-        internal static Stream GetResourceStream(string assemblyResource, Assembly assembly = null)
+        public static Stream GetResourceStream(string assemblyResource, Assembly assembly = null)
         {
             assembly ??= Assembly.GetExecutingAssembly();
 #if DEBUG
@@ -300,14 +341,15 @@ namespace ME3TweaksCore.Helpers
             return assembly.GetManifestResourceStream(assemblyResource);
         }
 
-        internal static MemoryStream ExtractInternalFileToStream(string internalResourceName)
+        public static MemoryStream ExtractInternalFileToStream(string internalResourceName, Assembly assembly = null)
         {
             MLog.Information($@"Extracting embedded file: {internalResourceName} to memory");
+            assembly ??= Assembly.GetExecutingAssembly();
 #if DEBUG
             // This is for inspecting the list of files in debugger
-            var resources = Assembly.GetExecutingAssembly().GetManifestResourceNames();
+            var resources = assembly.GetManifestResourceNames();
 #endif
-            using (Stream stream = GetResourceStream(internalResourceName))
+            using (Stream stream = GetResourceStream(internalResourceName, assembly))
             {
 #if AZURE
                 if (stream == null)
@@ -356,164 +398,6 @@ namespace ME3TweaksCore.Helpers
                 //MLog.Warning("File already exists. Not overwriting file.");
             }
 
-        }
-
-        private static (bool isRunning, DateTime lastChecked) le1RunningInfo = (false, DateTime.MinValue.AddSeconds(5));
-        private static (bool isRunning, DateTime lastChecked) le2RunningInfo = (false, DateTime.MinValue.AddSeconds(5));
-        private static (bool isRunning, DateTime lastChecked) le3RunningInfo = (false, DateTime.MinValue.AddSeconds(5));
-        private static (bool isRunning, DateTime lastChecked) lmpRunningInfo = (false, DateTime.MinValue.AddSeconds(5));
-        private static (bool isRunning, DateTime lastChecked) me1RunningInfo = (false, DateTime.MinValue.AddSeconds(5));
-        private static (bool isRunning, DateTime lastChecked) me2RunningInfo = (false, DateTime.MinValue.AddSeconds(5));
-        private static (bool isRunning, DateTime lastChecked) me3RunningInfo = (false, DateTime.MinValue.AddSeconds(5));
-        private static (bool isRunning, DateTime lastChecked) leLauncherRunningInfo = (false, DateTime.MinValue.AddSeconds(5));
-
-
-        private static int TIME_BETWEEN_PROCESS_CHECKS = 5;
-
-        private static object gameRunningSyncObjME1 = new object();
-        private static object gameRunningSyncObjME2 = new object();
-        private static object gameRunningSyncObjME3 = new object();
-        private static object gameRunningSyncObjLE1 = new object();
-        private static object gameRunningSyncObjLE2 = new object();
-        private static object gameRunningSyncObjLE3 = new object();
-        private static object gameRunningSyncObjLMP = new object();
-        private static object gameRunningSyncObjLEL = new object();
-
-        /// <summary>
-        /// Returns the object used to enforce concurrency when checking if a game is running
-        /// </summary>
-        /// <param name="game"></param>
-        /// <returns></returns>
-        private static object GetSyncObjForGameRunning(MEGame game) => game switch
-        {
-            MEGame.ME1 => gameRunningSyncObjME1,
-            MEGame.ME2 => gameRunningSyncObjME2,
-            MEGame.ME3 => gameRunningSyncObjME3,
-            MEGame.LE1 => gameRunningSyncObjLE1,
-            MEGame.LE2 => gameRunningSyncObjLE2,
-            MEGame.LE3 => gameRunningSyncObjLE3,
-            MEGame.LMP => gameRunningSyncObjLMP,
-            MEGame.LELauncher => gameRunningSyncObjLEL,
-        };
-
-        /// <summary>
-        /// Determines if a specific game is running. This method only updates every 3 seconds due to the huge overhead it has
-        /// </summary>
-        /// <returns>True if running, false otherwise</returns>
-        public static bool IsGameRunning(MEGame gameID, bool forceCheckNow = false)
-        {
-            (bool isRunning, DateTime lastChecked) runningInfo = (false, DateTime.MinValue);
-            lock (GetSyncObjForGameRunning(gameID))
-            {
-                switch (gameID)
-                {
-                    case MEGame.ME1:
-                        runningInfo = me1RunningInfo;
-                        break;
-                    case MEGame.LE1:
-                        runningInfo = le1RunningInfo;
-                        break;
-                    case MEGame.LE2:
-                        runningInfo = le2RunningInfo;
-                        break;
-                    case MEGame.ME2:
-                        runningInfo = me2RunningInfo;
-                        break;
-                    case MEGame.LE3:
-                        runningInfo = le3RunningInfo;
-                        break;
-                    case MEGame.LMP:
-                        runningInfo = lmpRunningInfo;
-                        break;
-                    case MEGame.ME3:
-                        runningInfo = me3RunningInfo;
-                        break;
-                    case MEGame.LELauncher:
-                        runningInfo = leLauncherRunningInfo;
-                        break;
-                }
-
-                var time = runningInfo.lastChecked.AddSeconds(TIME_BETWEEN_PROCESS_CHECKS);
-                //Debug.WriteLine(time + " vs " + DateTime.Now);
-                if (!forceCheckNow && time > DateTime.Now)
-                {
-                    //Debug.WriteLine("CACHED");
-                    return runningInfo.isRunning; //cached
-                }
-            }
-
-            Debug.WriteLine($@"{DateTime.Now} IsGameRunning({gameID}) - stale info, refreshing");
-
-            //Debug.WriteLine("IsRunning: " + gameID);
-
-            var processNames = MEDirectories.ExecutableNames(gameID).Select(Path.GetFileNameWithoutExtension);
-            try
-            {
-                // This is in a try catch, as things in MainModule will throw an error if accessed
-                // after the process ends, which it might during the periodic updates of this
-                runningInfo.isRunning = Process.GetProcesses().Any(x => processNames.Contains(x.ProcessName) && !IsProcessSuspended(x) &&
-                                                                        x.MainModule?.FileVersionInfo.FileMajorPart == (gameID.IsOTGame() ? 1 : 2));
-            }
-            catch
-            {
-                // don't really care
-            }
-
-            runningInfo.lastChecked = DateTime.Now;
-            switch (gameID)
-            {
-                case MEGame.ME1:
-                    me1RunningInfo = runningInfo;
-                    break;
-                case MEGame.LE1:
-                    le1RunningInfo = runningInfo;
-                    break;
-                case MEGame.ME2:
-                    me2RunningInfo = runningInfo;
-                    break;
-                case MEGame.LE2:
-                    le2RunningInfo = runningInfo;
-                    break;
-                case MEGame.ME3:
-                    me3RunningInfo = runningInfo;
-                    break;
-                case MEGame.LE3:
-                    le3RunningInfo = runningInfo;
-                    break;
-                case MEGame.LMP:
-                    lmpRunningInfo = runningInfo;
-                    break;
-                case MEGame.LELauncher:
-                    leLauncherRunningInfo = runningInfo;
-                    break;
-            }
-
-            return runningInfo.isRunning;
-        }
-
-        private static bool IsProcessSuspended(Process proc)
-        {
-#if DEBUG
-            if (proc.Threads.Count == 0) return true; // App is in some weird broken state. I see this in dev machine all the time, requires a restart to fix.
-            var isWaiting = proc.Threads[0].ThreadState == ThreadState.Wait;
-            if (isWaiting)
-            {
-                return proc.Threads[0].WaitReason == ThreadWaitReason.Suspended;
-            }
-
-            return isWaiting;
-#endif
-            return proc.Threads[0].ThreadState == ThreadState.Wait;
-        }
-
-        /// <summary>
-        /// Checks if a process is running. This should not be used for game detection, as it also uses version info.
-        /// </summary>
-        /// <param name="processName"></param>
-        /// <returns></returns>
-        public static bool IsProcessRunning(string processName)
-        {
-            return Process.GetProcesses().Any(x => x.ProcessName.Equals(processName, StringComparison.InvariantCultureIgnoreCase));
         }
 
 
@@ -944,6 +828,54 @@ namespace ME3TweaksCore.Helpers
             {
                 var key = Path.GetFileName(file);
                 loadedFiles[key] = file;
+            }
+        }
+
+        /// <summary>
+        /// Windows API function to retrieve disk space information.
+        /// </summary>
+        /// <param name="lpDirectoryName">A directory on the disk.</param>
+        /// <param name="lpFreeBytesAvailable">The total number of free bytes available to the user.</param>
+        /// <param name="lpTotalNumberOfBytes">The total number of bytes on the disk.</param>
+        /// <param name="lpTotalNumberOfFreeBytes">The total number of free bytes on the disk.</param>
+        /// <returns>True if the function succeeds, false otherwise.</returns>
+        [DllImport(@"kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetDiskFreeSpaceEx(string lpDirectoryName,
+            out ulong lpFreeBytesAvailable,
+            out ulong lpTotalNumberOfBytes,
+            out ulong lpTotalNumberOfFreeBytes);
+
+        /// <summary>
+        /// Gets the free space available on the drive containing the specified folder.
+        /// </summary>
+        /// <param name="folderName">The folder path on the drive to check.</param>
+        /// <param name="freespace">Output parameter that receives the number of free bytes.</param>
+        /// <returns>True if the operation succeeded, false otherwise.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when folderName is null or empty.</exception>
+        public static bool DriveFreeBytes(string folderName, out ulong freespace)
+        {
+            freespace = 0;
+            if (string.IsNullOrEmpty(folderName))
+            {
+                throw new ArgumentNullException(nameof(folderName));
+            }
+
+            if (!folderName.EndsWith("\\"))
+            {
+                folderName += '\\';
+            }
+
+            ulong free = 0, dummy1 = 0, dummy2 = 0;
+
+            if (GetDiskFreeSpaceEx(folderName, out free, out dummy1, out dummy2))
+            {
+                freespace = free;
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
     }

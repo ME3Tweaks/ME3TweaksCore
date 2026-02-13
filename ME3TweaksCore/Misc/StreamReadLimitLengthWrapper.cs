@@ -13,8 +13,8 @@ namespace ME3TweaksCore.Misc
 
         public StreamReadLimitLengthWrapper(Stream innerStream, long size)
         {
-            if (innerStream == null) throw new ArgumentNullException("innerStream");
-            if (size < 0) throw new ArgumentOutOfRangeException("size");
+            if (innerStream == null) throw new ArgumentNullException(@"innerStream");
+            if (size < 0) throw new ArgumentOutOfRangeException(@"size");
 
             m_innerStream = innerStream;
             m_endPosition = m_innerStream.Position + size;

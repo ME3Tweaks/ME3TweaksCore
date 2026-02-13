@@ -154,10 +154,10 @@ namespace ME3TweaksCore.Targets
             }
         }
 
-        public bool CanToggleDLC() => (game is MEGame.ME3 || game.IsLEGame() || DLCFolderName.StartsWith('x')) && !MUtilities.IsGameRunning(game);
+        public bool CanToggleDLC() => (game is MEGame.ME3 || game.IsLEGame() || DLCFolderName.StartsWith('x')) && !MRunningGameInfo.IsGameRunning(game);
 
         public bool EnableDisableVisible => game is MEGame.ME3 || game.IsLEGame() || DLCFolderName.StartsWith('x');
-        protected bool CanDeleteDLCMod() => !MUtilities.IsGameRunning(game);
+        protected bool CanDeleteDLCMod() => !MRunningGameInfo.IsGameRunning(game);
 
         protected virtual void DeleteDLCMod()
         {

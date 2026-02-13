@@ -1,17 +1,23 @@
 ﻿using LegendaryExplorerCore.Compression;
+using LegendaryExplorerCore.Gammtek.Extensions.Collections.Generic;
 using LegendaryExplorerCore.Gammtek.IO;
 using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Misc;
 using LegendaryExplorerCore.Packages;
+using LegendaryExplorerCore.Packages.CloningImportingAndRelinking;
 using LegendaryExplorerCore.Unreal;
 using LegendaryExplorerCore.Unreal.BinaryConverters;
 using LegendaryExplorerCore.Unreal.Classes;
+using LegendaryExplorerCore.Unreal.ObjectInfo;
 using ME3TweaksCore.Diagnostics;
+using ME3TweaksCore.Localization;
 using ME3TweaksCore.Objects;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Hashing;
 using System.Linq;
 using System.Text;
 
@@ -87,7 +93,7 @@ namespace ME3TweaksCore.TextureOverride
     /// <summary>
     /// Class for serializing FNV1 hashes. Very basic.
     /// </summary>
-    class FNV1
+    public class FNV1
     {
         private const uint OFFSET = 0x811c9dc5;
         private const uint PRIME = 0x01000193;
@@ -107,6 +113,18 @@ namespace ME3TweaksCore.TextureOverride
             }
 
             return value;
+        }
+
+        /// <summary>
+        /// Computes a hash value for the specified string using Unicode encoding.
+        /// </summary>
+        /// <remarks>The input string is encoded using UTF-16 (Unicode) before computing the hash. The
+        /// result is deterministic for the same input string.</remarks>
+        /// <param name="str">The string to compute the hash value for. Cannot be null.</param>
+        /// <returns>A 32-bit unsigned integer representing the computed hash value of the input string.</returns>
+        public static uint Compute(string str)
+        {
+            return Compute(Encoding.Unicode.GetBytes(str));
         }
     }
 
@@ -206,14 +224,20 @@ namespace ME3TweaksCore.TextureOverride
         public const string EXTENSION_TEXTURE_OVERRIDE_BINARY = @".btp";
 
         /// <summary>
-        /// The current version when serializing
+        /// The current supported version when serializing
         /// </summary>
         public const ushort CURRENT_VERSION = 2;
 
         /// <summary>
-        /// Flags to indicate that mips should be loaded on deserialization
+        /// Flags to indicate that mips should be loaded on deserialization and populated into mips
         /// </summary>
         public bool LoadMips { get; internal set; }
+
+        /// <summary>
+        /// If while loading mips, we should discard the result, as we are only testing the mips can load,
+        /// not that we care about the data. Requires LoadMips be true
+        /// </summary>
+        internal bool Verify { get; set; }
 
         /// <summary>
         /// If we are performing final serialization
@@ -222,8 +246,8 @@ namespace ME3TweaksCore.TextureOverride
 
 
         // LAYOUT ==================
-        internal BTPHeader Header;
-        internal List<BTPTextureEntry> TextureOverrides;
+        public BTPHeader Header;
+        public List<BTPTextureEntry> TextureOverrides;
         // Mips are referenced by TextureOverrides
         internal BTPTFCTable TFCTable;
 
@@ -232,10 +256,11 @@ namespace ME3TweaksCore.TextureOverride
         /// </summary>
         /// <param name="btpStream"></param>
         /// <param name="loadMips">If mip data should be also loaded. This can use a lot of memory.</param>
-        public BinaryTexturePackage(Stream btpStream, bool loadMips = false, ProgressInfo pi = null)
+        public BinaryTexturePackage(Stream btpStream, bool loadMips = false, bool verify = false, ProgressInfo pi = null)
         {
             if (btpStream != null)
             {
+                Verify = verify;
                 LoadMips = loadMips;
                 Deserialize(btpStream, pi);
             }
@@ -283,6 +308,11 @@ namespace ME3TweaksCore.TextureOverride
             Header = new BTPHeader(this, btpStream);
             var textureTableStart = btpStream.Position;
 
+            if (Header.Version > CURRENT_VERSION)
+            {
+                throw new Exception($@"BTP version {Header.Version} is not supported by this build, the highest supported version is {CURRENT_VERSION}");
+            }
+
             // First we must deserialize tfc table/map
             btpStream.Seek((long)Header.TFCTableOffset, SeekOrigin.Begin);
             TFCTable = new BTPTFCTable(this, btpStream);
@@ -290,7 +320,7 @@ namespace ME3TweaksCore.TextureOverride
             // Deserialize texture table
 
             uint textureCount = Header.TextureCount;
-            
+
             btpStream.Seek(textureTableStart, SeekOrigin.Begin);
             TextureOverrides = new List<BTPTextureEntry>((int)Header.TextureCount);
             for (var i = 0; i < Header.TextureCount; i++)
@@ -302,18 +332,217 @@ namespace ME3TweaksCore.TextureOverride
                 TextureOverrides.Add(btpOverride);
             }
         }
+
+        /// <summary>
+        /// Given a matching metadata file, reconstitute source packages from this BTP.
+        /// </summary>
+        /// <param name="inMetadataFile">Input metadata file</param>
+        /// <param name="outFolder">Directory to output files to</param>
+        public void ReconstituteSource(Stream btpStream, string inMetadataFile, string outFolder, ProgressInfo pi = null)
+        {
+
+            MLog.Information($@"BTP RECONSTITUTION: Rebuild package files from BTP with metadata file {inMetadataFile}");
+
+            var crc = Crc32.HashToUInt32(File.ReadAllBytes(inMetadataFile));
+            if (crc != Header.MetadataCRC)
+            {
+                MLog.Error($@"BTP RECONSTITUTION: The given metadata file was not generated for this BTP: Expected {Header.MetadataCRC:X8}, got {crc:X8}");
+                throw new Exception(LC.GetString(LC.string_interp_mismatchedBTMBTP, inMetadataFile));
+            }
+
+            var reconstName = @"TexturePackage";
+
+            // CRC matches
+            using var metadataPackage = MEPackageHandler.UnsafeLazyLoad(inMetadataFile);
+            if (metadataPackage.NameCount > 0 && metadataPackage.Names[0].StartsWith(@"DLC_MOD_"))
+            {
+                // We assigned DLC name as the first item in the metadata package.
+                reconstName = metadataPackage.Names[0];
+                MLog.Information($@"BTP RECONSTITUTION: Metadata file indicates DLC name was {reconstName}");
+            }
+
+            // M3TO that we are also reconstituting
+            var m3to = new TextureOverrideManifest()
+            {
+                Textures = [],
+                Game = metadataPackage.Game
+            };
+
+            var largeDataSerializer = new LargePackageChunkedSerializer()
+            {
+                game = metadataPackage.Game,
+                basePackageName = $@"TO_{reconstName}",
+                baseSavePath = outFolder,
+                OnSave = (package) =>
+                {
+                    // On rollover, we need to add all textures in this package to the m3to
+                    foreach (var tex in package.Exports.Where(x => x.IsA(@"Texture2D")))
+                    {
+                        m3to.Textures.Add(new TextureOverrideTextureEntry()
+                        {
+                            CompilingSourcePackage = Path.GetFileName(package.FilePath),
+                            TextureIFP = tex.InstancedFullPath
+                        });
+                    }
+                }
+            };
+
+            var textures = metadataPackage.Exports.Where(x => x.IsA(@"Texture2D")).ToList();
+            var cache = new PackageCache();
+            MLog.Information($@"BTP RECONSTITUTION: Beginning rebuild of {textures.Count} textures");
+            var done = 0;
+
+            // Do all texture cubes first, so they appear in the first package.
+            var textureCubeLoadList = metadataPackage.Exports.Where(x => x.IsA(@"Texture2D") && x.Parent.IsA(@"TextureCube")).ToList();
+            if (textureCubeLoadList.Count > 0)
+            {
+                MLog.Information($@"BTP RECONSTITUTION: Rebuilding texture cubes");
+                MLog.Information($@"BTP RECONSTITUTION: Temporarily raising serializer limit to ensure texture cubes serialize");
+                var originalSize = largeDataSerializer.MaxSize;
+                largeDataSerializer.MaxSize = (int)(FileSize.GibiByte * 1.5);
+
+                // Load objects.
+                foreach (var subCubeTexture in textureCubeLoadList)
+                {
+                    metadataPackage.LoadExport(subCubeTexture, true);
+
+                    // Texture cube textures must be all reconstituted before the first port
+                    // as it will try to pull in the parent texture cube which will pull in the
+                    // face siblings
+                    ReconstituteTexture(btpStream, subCubeTexture);
+                }
+
+                // Now port the textures that are part of cubes.
+                foreach (var subCubeTexture in textureCubeLoadList)
+                {
+                    done++;
+                    pi.Value = done * 100.0 / textures.Count;
+                    pi.OnUpdate(pi);
+                    largeDataSerializer.ExportInto(subCubeTexture, cache);
+                }
+
+                MLog.Information($@"BTP RECONSTITUTION: Resetting serializer limit");
+                largeDataSerializer.MaxSize = originalSize;
+                MLog.Information($@"BTP RECONSTITUTION: Rebuilding texture cubes complete");
+
+                // Unload objects.
+                foreach (var subCubeTexture in textureCubeLoadList)
+                {
+                    metadataPackage.UnloadExport(subCubeTexture, true);
+                }
+            }
+
+            // Now port normal textures
+            // TO packages will never have textures at the root! So we purposely don't check for that here.
+            foreach (var exp in textures.Where(x => !x.Parent.IsA(@"TextureCube")))
+            {
+                done++;
+                pi.Value = done * 100.0 / textures.Count;
+                pi.OnUpdate(pi);
+
+                metadataPackage.LoadExport(exp, true); // Load parents too.
+                ReconstituteTexture(btpStream, exp);
+                largeDataSerializer.ExportInto(exp, cache);
+                metadataPackage.UnloadExport(exp); // Parents should just be packages so just leave them loaded.
+            }
+
+            largeDataSerializer.Finish();
+
+            // Re-save the m3to
+            var m3toPath = Path.Combine(outFolder, $@"{TextureOverrideManifest.PREFIX_TEXTURE_OVERRIDE_MANIFEST}{reconstName}{TextureOverrideManifest.EXTENSION_TEXTURE_OVERRIDE_MANIFEST}");
+            MLog.Information($@"BTP RECONSTITUTION: Writing m3to file to {m3toPath}");
+            File.WriteAllText(m3toPath, JsonConvert.SerializeObject(m3to, Formatting.Indented));
+
+
+            MLog.Information($@"BTP RECONSTITUTION: Rebuild complete.");
+        }
+
+        /// <summary>
+        /// Generates the texture binary from this BTP for the given export
+        /// </summary>
+        /// <param name="btpStream">Data stream we can access mip data from</param>
+        /// <param name="exp">Export to reconstitute</param>
+        private void ReconstituteTexture(Stream btpStream, ExportEntry exp)
+        {
+            // Find the matching entry
+            var matchingEntry = TextureOverrides.FirstOrDefault(x => x.OverridePath.CaseInsensitiveEquals(exp.InstancedFullPath)); // Should be IFP matching in the TO
+            if (matchingEntry == null)
+            {
+#if DEBUG
+                MLog.Warning($@"Not reconstituting sibling texture {exp.InstancedFullPath}: Not overridden by BTP");
+#endif
+                return;
+            }
+
+            // Create T2D
+            UTexture2D texture2D = exp.IsA(@"LightMapTexture2D") ? LightMapTexture2D.Create() : UTexture2D.Create();
+            // Now fill out the mips
+            int count = matchingEntry.PopulatedMipCount;
+            foreach (var btpMip in matchingEntry.Mips)
+            {
+                count--;
+                if (count < 0)
+                {
+                    // No more mips
+                    break;
+                }
+
+                var mip = new UTexture2D.Texture2DMipMap();
+                mip.UncompressedSize = btpMip.UncompressedSize;
+                mip.CompressedSize = btpMip.CompressedSize;
+                mip.SizeX = btpMip.Width;
+                mip.SizeY = btpMip.Height;
+                mip.DataOffset = (int)btpMip.CompressedOffset;
+                if (btpMip.Flags.HasFlag(BTPMipFlags.External))
+                {
+                    // It is stored externally.
+                    mip.StorageType = StorageTypes.extOodle;
+                    mip.Mip = [];
+                }
+                else
+                {
+                    // It is stored locally in the package
+                    mip.StorageType = StorageTypes.pccUnc;
+                    // Load mip data from the BTP
+                    btpStream.Seek(btpMip.CompressedOffset, SeekOrigin.Begin);
+                    mip.Mip = btpStream.ReadToBuffer(btpMip.CompressedSize);
+                    if (btpMip.Flags.HasFlag(BTPMipFlags.OodleCompressed))
+                    {
+                        // The mip data is compressed and needs decompressed for package storage
+                        var mipBuffer = new byte[btpMip.UncompressedSize];
+                        OodleHelper.Decompress(mip.Mip, mipBuffer);
+                        mip.Mip = mipBuffer;
+                        mip.CompressedSize = mip.UncompressedSize;
+                    }
+                }
+
+                texture2D.Mips.Add(mip);
+            }
+
+            if (texture2D is LightMapTexture2D lm2d)
+            {
+                // We stored the lightmap flag in the metadata binary
+                lm2d.LightMapFlags = (ELightMapFlags)BitConverter.ToInt32(exp.GetBinaryData(), 0);
+            }
+
+            exp.WriteBinary(texture2D);
+
+#if DEBUG
+            var test2d = ObjectBinary.From(exp);
+#endif
+        }
     }
 
 
     /// <summary>
     /// Header for BTP file
     /// </summary>
-    class BTPHeader
+    public class BTPHeader
     {
         /// <summary>
         /// Magic for BTP
         /// </summary>
-        private static string MANIFEST_HEADER => "LETEXM"; // Must be ASCII
+        private static string MANIFEST_HEADER => @"LETEXM"; // Must be ASCII
 
         /// <summary>
         /// BTP owner of this header
@@ -538,7 +767,7 @@ namespace ME3TweaksCore.TextureOverride
             btpStream.WriteByte(PopulatedMipCount);
 
             // Write out all 13 mip header structs now, from largest to smallest
-            for(int i = 0; i < Mips.Count; i++)
+            for (int i = 0; i < Mips.Count; i++)
             {
                 var mip = Mips[i];
                 mip.Serialize(btpStream, i >= PopulatedMipCount);
@@ -582,7 +811,11 @@ namespace ME3TweaksCore.TextureOverride
             OverridePath = btpStream.ReadStringUnicodeNull();
             btpStream.Seek(EntryOffset + ((OVERRIDE_PATH_MAX_CHARS + 1) * 2), SeekOrigin.Begin); // +1 for null terminator
             var tfcTableIndex = btpStream.ReadInt32();
-            TFC = Owner.TFCTable.TFCTable.Values.First(x => x.TableIndex == tfcTableIndex);
+            TFC = Owner.TFCTable.TFCTable.Values.FirstOrDefault(x => x.TableIndex == tfcTableIndex);
+            if (TFC == null)
+            {
+                throw new Exception($@"Invalid TFC table index in BTP: {tfcTableIndex}");
+            }
             Format = (BTPPixelFormat)btpStream.ReadInt32();
             bSRGB = btpStream.ReadBoolByte();
             InternalFormatLODBias = btpStream.ReadByte();
@@ -802,32 +1035,55 @@ namespace ME3TweaksCore.TextureOverride
                 {
                     throw new Exception(@"Deserializer for mip reports 0 Width/Height!");
                 }
+
+                if (Width > 8192 || Width < 0)
+                {
+                    throw new Exception($@"Deserializer for mip reports width out of bounds: {Width}");
+                }
+
+                if (Height > 8192 || Height < 0)
+                {
+                    throw new Exception($@"Deserializer for mip reports height out of bounds: {Height}");
+                }
             }
 #endif
 
             if (!isUnused && Owner.Owner.LoadMips && (Flags & BTPMipFlags.External) == 0)
             {
-                // Local stored mip
-                // To use it's data as a texture
-                // you must check for oodle compression flag.
-                var mipEntryEnd = btpStream.Position;
-                btpStream.Seek(CompressedOffset, SeekOrigin.Begin);
-                if (btpStream.Position + CompressedSize > btpStream.Length) {
-                    throw new Exception(@"The requested mip data is out of bounds of the BTP stream! We are overreading");
-                }
-                var data = Data = btpStream.ReadToBuffer(CompressedSize);
-
-                // Verify decompression
-                byte[] decompressedData = null;
-                if ((Flags & BTPMipFlags.OodleCompressed) != 0)
+                var data = LoadData(btpStream);
+                // If not in verify mode, set the mip data value
+                if (!Owner.Owner.Verify)
                 {
-                    decompressedData = new byte[UncompressedSize];
-                    OodleHelper.Decompress(data, decompressedData);
+                    Data = data;
                 }
-
-                // Return
-                btpStream.Seek(mipEntryEnd, SeekOrigin.Begin);
             }
+        }
+
+        private byte[] LoadData(Stream btpStream)
+        {
+            // Local stored mip
+            // To use it's data as a texture
+            // you must check for oodle compression flag.
+            var mipEntryEnd = btpStream.Position;
+            btpStream.Seek(CompressedOffset, SeekOrigin.Begin);
+            if (btpStream.Position + CompressedSize > btpStream.Length)
+            {
+                throw new Exception($@"The requested mip data is out of bounds of the BTP file. BTP Size: {btpStream.Length}, Requested Offset {CompressedOffset}, Requested size: {CompressedSize}");
+            }
+            var data = Data = btpStream.ReadToBuffer(CompressedSize);
+
+            // Verify decompression
+            byte[] decompressedData = null;
+            if ((Flags & BTPMipFlags.OodleCompressed) != 0)
+            {
+                decompressedData = new byte[UncompressedSize];
+                OodleHelper.Decompress(data, decompressedData);
+            }
+
+            // Return
+            btpStream.Seek(mipEntryEnd, SeekOrigin.Begin);
+
+            return decompressedData;
         }
     }
 
@@ -996,7 +1252,7 @@ namespace ME3TweaksCore.TextureOverride
         {
             if (guid == Guid.Empty && tfc != @"None")
             {
-                throw new Exception($"Detected invalid TFC reference, empty guid for {tfc}");
+                throw new Exception(LC.GetString(LC.string_interp_btpInvalidTFCReference, tfc));
             }
 
             if (TFCTable.TryGetValue(tfc, out var tfcInfo))
@@ -1013,7 +1269,7 @@ namespace ME3TweaksCore.TextureOverride
             if (tfc.Length > BTPTFCEntry.TFC_NAME_MAX_SIZE)
             {
                 MLog.Error($@"TFC name is too big to serialize to BTP, aborting: {tfc}");
-                throw new Exception($"TFC name is too long to use for the M3 Texture Override system: {tfc}. The maximum length supported is {BTPTFCEntry.TFC_NAME_MAX_SIZE} characters.");
+                throw new Exception(LC.GetString(LC.string_interp_btpTFCNameTooLong, tfc, BTPTFCEntry.TFC_NAME_MAX_SIZE));
             }
 
             tfcInfo = new BTPTFCEntry(this, null)

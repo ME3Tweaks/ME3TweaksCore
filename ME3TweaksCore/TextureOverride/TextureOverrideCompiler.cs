@@ -3,7 +3,9 @@ using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Packages;
 using LegendaryExplorerCore.Unreal;
 using LegendaryExplorerCore.Unreal.BinaryConverters;
+using LegendaryExplorerCore.Unreal.ObjectInfo;
 using ME3TweaksCore.Diagnostics;
+using ME3TweaksCore.Localization;
 using ME3TweaksCore.Objects;
 using System;
 using System.Collections.Concurrent;
@@ -12,6 +14,7 @@ using System.IO;
 using System.IO.Hashing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ME3TweaksCore.TextureOverride
@@ -55,7 +58,7 @@ namespace ME3TweaksCore.TextureOverride
         /// <param name="sourceFolder">Source folder that contains the packages. This is the DLC cooked directory.</param>
         /// <param name="btpStream">The destination stream to write to. This should be the start of a stream.</param>
         /// <param name="pi">Progress interop</param>
-        public void BuildBTPFromTO(TextureOverrideManifest tom, string sourceFolder, Stream btpStream, string dlcName, ProgressInfo pi, IMEPackage metadataPackage = null)
+        public void BuildBTPFromTO(TextureOverrideManifest tom, string sourceFolder, Stream btpStream, string dlcName, ProgressInfo pi, IMEPackage metadataPackage)
         {
             MLog.Information($@"BTP build: Initializing");
 
@@ -80,11 +83,11 @@ namespace ME3TweaksCore.TextureOverride
             var BTP = new BinaryTexturePackage(null);
 
             // Add No-TFC to TFC table at index 0
-            BTP.TFCTable.GetTFCTableIndex("None", Guid.Empty, null);
+            BTP.TFCTable.GetTFCTableIndex(@"None", Guid.Empty, null);
 
             // Setup header (first pass)
             var fnvInput = $@"{tom.Game}{DLCName}";
-            BTP.Header.TargetHash = FNV1.Compute(Encoding.Unicode.GetBytes(fnvInput));
+            BTP.Header.TargetHash = FNV1.Compute(fnvInput);
             BTP.Header.Serialize(btpStream);
 
             // TEXTURE OVERRIDE SERIALIZATION =======================
@@ -92,7 +95,7 @@ namespace ME3TweaksCore.TextureOverride
             var done = 0;
 
             pi?.Value = 0;
-            pi?.Status = $"Building texture override package";
+            pi?.Status = LC.GetString(LC.string_interp_buildingTextureOverridePackage);
             pi?.OnUpdate(pi);
 
             // Preallocate space for texture entries
@@ -117,7 +120,7 @@ namespace ME3TweaksCore.TextureOverride
             var dataSegmentStart = btpStream.Position;
 
             // Serialize texture entries and mip data
-            IMEPackage currentSourcePackage = null;
+            ILazyLoadPackage currentSourcePackage = null;
             done = 0;
             MLog.Information($@"BTP build: Beginning texture override serializations");
 
@@ -137,21 +140,15 @@ namespace ME3TweaksCore.TextureOverride
                 {
                     // Load new source package
                     var newPath = Path.Combine(sourceFolder, texture.CompilingSourcePackage);
-                    MLog.Information($@"BTP build: Switching to new source package {newPath}");
-
-                    currentSourcePackage = MEPackageHandler.UnsafePartialLoad(newPath, x =>
+                    if (!File.Exists(newPath))
                     {
-                        var ifp = x.MemoryFullPath;
-                        // Load textures that are in the manifest only
-                        return tom.Textures.Any(entry =>
-                        {
-                            if (entry.MemoryPath != null)
-                            {
-                                return entry.MemoryPath.CaseInsensitiveEquals(ifp);
-                            }
-                            return entry.TextureIFP.CaseInsensitiveEquals(ifp);
-                        });
-                    });
+                        MLog.Error($@"Referenced source package {newPath} not found at {newPath} - aborting BTP build");
+                        throw new Exception(LC.GetString(LC.string_interp_btpBuildFailedSourceTextureMissing, texture.CompilingSourcePackage, texture.TextureIFP));
+                    }
+
+                    MLog.Information($@"BTP build: Switching to new source package {newPath}");
+                    currentSourcePackage?.Dispose(); // Dispose any existing package to lose the stream
+                    currentSourcePackage = MEPackageHandler.UnsafeLazyLoad(newPath);
 
                     // Dump old package.
                     GC.Collect();
@@ -159,12 +156,11 @@ namespace ME3TweaksCore.TextureOverride
                     // Now compress textures in the package in parallel to speed things along.
                     MLog.Information($@"BTP build: Compressing package stored mips in parallel");
                     PrepareTextureCompression(currentSourcePackage);
-                    MLog.Information($@"BTP build: Serializing {currentSourcePackage.Exports.Count(x=>x.IsDataLoaded())} package stored texture overrides");
+                    MLog.Information($@"BTP build: Serializing {currentSourcePackage.Exports.Count(x => IsBTPTexture(x))} texture overrides");
                 }
 
-                // Serialize the texture
+                // Serialize textures
                 texture.Serialize(this, btpEntry, btpStream, currentSourcePackage, metadataPackage);
-                currentSourcePackage.FindExport(btpEntry.OverridePath)?.Data = Array.Empty<byte>(); // This will allow deallocation of memory as we progress
 
 #if DEBUG
                 // pi?.Status = $"Serializing In: {FileSize.FormatSize(InDataSize)} Out: {FileSize.FormatSize(OutDataSize)} Dedup: -{FileSize.FormatSize(DeduplicationSavings)} {pi.Value:0.00}%";
@@ -172,7 +168,15 @@ namespace ME3TweaksCore.TextureOverride
             }
 
             // Lose the reference
+            currentSourcePackage?.Dispose();
             currentSourcePackage = null;
+
+            MLog.Information(@"BTP build: Saving metadata package");
+            metadataPackage.Save();
+
+            // Compute metadata crc
+            var metadataBytes = File.ReadAllBytes(metadataPackage.FilePath);
+            BTP.Header.MetadataCRC = Crc32.HashToUInt32(metadataBytes);
 
             // Log statistics
             var ratio = InDataSize > 0 ? (OutDataSize * 100.0 / InDataSize).ToString() : @"N/A";
@@ -189,10 +193,20 @@ namespace ME3TweaksCore.TextureOverride
             pi?.Status = @"Verifying BTP";
             pi?.Value = 0;
             pi?.OnUpdate(pi);
-            var verifyBTP = new BinaryTexturePackage(btpStream, true, pi);
+            var verifyBTP = new BinaryTexturePackage(btpStream, true, true, pi);
 #endif
 
             btpStream.Close();
+        }
+
+        /// <summary>
+        /// Returns if an export is something stored in a BTP
+        /// </summary>
+        /// <param name="export">Export to check</param>
+        /// <returns></returns>
+        private bool IsBTPTexture(ExportEntry export)
+        {
+            return export.IsA(@"Texture2D");
         }
 
         /// <summary>
@@ -212,14 +226,29 @@ namespace ME3TweaksCore.TextureOverride
             existingMap[i] = serializationInfo;
         }
 
-        private void PrepareTextureCompression(IMEPackage currentSourcePackage)
+
+        /// <summary>
+        /// This method enumerates textures in the target package and compresses their mips with Oodle compression in parallel for performance
+        /// </summary>
+        /// <param name="currentSourcePackage"></param>
+        private void PrepareTextureCompression(ILazyLoadPackage currentSourcePackage)
         {
             // For every loaded object...
-            var loadedItems = currentSourcePackage.Exports.Where(x => x.IsDataLoaded());
+            var loadedItems = currentSourcePackage.Exports.Where(IsBTPTexture);
+            var textureLoadObj = new Lock();
             Parallel.ForEach(loadedItems, new ParallelOptions() { MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount - 2, 1, 6) }, texture =>
             {
                 var compressedAny = false;
-                var texBin = ObjectBinary.From<UTexture2D>(texture);
+                if (!texture.IsDataLoaded())
+                {
+                    lock (textureLoadObj)
+                    {
+                        currentSourcePackage.LoadExport(texture);
+                    }
+                }
+
+                // We must use .From without typing so we get a full object back for lightmaps.
+                var texBin = ObjectBinary.From(texture) as UTexture2D;
                 for (int i = 0; i < texBin.Mips.Count; i++)
                 {
                     var sourceMip = texBin.Mips[i];

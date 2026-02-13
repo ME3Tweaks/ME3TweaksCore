@@ -43,11 +43,11 @@ namespace ME3TweaksCore.Targets
             }
         }
 
-        public bool CanDeleteFile() => !MUtilities.IsGameRunning(game);
+        public bool CanDeleteFile() => !MRunningGameInfo.IsGameRunning(game);
 
         public void DeleteExtraFile()
         {
-            if (!MUtilities.IsGameRunning(game))
+            if (!MRunningGameInfo.IsGameRunning(game))
             {
                 try
                 {

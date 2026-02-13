@@ -16,7 +16,7 @@ namespace ME3TweaksCore.Targets
         internal const string ME1ASILoaderHash = @"30660f25ab7f7435b9f3e1a08422411a";
         internal const string ME2ASILoaderHash = @"a5318e756893f6232284202c1196da13";
         internal const string ME3ASILoaderHash = @"1acccbdae34e29ca7a50951999ed80d5";
-        internal const string LEASILoaderHash =  @"e09cb8c2db540e55e24fb58a8151c2ae"; // bink 2.0.0.13 by ME3Tweaks 12/01/2025
+        internal const string LEASILoaderHash = @"2511b99b964b1f9302f5cb3cb4bff273"; // bink 2.0.0.14 by ME3Tweaks 02/01/2026
 
 
         /// <summary>
@@ -172,7 +172,7 @@ namespace ME3TweaksCore.Targets
         /// Gets the path where the original, vanilla bink dll should be (the one that is proxied)
         /// </summary>
         /// <returns></returns>
-        private static string GetVanillaBinkPath(this GameTarget target)
+        public static string GetVanillaBinkPath(this GameTarget target)
         {
             if (target.Game == MEGame.ME1 || target.Game == MEGame.ME2) return Path.Combine(target.TargetPath, @"Binaries", @"binkw32.dll");
             if (target.Game == MEGame.ME3) return Path.Combine(target.TargetPath, @"Binaries", @"win32", @"binkw32.dll");

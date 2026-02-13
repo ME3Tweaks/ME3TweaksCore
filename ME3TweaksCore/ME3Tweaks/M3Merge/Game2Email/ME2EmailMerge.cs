@@ -13,6 +13,7 @@ using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Helpers;
 using ME3TweaksCore.Localization;
+using ME3TweaksCore.ME3Tweaks.ModManager;
 using ME3TweaksCore.Misc;
 using ME3TweaksCore.Targets;
 using Newtonsoft.Json;
@@ -101,9 +102,17 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Game2Email
             if (!target.Game.IsGame2()) return false;
             try
             {
-                var emailSupercedances = target.GetFileSupercedances(new[] { @".emm" });
-                return emailSupercedances.TryGetValue(EMAIL_MERGE_MANIFEST_FILE, out var infoList) &&
+                var emailSupercedances = target.GetFileSupercedances(new[] { EMAIL_MERGE_FILE_SUFFIX });
+                // Check V1
+                var needsMerged = emailSupercedances.TryGetValue(EMAIL_MERGE_MANIFEST_FILE, out var infoList) &&
                        infoList.Count > 0;
+                if (!needsMerged)
+                {
+                    // Check V2
+                    needsMerged = emailSupercedances.Any(x => Path.GetExtension(x.Key) == EMAIL_MERGE_FILE_SUFFIX);
+                }
+
+                return needsMerged;
             }
             catch (Exception e)
             {
@@ -147,15 +156,52 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Game2Email
                 : MEPackageHandler.OpenMEPackageFromStream(MUtilities.GetResourceStream($@"ME3TweaksCore.ME3Tweaks.M3Merge.Startup.{mergeDLC.Target.Game}.{StartupFileName}"), StartupFileName);
 
             var emailInfos = new List<ME2EmailMergeFile>();
-            var jsonSupercedances = M3Directories.GetFileSupercedances(mergeDLC.Target, new[] { EMAIL_MERGE_FILE_SUFFIX });
-            if (jsonSupercedances.TryGetValue(EMAIL_MERGE_MANIFEST_FILE, out var jsonList))
+            
+            var dlcs = mergeDLC.Target.GetInstalledDLCByMountPriority();
+            dlcs.Reverse();
+
+            foreach (var dlc in dlcs)
             {
-                jsonList.Reverse();
-                foreach (var dlc in jsonList)
+                if (dlc == M3MergeDLC.MERGE_DLC_FOLDERNAME)
                 {
-                    var jsonFile = Path.Combine(M3Directories.GetDLCPath(mergeDLC.Target), dlc, mergeDLC.Target.Game.CookedDirName(),
-                        EMAIL_MERGE_MANIFEST_FILE);
-                    emailInfos.Add(JsonConvert.DeserializeObject<ME2EmailMergeFile>(File.ReadAllText(jsonFile)));
+                    // This doesn't get used
+                    continue;
+                }
+
+                var dlcCookedPath = Path.Combine(mergeDLC.Target.GetDLCPath(), dlc, mergeDLC.Target.Game.CookedDirName());
+                if (!Directory.Exists(dlcCookedPath))
+                    continue;
+
+                var dlcFiles = Directory.GetFiles(dlcCookedPath, @"*", SearchOption.TopDirectoryOnly);
+                var metacmm = mergeDLC.Target.GetMetaCMMForDLC(dlc);
+                var manifestFiles = new List<string>();
+
+                // Find manifest files in the DLC files list
+                foreach (var f in dlcFiles)
+                {
+                    var fname = Path.GetFileName(f);
+                    if (fname == EMAIL_MERGE_MANIFEST_FILE)
+                    {
+                        // This is a manifest file (v1)
+                        manifestFiles.Add(f);
+                        continue;
+                    }
+
+                    if (metacmm != null && metacmm.ModDescFeatureLevel >= ModDescConsts.MODDESC_VERSION_9_2)
+                    {
+                        // 9.2 and above: Support extra emm files.
+                        if (Path.GetExtension(fname) == EMAIL_MERGE_FILE_SUFFIX)
+                        {
+                            manifestFiles.Add(f);
+                            continue;
+                        }
+                    }
+                }
+
+                foreach (var manifestFile in manifestFiles)
+                {
+                    MLog.Information($@"EmailMerge: Processing {manifestFile}");
+                    ProcessManifest(manifestFile, emailInfos);
                 }
             }
 
@@ -186,8 +232,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Game2Email
             bool initialized = fl.Initialize(usop);
             if (!initialized)
             {
-                throw new Exception(
-                    $@"FileLib for script update could not initialize, cannot install conditionals");
+                throw new Exception($@"FileLib for email merge script update could not initialize, cannot install conditionals");
             }
 
             #region Sequence Exports
@@ -504,6 +549,27 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Game2Email
             }
 
             return conditionalId;
+        }
+
+        /// <summary>
+        /// Processes a single EMM manifest file and adds its emails to the emailInfos list.
+        /// </summary>
+        /// <param name="manifestFile">The full path to the manifest file</param>
+        /// <param name="emailInfos">List to add parsed email merge files to</param>
+        private static void ProcessManifest(string manifestFile, List<ME2EmailMergeFile> emailInfos)
+        {
+            try
+            {
+                var emailMergeFile = JsonConvert.DeserializeObject<ME2EmailMergeFile>(File.ReadAllText(manifestFile));
+                if (emailMergeFile != null)
+                {
+                    emailInfos.Add(emailMergeFile);
+                }
+            }
+            catch (Exception ex)
+            {
+                MLog.Exception(ex, $@"Error reading email merge manifest: {manifestFile}. This manifest will not be processed");
+            }
         }
 
         /// <summary>

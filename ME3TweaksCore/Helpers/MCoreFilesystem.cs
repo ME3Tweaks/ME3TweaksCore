@@ -117,6 +117,15 @@ namespace ME3TweaksCore.Helpers
         }
 
         /// <summary>
+        /// Returns the path to where the local SymbolService file resides on disk.
+        /// </summary>
+        /// <returns></returns>
+        public static string GetSymbolServiceFile()
+        {
+            return Path.Combine(GetME3TweaksServicesCache(), @"symbolservice.json");
+        }
+
+        /// <summary>
         /// Directory that contains MEM executables
         /// </summary>
         /// <returns></returns>

@@ -19,6 +19,18 @@ namespace ME3TweaksCore.Helpers
         private const uint FileTextureTag = 0x53444446;
         private const uint FileMovieTextureTag = 0x53494246;
 
+
+        /// <summary>
+        /// Rounds the specified version number to one decimal place for normalization purposes.
+        /// </summary>
+        /// <param name="targetVersion">The version number to normalize.</param>
+        /// <returns>A double value representing the normalized version number rounded to one decimal place.</returns>
+        public static double NormalizeModescVersion(double targetVersion)
+        {
+            return Math.Round(targetVersion * 10) / 10;
+        }
+
+
         public static MEGame GetGameMEMFileIsFor(string file)
         {
             if (!File.Exists(file))

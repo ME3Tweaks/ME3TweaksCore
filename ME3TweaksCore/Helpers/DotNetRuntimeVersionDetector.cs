@@ -40,7 +40,6 @@ namespace ME3TweaksCore.Helpers
                             if (stdOut.Text.StartsWith(@"Microsoft.NETCore.App") && !desktopVersion)
                             {
                                 v = parseVersion(stdOut.Text);
-                                runtimes.Add(parseVersion(stdOut.Text));
                             }
                             else if (stdOut.Text.StartsWith(@"Microsoft.WindowsDesktop.App") && desktopVersion)
                             {
@@ -75,7 +74,7 @@ namespace ME3TweaksCore.Helpers
         /// <returns></returns>
         private static Version parseVersion(string stdOutText)
         {
-            var split = stdOutText.Split(' ');
+            var split = stdOutText.Trim().Split(' ');
 
             // We do not check things like rc- or previews.
             if (Version.TryParse(split[1], out var v))

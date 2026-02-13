@@ -20,6 +20,7 @@ using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Helpers;
 using ME3TweaksCore.Localization;
+using ME3TweaksCore.ME3Tweaks.ModManager;
 using ME3TweaksCore.ME3Tweaks.StarterKit.LE2;
 using ME3TweaksCore.Misc;
 using ME3TweaksCore.Targets;
@@ -30,8 +31,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
 {
     public class SQMOutfitMerge
     {
-        public const string SQUADMATE_MERGE_MANIFEST_V2_EXTENSION = @".sqm2";
-
+        public const string SQUADMATE_MERGE_MANIFEST_EXTENSION = @".sqm";
         public const string SQUADMATE_MERGE_MANIFEST_FILE = @"SquadmateMergeInfo.sqm";
         private const string SUICIDE_MISSION_STREAMING_PACKAGE_NAME = @"BioP_EndGm_StuntHench.pcc";
         public class SquadmateMergeInfo
@@ -48,6 +48,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
                 foreach (var outfit in Outfits)
                 {
                     // Check packages
+                    // Source package
                     if (!loadedFiles.ContainsKey($@"{outfit.HenchPackage}.pcc"))
                     {
                         MLog.Error($@"SquadmateMergeInfo failed validation: {outfit.HenchPackage}.pcc not found in game");
@@ -56,6 +57,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
 
                     if (Game.IsGame3())
                     {
+                        // Source package
                         if (!loadedFiles.ContainsKey($@"{outfit.HenchPackage}_Explore.pcc"))
                         {
                             MLog.Error($@"SquadmateMergeInfo failed validation: {outfit.HenchPackage}_Explore.pcc not found in game");
@@ -63,9 +65,10 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
                         }
                     }
 
-                    if (!loadedFiles.ContainsKey($@"SFXHenchImages_{dlcName}.pcc"))
+                    // Ensure hench image package exists, and is in our DLC folder
+                    if (!loadedFiles.TryGetValue($@"SFXHenchImages_{dlcName}.pcc", out var file) || Directory.GetParent(file).Parent.Name != dlcName)
                     {
-                        MLog.Error($@"SquadmateMergeInfo failed validation: SFXHenchImages_{dlcName}.pcc not found in game");
+                        MLog.Error($@"SquadmateMergeInfo failed validation: SFXHenchImages_{dlcName}.pcc not found in DLC {dlcName}");
                         return false;
                     }
                 }
@@ -157,8 +160,16 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
         public static bool NeedsMerged(GameTarget target)
         {
             if (!target.Game.IsGame3() && target.Game != MEGame.LE2) return false;
-            var sqmSupercedances = M3Directories.GetFileSupercedances(target, new[] { @".sqm" });
-            return sqmSupercedances.TryGetValue(SQUADMATE_MERGE_MANIFEST_FILE, out var infoList) && infoList.Count > 0;
+            var sqmSupercedances = M3Directories.GetFileSupercedances(target, new[] { SQMOutfitMerge.SQUADMATE_MERGE_MANIFEST_EXTENSION });
+            // Check V1
+            var needsMerged = sqmSupercedances.TryGetValue(SQUADMATE_MERGE_MANIFEST_FILE, out var infoList) && infoList.Count > 0;
+            if (!needsMerged)
+            {
+                // Check V2
+                needsMerged = sqmSupercedances.Any(x => Path.GetExtension(x.Key) == SQUADMATE_MERGE_MANIFEST_EXTENSION);
+            }
+
+            return needsMerged;
         }
 
         /// <summary>
@@ -173,123 +184,77 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
             Stopwatch sw = Stopwatch.StartNew();
             string result = null;
             var loadedFiles = MELoadedFiles.GetFilesLoadedInGame(mergeDLC.Target.Game, gameRootOverride: mergeDLC.Target.TargetPath);
-            //var mergeFiles = loadedFiles.Where(x =>
-            //    x.Key.StartsWith(@"BioH_") && x.Key.Contains(@"_DLC_MOD_") && x.Key.EndsWith(@".pcc") && !x.Key.Contains(@"_LOC_") && !x.Key.Contains(@"_Explore."));
 
             MLog.Information(@"SQMMERGE: Building BioP_Global");
+            // Map of hench to their squadmate merge infos
             var appearanceInfo = new CaseInsensitiveDictionary<List<SquadmateInfoSingle>>();
 
             int appearanceId = mergeDLC.Target.Game.IsGame3() ? 255 : 3; // starting // LE2 is 0-8, LE3 does not care
-
-            // Scan squadmate merge files
-            var sqmSupercedances = M3Directories.GetFileSupercedances(mergeDLC.Target, new[] { @".sqm" });
             var squadmateImageInfosLE2 = new List<LE2SquadmateImageInfo>();
 
-            if (sqmSupercedances.TryGetValue(SQUADMATE_MERGE_MANIFEST_FILE, out var infoList))
+            var dlcs = mergeDLC.Target.GetInstalledDLCByMountPriority();
+            dlcs.Reverse();
+
+            foreach (var dlc in dlcs)
             {
-                infoList.Reverse();
-                foreach (var dlc in infoList)
+                if (dlc == M3MergeDLC.MERGE_DLC_FOLDERNAME)
                 {
-                    MLog.Information($@"SQMMERGE: Processing {dlc}");
+                    // This doesn't get used
+                    continue;
+                }
 
-                    var jsonFile = Path.Combine(M3Directories.GetDLCPath(mergeDLC.Target), dlc, mergeDLC.Target.Game.CookedDirName(), SQUADMATE_MERGE_MANIFEST_FILE);
-                    SquadmateMergeInfo infoPackage = null;
-                    try
-                    {
-                        infoPackage = JsonConvert.DeserializeObject<SquadmateMergeInfo>(File.ReadAllText(jsonFile));
-                    }
-                    catch (Exception ex)
-                    {
-                        result = LC.GetString(LC.string_errorReadingSquadmateOutfitManifestFileSeeLogs);
-                        MLog.Exception(ex, $@"Error reading squadmate merge manifest: {jsonFile}. This DLC will not be squadmate merged");
-                    }
+                var dlcCookedPath = Path.Combine(mergeDLC.Target.GetDLCPath(), dlc, mergeDLC.Target.Game.CookedDirName());
+                var dlcFiles = Directory.GetFiles(dlcCookedPath, @"*", SearchOption.TopDirectoryOnly);
+                var metacmm = mergeDLC.Target.GetMetaCMMForDLC(dlc);
+                var manifestFiles = new List<string>();
 
-                    if (infoPackage == null || !infoPackage.Validate(dlc, mergeDLC.Target, loadedFiles))
+                // Find manifest files in the DLC files list
+                foreach (var f in dlcFiles)
+                {
+                    var fname = Path.GetFileName(f);
+                    if (fname == SQUADMATE_MERGE_MANIFEST_FILE)
                     {
-                        continue; // skip this
-                    }
-
-                    IMEPackage imagePackage = null; // Not used for LE3
-                    if (mergeDLC.Target.Game == MEGame.LE2)
-                    {
-                        var henchImagesP = Path.Combine(mergeDLC.Target.GetDLCPath(), dlc, mergeDLC.Target.Game.CookedDirName(), $@"SFXHenchImages_{dlc}.pcc");
-                        imagePackage = MEPackageHandler.OpenMEPackage(henchImagesP);
+                        // This is a manifest file (v1)
+                        manifestFiles.Add(f);
+                        continue;
                     }
 
-                    // Enumerate all outfits listed for a single squadmate
-                    foreach (var outfit in infoPackage.Outfits)
+                    if (metacmm != null && metacmm.ModDescFeatureLevel >= ModDescConsts.MODDESC_VERSION_9_2)
                     {
-                        List<SquadmateInfoSingle> list;
-
-                        // See if we already have an outfit list for this squadmate, maybe from another mod...
-                        if (!appearanceInfo.TryGetValue(outfit.HenchName, out list))
+                        // 9.2 and above: Support extra sqm files.
+                        if (Path.GetExtension(fname) == SQUADMATE_MERGE_MANIFEST_EXTENSION)
                         {
-                            list = new List<SquadmateInfoSingle>();
-                            appearanceInfo[outfit.HenchName] = list;
+                            manifestFiles.Add(f);
+                            continue;
                         }
-
-                        outfit.ConditionalIndex = mergeDLC.CurrentConditional++; // This is always incremented, so it might appear out of order in game files depending on how mod order is processed, that should be okay though.
-
-                        if (mergeDLC.Target.Game.IsGame2())
-                        {
-                            // This is the 'slot' of the outfit for this squadmate
-                            outfit.AppearanceId = list.Any() ? (list.MaxBy(x => x.AppearanceId).AppearanceId + 1) : GetFirstAvailableSquadmateAppearanceIndexLE2(outfit.HenchName); // Get first unused slot
-
-                            // 06/17/2024 - Update to 32 with changes by Nanuke
-                            // Todo: If higher than 31 (0 index) we have too many outfits!!!!
-                            if (outfit.AppearanceId > 31)
-                            {
-                                MLog.Error(@"Squadmate outfit merge for LE2 only supports 32 outfits per character currently!");
-                                MLog.Error($@"This outfit for {outfit.HenchName} will be skipped.");
-                                result = LC.GetString(LC.string_someSquadmateOutfitsWereNotMergedSeeLogs);
-                                continue;
-                            }
-
-                            var availableImage = imagePackage.FindExport(outfit.AvailableImage);
-                            if (availableImage == null)
-                            {
-                                MLog.Error($@"Available image {outfit.AvailableImage} not found in package: {imagePackage.FilePath}. This outfit will be skipped");
-                                result = LC.GetString(LC.string_someSquadmateOutfitsWereNotMergedSeeLogs);
-                                continue;
-                            }
-
-                            var selectedImage = imagePackage.FindExport(outfit.HighlightImage);
-                            if (selectedImage == null)
-                            {
-                                MLog.Error($@"Selected image {outfit.HighlightImage} not found in package: {imagePackage.FilePath}. This outfit will be skipped");
-                                result = LC.GetString(LC.string_someSquadmateOutfitsWereNotMergedSeeLogs);
-                                continue;
-                            }
-
-                            // Add the source exports to the porting list
-                            squadmateImageInfosLE2.Add(new LE2SquadmateImageInfo()
-                            {
-                                SourceExport = availableImage,
-                                DestinationTextureName = GetTextureExportNameForSquadmateLE2(outfit.HenchName, outfit.AppearanceId, false)
-                            });
-
-                            squadmateImageInfosLE2.Add(new LE2SquadmateImageInfo()
-                            {
-                                SourceExport = selectedImage,
-                                DestinationTextureName = GetTextureExportNameForSquadmateLE2(outfit.HenchName, outfit.AppearanceId, true)
-                            });
-                        }
-                        else if (mergeDLC.Target.Game.IsGame3())
-                        {
-                            // Must be fully unique
-                            outfit.AppearanceId = appearanceId++; // may need adjusted
-                        }
-                        outfit.DLCName = dlc;
-                        list.Add(outfit);
-                        MLog.Information($@"SQMMERGE: ConditionalIndex for {outfit.HenchName} appearanceid {outfit.AppearanceId}: {outfit.ConditionalIndex}");
                     }
+                }
 
-                    //Debug.WriteLine("hi");
+                foreach (var manifestFile in manifestFiles)
+                {
+                    MLog.Information($@"SQMMERGE: Processing {manifestFile}");
+                    ProcessManifest(mergeDLC, dlc, manifestFile, appearanceInfo, squadmateImageInfosLE2, loadedFiles, ref appearanceId);
                 }
             }
 
+
+
+
+            //var sqmSupercedances = M3Directories.GetFileSupercedances(mergeDLC.Target, new[] { @".sqm", SQUADMATE_MERGE_MANIFEST_V2_EXTENSION });
+
+            //if (sqmSupercedances.TryGetValue(SQUADMATE_MERGE_MANIFEST_FILE, out var infoList))
+            //{
+            //    infoList.Reverse();
+            //    foreach (var dlc in infoList)
+            //    {
+            //        MLog.Information($@"SQMMERGE: Processing {dlc}");
+            //        HandleLE2SquadmateMerge(mergeDLC, dlc, appearanceInfo, squadmateImageInfosLE2);
+            //    }
+            //}
+
             if (appearanceInfo.Any())
             {
+                // Build the 
                 var cookedDir = Path.Combine(M3Directories.GetDLCPath(mergeDLC.Target),
                     M3MergeDLC.MERGE_DLC_FOLDERNAME, mergeDLC.Target.Game.CookedDirName());
 
@@ -403,7 +368,6 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
                     {
                         throw new Exception(@"FileLib for script update could not initialize, cannot install conditionals");
                     }
-
 
                     var scTextOrig = new StreamReader(MUtilities.GetResourceStream($@"ME3TweaksCore.ME3Tweaks.M3Merge.Squadmate.{mergeDLC.Target.Game}.HasOutfitOnConditional.uc"))
                         .ReadToEnd();
@@ -568,6 +532,110 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
             sw.Stop();
             MLog.Information($@"Ran SQMOutfitMerge in {sw.ElapsedMilliseconds}ms");
             return result;
+        }
+
+        private static string ProcessManifest(M3MergeDLC mergeDLC,
+            string dlc,
+            string manifestFile,
+            CaseInsensitiveDictionary<List<SquadmateInfoSingle>> appearanceInfo,
+            List<LE2SquadmateImageInfo> squadmateImageInfosLE2,
+            CaseInsensitiveDictionary<string> loadedFiles,
+            ref int appearanceId)
+        {
+            string result = null;
+            SquadmateMergeInfo infoPackage = null;
+            try
+            {
+                infoPackage = JsonConvert.DeserializeObject<SquadmateMergeInfo>(File.ReadAllText(manifestFile));
+            }
+            catch (Exception ex)
+            {
+                result = LC.GetString(LC.string_errorReadingSquadmateOutfitManifestFileSeeLogs);
+                MLog.Exception(ex, $@"Error reading squadmate merge manifest: {manifestFile}. This manifest will not be squadmate merged");
+            }
+
+            if (infoPackage == null || !infoPackage.Validate(dlc, mergeDLC.Target, loadedFiles))
+            {
+                return null; // skip this
+            }
+
+            IMEPackage imagePackage = null; // Not used for LE3
+            if (mergeDLC.Target.Game == MEGame.LE2)
+            {
+                var henchImagesP = Path.Combine(mergeDLC.Target.GetDLCPath(), dlc, mergeDLC.Target.Game.CookedDirName(), $@"SFXHenchImages_{dlc}.pcc");
+                imagePackage = MEPackageHandler.OpenMEPackage(henchImagesP);
+            }
+
+            // Enumerate all outfits listed for a single squadmate
+            foreach (var outfit in infoPackage.Outfits)
+            {
+                List<SquadmateInfoSingle> list;
+
+                // See if we already have an outfit list for this squadmate, maybe from another mod...
+                if (!appearanceInfo.TryGetValue(outfit.HenchName, out list))
+                {
+                    list = new List<SquadmateInfoSingle>();
+                    appearanceInfo[outfit.HenchName] = list;
+                }
+
+                outfit.ConditionalIndex = mergeDLC.CurrentConditional++; // This is always incremented, so it might appear out of order in game files depending on how mod order is processed, that should be okay though.
+
+                if (mergeDLC.Target.Game.IsGame2())
+                {
+                    // This is the 'slot' of the outfit for this squadmate
+                    outfit.AppearanceId = list.Any() ? (list.MaxBy(x => x.AppearanceId).AppearanceId + 1) : GetFirstAvailableSquadmateAppearanceIndexLE2(outfit.HenchName); // Get first unused slot
+
+                    // 06/17/2024 - Update to 32 with changes by Nanuke
+                    // Todo: If higher than 31 (0 index) we have too many outfits!!!!
+                    if (outfit.AppearanceId > 31)
+                    {
+                        MLog.Error(@"Squadmate outfit merge for LE2 only supports 32 outfits per character currently!");
+                        MLog.Error($@"This outfit for {outfit.HenchName} will be skipped.");
+                        result = LC.GetString(LC.string_someSquadmateOutfitsWereNotMergedSeeLogs);
+                        continue;
+                    }
+
+                    var availableImage = imagePackage.FindExport(outfit.AvailableImage);
+                    if (availableImage == null)
+                    {
+                        MLog.Error($@"Available image {outfit.AvailableImage} not found in package: {imagePackage.FilePath}. This outfit will be skipped");
+                        result = LC.GetString(LC.string_someSquadmateOutfitsWereNotMergedSeeLogs);
+                        continue;
+                    }
+
+                    var selectedImage = imagePackage.FindExport(outfit.HighlightImage);
+                    if (selectedImage == null)
+                    {
+                        MLog.Error($@"Selected image {outfit.HighlightImage} not found in package: {imagePackage.FilePath}. This outfit will be skipped");
+                        result = LC.GetString(LC.string_someSquadmateOutfitsWereNotMergedSeeLogs);
+                        continue;
+                    }
+
+                    // Add the source exports to the porting list
+                    squadmateImageInfosLE2.Add(new LE2SquadmateImageInfo()
+                    {
+                        SourceExport = availableImage,
+                        DestinationTextureName = GetTextureExportNameForSquadmateLE2(outfit.HenchName, outfit.AppearanceId, false)
+                    });
+
+                    squadmateImageInfosLE2.Add(new LE2SquadmateImageInfo()
+                    {
+                        SourceExport = selectedImage,
+                        DestinationTextureName = GetTextureExportNameForSquadmateLE2(outfit.HenchName, outfit.AppearanceId, true)
+                    });
+                }
+                else if (mergeDLC.Target.Game.IsGame3())
+                {
+                    // Must be fully unique
+                    outfit.AppearanceId = appearanceId++; // may need adjusted
+                }
+                outfit.DLCName = dlc;
+                list.Add(outfit);
+                MLog.Information($@"SQMMERGE: ConditionalIndex for {outfit.HenchName} appearanceid {outfit.AppearanceId}: {outfit.ConditionalIndex}");
+            }
+
+            return result;
+            //Debug.WriteLine("hi");
         }
 
         private static void buildPlotElementObject(ArrayProperty<StructProperty> plotStreaming, SquadmateInfoSingle sqm, MEGame game, bool isSpecial)

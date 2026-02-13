@@ -55,7 +55,9 @@
     <system:String x:Key="string_errorCreatingBackup">Error creating backup</system:String>
     <system:String x:Key="string_interp_errorCreatingBackupX">An error occurred backing up the game: {0}. The last file attempted to be processed was: {1}.</system:String>
     <!-- 0={Error message} 1={The last processed filepath} -->
-
+    <system:String x:Key="string_dialog_backupUnableToDetermineFreeSpace">Unable to determine free space for backup location: {0}</system:String>
+    <!-- 0={Backup path} -->
+    
     <!-- Installation Information -->
     <system:String x:Key="string_installedByModManager">Installed by Mod Manager</system:String>
     <system:String x:Key="string_interp_installedByX">Installed by {0}</system:String>
@@ -192,6 +194,12 @@
     <!-- 0={Dll Description String} -->
     <system:String x:Key="string_interp_companyX">Company: {0}</system:String>
     <!-- 0={Dll Company String} -->
+    <system:String x:Key="string_interp_versionX">Version: {0}</system:String>
+    <!-- 0={Version string} -->
+    <system:String x:Key="string_interp_failedToDownloadASIDependency">Failed to download ASI dependency {0}</system:String>
+    <!-- 0={Filename} -->
+    <system:String x:Key="string_interp_asiDependencyNotAvailable">ASI dependency {0} is not available</system:String>
+    <!-- 0={Filename} -->
 
     <!-- App Updater -->
     <system:String x:Key="string_upd_betaBuildNotificationString">This update is a beta build. You are receiving this update because you have opted into Beta Mode in the settings.</system:String>
@@ -406,6 +414,8 @@
     <!-- 0={export name} 1={list of log messages} -->
     <system:String x:Key="string_interp_fileLibInitFailedPlotManager">FileLib for PlotManagerSync could not initialize: {0}</system:String>
     <!-- 0={Newline separated list of errors} -->
+    <system:String x:Key="string_dialog_invalidConditionalNumberSourceMod">Conditional {0} is not a valid number for use. Source mod: {1}</system:String>
+    <!-- 0={Number} 1={Mod name} -->
 
     <!-- Library Consumer -->
     <system:String x:Key="string_buildNotSigned">Build not signed</system:String>
@@ -436,5 +446,52 @@
     <!-- 0={Table InstancedFullPath string} 1={Table name} 2={Filepath} -->
     <system:String x:Key="string_interp_2damerge_invalidNotAVanillaTable">Bio2DA merge 'mergetables' value is invalid: {0} - this is not a vanilla table. Bio2DA merge does not work with non-vanilla tables</system:String>
     <!-- 0={Table InstancedFullPath string} -->
+    <system:String x:Key="string_interp_bio2daMerge_incompatibleModDetected">'{0}' is not compatible with the automated Bio2DA Merge feature. Please ensure your mod is up to date and notify the mod developer that mods cannot have DLC overrides of merge targets.</system:String>
+    <!-- 0={DLC foldername or Human name of DLC} -->
+    <system:String x:Key="string_vanillaAllM3DAsReverted">(Vanilla - all M3DAs reverted)</system:String>
+
+    <!-- DiagExtended -->
+    <system:String x:Key="string_testingPackageDecompression">Testing package decompression</system:String>
+
+    <!-- Binary Texture Package-->
+    <system:String x:Key="string_interp_mismatchedBTMBTP">The metadata file {0} is not for this BTP file.</system:String>
+    <!-- 0={Filepath} -->
+    <system:String x:Key="string_interp_btpInvalidTFCReference">Detected invalid TFC reference, empty guid for {0}</system:String>
+    <!-- 0={Name of TFC} - Guid in this case is a unique identifier, it is known as a guid internally in editor tools, a data structure concept -->
+    <system:String x:Key="string_interp_btpTFCNameTooLong">TFC name is too long to use for the M3 Texture Override system: {0}. The maximum length supported is {1} characters.</system:String>
+    <!-- 0={Name of TFC} 1={Number} -->
+
+    <!-- M3CTextureOverrideMerge -->
+    <system:String x:Key="string_buildingTextureOverridePackage">Building texture override package</system:String>
+
+    <!-- Texture Override Compiler -->
+    <system:String x:Key="string_interp_buildingTextureOverridePackage">Building texture override package</system:String>
+    <system:String x:Key="string_interp_btpBuildFailedSourceTextureMissing">sourcepackage '{0}' for texture '{1}' does not exist, BTP cannot be compiled.</system:String>
+    <!-- 0={Filename} 1={Texture path in package file} -->
+
+    <!-- TextureOverrideTextureEntry -->
+    <system:String x:Key="string_interp_toCouldNotFindIFP">Could not find textureifp {0} in package {1}</system:String>
+    <!-- 0={Texture path in package} 1={Packagefilename} - textureifp is the key name in the manifest file, it shouldn't be localized -->
+    <system:String x:Key="string_interp_toInvalidTexture">{0} is not a texture object in {1} ({2})</system:String>
+    <!-- 0={Texture path in package} 1={Package filename} 2={Name of object class that was found} -->
+
+    <!-- Texture Override Manifest -->
+    <system:String x:Key="string_interp_toManifestGameMismatch1">Cannot use texture override manifests for different games: {0} &gt;-&lt; {1}</system:String>
+    <!-- 0={Game} 1={Game} -->
+    <system:String x:Key="string_interp_toManifestGameMismatch2">Texture Override manifest {0} targets a different game: The manifest is for {1}, we are loading for {2}</system:String>
+    <!-- 0={filePath} 1={Game} 2={Game} -->
+    <system:String x:Key="string_interp_toInvalidSourcePackageName">Texture Override manifest {0} has invalid source package name: {1} - files MUST start with 'TO_'</system:String>
+    <!-- 0={filePath} 1={fileName} -->
+
+    <!-- Global Shader Merge-->
+    <system:String x:Key="string_interp_gsInvalidHeader">Invalid m3gs file: {0}. File has invalid header.</system:String>
+    <!-- 0={Filepath} -->
+    <system:String x:Key="string_interp_gsNotValidShader">Invalid m3gs file: {0}. File is not a valid compiled shader.</system:String>
+    <!-- 0={Filepath} -->
+    
+    <!-- MSVCPPDetector -->
+    <system:String x:Key="string_installingMicrosoftVisualCPPRedistributable">Installing Microsoft Visual C++ Redistributable</system:String>
+    <system:String x:Key="string_downloadingMicrosoftVisualCPPRedistributable">Downloading Microsoft Visual C++ Redistributable</system:String>
+
 
 </ResourceDictionary>

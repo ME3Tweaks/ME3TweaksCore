@@ -10,6 +10,7 @@ using ME3TweaksCore.NativeMods;
 using ME3TweaksCore.Services;
 using ME3TweaksCore.Services.FileSource;
 using ME3TweaksCore.Services.Shared.BasegameFileIdentification;
+using ME3TweaksCore.Services.Symbol;
 using ME3TweaksCore.Services.ThirdPartyModIdentification;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -37,6 +38,7 @@ namespace ME3TweaksCore.ME3Tweaks.Online
         public const string BGFI_SERVICE_KEY = @"basegamefileidentificationservice";
         public const string TPMI_SERVICE_KEY = @"thirdpartyidentificationservice";
         public const string FS_SERVICE_KEY   = @"filesourceservice";
+        public const string SYMBOL_SERVICE_KEY = @"symbolservice";
 
         /// <summary>
         /// If this is the first content check for this session, we will check throttling for online fetch. If we are not able to use online, we will use cached instead
@@ -51,6 +53,7 @@ namespace ME3TweaksCore.ME3Tweaks.Online
             { BGFI_SERVICE_KEY, BasegameFileIdentificationService.LoadService },
             { FS_SERVICE_KEY, FileSourceService.LoadService },
             { ASI_MANIFEST_KEY, ASIManager.LoadService },
+            { SYMBOL_SERVICE_KEY, SymbolService.LoadService },
         };
 
         /// <summary>

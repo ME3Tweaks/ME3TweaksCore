@@ -40,6 +40,11 @@ namespace ME3TweaksCore.Targets
         public MEGame Game { get; }
         public string TargetPath { get; }
         public bool RegistryActive { get; set; }
+
+        /// <summary>
+        /// If this game target detected cmm_vanilla and should not be loaded for that specific reason
+        /// </summary>
+        public bool IsBackup { get; private set; }
         public string GameSource { get; private set; }
         public string ExecutableHash { get; private set; }
 
@@ -708,7 +713,11 @@ namespace ME3TweaksCore.Targets
 
             if (!ignoreCmmVanilla)
             {
-                if (File.Exists(Path.Combine(TargetPath, @"cmm_vanilla"))) return LC.GetString(LC.string_invalidTargetProtectedByCmmvanilla);
+                if (File.Exists(Path.Combine(TargetPath, @"cmm_vanilla")))
+                {
+                    IsBackup = true;
+                    return LC.GetString(LC.string_invalidTargetProtectedByCmmvanilla);
+                }
             }
 
             IsValid = true;
@@ -1026,7 +1035,11 @@ namespace ME3TweaksCore.Targets
                         var matchingManifestASI = ASIManager.GetASIVersionByHash(hash, Game);
                         if (matchingManifestASI != null)
                         {
-                            installedASIs.Add(MExtendedClassGenerators.GenerateKnownInstalledASIMod(asiFile, hash, Game, matchingManifestASI));
+                            var knownAsiMod = MExtendedClassGenerators.GenerateKnownInstalledASIMod(asiFile, hash, Game, matchingManifestASI);
+                            if (knownAsiMod.VerifyDependencies(this))
+                            {
+                                installedASIs.Add(knownAsiMod);
+                            }
                         }
                         else
                         {
@@ -1062,7 +1075,7 @@ namespace ME3TweaksCore.Targets
         }
 
         /// <summary>
-        /// Gets a list of installed DLC, sorted by mount priority from lowest to highest. Does not include disabled DLC.
+        /// Gets a list of installed DLC folder names, sorted by mount priority from lowest to highest. Does not include disabled DLC.
         /// </summary>
         /// <param name="includeDisabled"></param>
         /// <returns></returns>
@@ -1091,21 +1104,31 @@ namespace ME3TweaksCore.Targets
         {
             installedDLC ??= GetInstalledDLC();
             var metamap = new CaseInsensitiveDictionary<MetaCMM>();
-            var dlcpath = M3Directories.GetDLCPath(this);
             foreach (var v in installedDLC)
             {
                 if (!includeOfficial && MEDirectories.OfficialDLC(Game).Contains(v)) continue; // This is not a mod
-                var meta = Path.Combine(dlcpath, v, @"_metacmm.txt");
-                MetaCMM mf = null;
-                if (File.Exists(meta))
-                {
-                    mf = new MetaCMM(meta);
-                }
-
+                MetaCMM mf = GetMetaCMMForDLC(v);
                 metamap[v] = mf;
             }
 
             return metamap;
+        }
+
+        /// <summary>
+        /// Retrieves the metadata for the specified DLC if available.
+        /// </summary>
+        /// <param name="dlcName">The name of the DLC for which to retrieve metadata. Cannot be null or empty.</param>
+        /// <returns>A MetaCMM object containing the metadata for the specified DLC if the metadata file exists; otherwise, null.</returns>
+        public MetaCMM GetMetaCMMForDLC(string dlcName)
+        {
+            var dlcpath = M3Directories.GetDLCPath(this);
+            var meta = Path.Combine(dlcpath, dlcName, @"_metacmm.txt");
+            if (File.Exists(meta))
+            {
+                return new MetaCMM(meta);
+            }
+
+            return null;
         }
 
         /// <summary>

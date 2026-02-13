@@ -18,38 +18,5 @@ namespace ME3TweaksCore.Diagnostics
     public static class DiagnosticTools
     {
 
-        /// <summary>
-        /// Opens all used package files in the game and verifies they can be opened by LEC. This will catch things such as compression errors.
-        /// </summary>
-        /// <param name="target"></param>
-        /// <param name="progressCallback"></param>
-        /// <returns></returns>
-        public static List<string> VerifyPackages(GameTarget target, Action<int, int> progressCallback = null)
-        {
-            MLog.Information($@"Running diagnostic tool: VerifyPackages on {target.TargetPath}");
-            List<string> errors = new List<string>();
-
-            var loadedPackages = MELoadedFiles.GetAllFiles(target.Game)
-                .Where(x => x.RepresentsPackageFilePath()).ToList();
-
-            int done = 0;
-            foreach (var packPath in loadedPackages)
-            {
-                try
-                {
-                    using var package = MEPackageHandler.OpenMEPackage(packPath);
-                }
-                catch (Exception e)
-                {
-                    MLog.Exception(e, @"Error opening package file: ");
-                    errors.Add(LC.GetString(LC.string_interp_failedToLoadPackageXY, packPath, e.FlattenException())); // Fat stack is probably more useful as it can trace where code failed.
-                }
-
-                done++;
-                progressCallback?.Invoke(done, loadedPackages.Count);
-            }
-
-            return errors;
-        }
     }
 }

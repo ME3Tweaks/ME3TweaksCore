@@ -1,273 +1,492 @@
-<ResourceDictionary	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-					xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-					xmlns:system="clr-namespace:System;assembly=System.Runtime">
-	<system:String x:Key="string_textureModded">Textur modifiziert</system:String>
-	<system:String x:Key="string_interp_modNameByAuthorName">{0} von {1}</system:String>
-	<system:String x:Key="string_upd_betaBuildNotificationString">Diese Aktualisierung ist ein Beta Build. Du bekommst diese Aktualisierung, weil du in den Einstellungen Beta-Versionen aktiviert hast.</system:String>
-	<system:String x:Key="string_upd_1DayAgo">Vor 1 Tag</system:String>
-	<system:String x:Key="string_upd_today">Heute</system:String>
-	<system:String x:Key="string_upd_interp_daysAgoDaysAgo">Vor {0} Tagen</system:String>
-	<system:String x:Key="string_upd_interp_releasedX" xml:space="preserve">\nVeröffentlicht: {0}</system:String>
-	<system:String x:Key="string_upd_interp_XYisAvailable">{0} {1} ist verfügbar</system:String>
-	<system:String x:Key="string_upd_interp_youAreCurrentlyUsingXWithSubInfo" xml:space="preserve">Du benutzt aktuell Version {0}.{1}\n\n{2}</system:String>
-	<system:String x:Key="string_upd_update">Aktualisieren</system:String>
-	<system:String x:Key="string_upd_later">Später</system:String>
-	<system:String x:Key="string_upd_interp_downloadingUpdateForX">Lade Aktualisierung für {0} herunter...</system:String>
-	<system:String x:Key="string_upd_interp_forcedUpdateOutOfDate">Diese Version von {0} ist veraltet und muss aktualisiert werden.</system:String>
-	<system:String x:Key="string_upd_interp_updatingX">{0} wird aktualisiert</system:String>
-	<system:String x:Key="string_upd_updateFailed">Aktualisierung fehlgeschlagen</system:String>
-	<system:String x:Key="string_upd_interp_errorDownloadingUpdateX">Es gab einen Fehler beim Herunterladen der Aktualisierung: {0}</system:String>
-	<system:String x:Key="string_upd_downloadWasIncomplete">Die heruntergeladene Datei war unvollständig.</system:String>
-	<system:String x:Key="string_upd_preparingToApplyUpdate">Anwenden der Aktualisierung wird vorbereitet</system:String>
-	<system:String x:Key="string_upd_interp_applyingUpdateFailed">Anwenden der Aktualisierung ist fehlgeschlagen: {0}</system:String>
-	<system:String x:Key="string_upd_oldVersionsAreNotSupportedTitle">Alte Versionen werden nicht unterstützt</system:String>
-	<system:String x:Key="string_upd_interp_outdatedVersionsAreNotSupportedMsg">Alte Versionen von {0} werden nicht unterstützt und könnten in Zukunft nicht mehr funktionieren.</system:String>
-	<system:String x:Key="string_upd_buildingNewExecutable">Neue ausführbare Datei wird gebaut</system:String>
-	<system:String x:Key="string_upd_extractingUpdate">Aktualisierung wird extrahiert</system:String>
-	<system:String x:Key="string_upd_interp_couldNotFindUpdateFileInArchive">Konnte {0} nicht im heruntergeladenen Archiv finden.</system:String>
-	<system:String x:Key="string_upd_updateExtractionFailed">Das Aktualisierungsarchiv konnte nicht entpackt werden.</system:String>
-	<system:String x:Key="string_upd_verifyingUpdate">Aktualisierung wird verifiziert</system:String>
-	<system:String x:Key="string_upd_invalidSignature">Die Aktualisierungsdatei hat eine ungültige Signatur. Siehe Anwendungsereignisprotokoll für weitere Details.</system:String>
-	<system:String x:Key="string_upd_applyingUpdate">Aktualisierung wird angewendet</system:String>
-	<system:String x:Key="string_upd_restartingApplication">Applikation wird neu gestartet</system:String>
-	<system:String x:Key="string_outdatedVersionInstalled">Alte Version installiert</system:String>
-	<system:String x:Key="string_installed">Installiert</system:String>
-	<system:String x:Key="string_installLoader">Loader installieren</system:String>
-	<system:String x:Key="string_unknownASIDescription">Unbekannte ASI-Mod. Du solltest mit dieser ASI vorsichtig umgehen, da sie böswilligen Code enthalten könnte.</system:String>
-	<system:String x:Key="string_loaderInstalled">Loader installiert</system:String>
-	<system:String x:Key="string_aSILoaderInstalledASIModsWillLoad">ASI-Loader installiert. ASI-Mods werden geladen</system:String>
-	<system:String x:Key="string_aSILoaderNotInstalledASIModsWillNotLoad">ASI-Loader nicht installiert. ASI-Mods werden nicht geladen</system:String>
-	<system:String x:Key="string_interp_unsupportedGameIdInAsiManifest">Nicht unterstützte Spiel-ID in ASI Manifest: {0}</system:String>
-	<system:String x:Key="string_interp_productNameX">Produkt: {0}</system:String>
-	<system:String x:Key="string_interp_descriptionX">Beschreibung: {0}</system:String>
-	<system:String x:Key="string_interp_companyX">Firma: {0}</system:String>
-	<system:String x:Key="string_validatingBackupSource">Überprüfe Backup-Quelle</system:String>
-	<system:String x:Key="string_waitingForUserInput">Warte auf Benutzereingabe</system:String>
-	<system:String x:Key="string_directoryIsNotEmptyMustBeEmpty">Ordner ist nicht leer. Ein Backup-Ziel muss leer sein.</system:String>
-	<system:String x:Key="string_directoryNotEmpty">Ordner ist nicht leer</system:String>
-	<system:String x:Key="string_interp_backingUpX">Backup von {0} wird erstellt</system:String>
-	<system:String x:Key="string_creatingBackup">Backup wird erstellt</system:String>
-	<system:String x:Key="string_cannotBackupModifiedGame">Es kann kein Backup von einer modifizierten Installation erstellt werden</system:String>
-	<system:String x:Key="string_followingFilesDoNotMatchTheVanillaDatabase">Die folgenden Dateien stimmen nicht mit der Vanilla-Datenbank überein und scheinen modifiziert worden zu sein. Aufgrund dessen kann aus dieser Installation kein Backup erstellt werden.</system:String>
-	<system:String x:Key="string_inconsistentDLCDetected">Inkonsistentes DLC gefunden</system:String>
-	<system:String x:Key="string_dialogTheFollowingDLCAreInAnInconsistentState">Die folgenden DLCs sind in in einem inkonsistenten Zustand; sie enthalten sowohl gepackte SFAR-Dateien als auch ungepackte Spieldateien. Diese Konfiguration wird nicht unterstützt, die ungepackten Dateien müssen manuell entfernt werden.</system:String>
-	<system:String x:Key="string_dialogDLCModsWereDetectedCannotBackup">Die folgenden DLC-Ordner sind nicht Teil des offiziellen Spiels von BioWare. Backups können keine DLC-Mods enthalten - das Spiel muss unmodifiziert sein.</system:String>
-	<system:String x:Key="string_inconsistentDLCDetectedUnofficialGame">Inkonsistentes DLC wurde gefunden. Das könnte daran liegen, dass es sich um eine inoffizielle Kopie des Spiels handelt.</system:String>
-	<system:String x:Key="string_movies">Filme</system:String>
-	<system:String x:Key="string_basegame">Hauptspiel</system:String>
-	<system:String x:Key="string_dialogInsufficientDiskSpace" xml:space="preserve">Auf {0} ist nicht genügend freier Speicherplatz vorhanden, um dieses Backup zu erstellen.\n\nBenötigter Speicherplatz: {2}\nFreier Speicherplatz: {1}</system:String>
-	<system:String x:Key="string_dialogBackupCannotBeSubdirectoryOfGame" xml:space="preserve">Ein Backup kann nicht in einen Unterordner eines Installationsziels erstellt werden\n\nGewählter Pfad: {0}\nKollidierendes Ziel: {1}</system:String>
-	<system:String x:Key="string_cannotCreateBackup">Backup kann nicht erstellt werden</system:String>
-	<system:String x:Key="string_someDlcNotInstalled">DLC nicht installiert</system:String>
-	<system:String x:Key="string_dialog_notAllDLCInstalled" xml:space="preserve">In diesem Ziel sind nicht alle OFFIZIELLEN DLCs installiert. Stelle sicher, dass du alle OFFIZIELLEN DLCs installiert hast, die dein Backup enthalten soll, ansonsten können nun fehlende DLCs nicht wiederhergestellt werden.\n\nDie folgenden DLCs sind nicht installiert:\n{0}\n\nHinweis: du brauchst nicht alle DLCs in einem Backup (z.B. wenn du ein DLC nicht besitzt), jedoch sind einige Mod Manager Funktionen von bestimmten DLCs abhängig und können dann nicht benutzt werden, wie beispielsweise ME3Tweaks ModMaker.\n\nBackup dieses Ziels erstellen?</system:String>
-	<system:String x:Key="string_interp_dialog_linkFailedSubdirectoryOfGameDocumentsFolder">Der Ordner Dokumente/BioWare/ (und Unterordner) können nicht als Ort für Backups benutzt werden, da das Spiel Dateien daraus lädt. Bitte wähle einen anderen Ordner.</system:String>
-	<system:String x:Key="string_locationNotAllowedForBackup">Ordner nicht für Backup zulässig</system:String>
-	<system:String x:Key="string_dialog_userAccountDoesntHaveWritePermissionsBackup">Dein Benutzerkonto hat keinen Schreibzugriff auf das gewählte Zielverzeichnis. Wähle ein anderes Verzeichnis.</system:String>
-	<system:String x:Key="string_leftoverTextureFilesFound">Übrig gebliebene Texturdateien gefunden</system:String>
-	<system:String x:Key="string_dialog_foundLeftoverTextureFiles">Zusätzliche Dateien von einer vorherigen Texturinstallation wurden gefunden. Es kann kein Backup erstellt werden, wenn Texturdateien im Spielverzeichnis übrig geblieben sind. Dies ist ein Zeichen, dass das Spielverzeichnis beim Wiederherstellen nicht vollständig gelöscht wurde.\n\nDu solltest das gesamte Spielverzeichnis löschen, das Spiel frisch installieren und dann ein Backup erstellen.</system:String>
-	<system:String x:Key="string_dialog_selectWhichLanguagesToIncludeInBackup">Wähle, welche Sprachen in deinem Backup vorhanden sein sollen. Nicht gewählte Sprachen werden nicht gesichert; wenn du das Spiel reparieren lässt, werden diese Sprachen neu heruntergeladen.</system:String>
-	<system:String x:Key="string_selectLanguages">Sprachen wählen</system:String>
-	<system:String x:Key="string_pleaseWait">Bitte warten</system:String>
-	<system:String x:Key="string_backedUp">Backup existiert</system:String>
-	<system:String x:Key="string_interp_backupStoredAtX">Backup gespeichert in {0}</system:String>
-	<system:String x:Key="string_unlinkBackup">Backup trennen</system:String>
-	<system:String x:Key="string_restoreGame">Spiel wiederherstellen</system:String>
-	<system:String x:Key="string_notBackedUp">Kein Backup</system:String>
-	<system:String x:Key="string_gameHasNotBeenBackedUp">Kein Backup dieses Spiels wurde erstellt</system:String>
-	<system:String x:Key="string_linkExistingBackup">Existierendes Backup verknüpfen</system:String>
-	<system:String x:Key="string_createBackup">Backup erstellen</system:String>
-	<system:String x:Key="string_backupUnavailable">Backup nicht verfügbar</system:String>
-	<system:String x:Key="string_interp_backupPathNotAccessibleX">Backup-Pfad nicht zugreifbar: {0}</system:String>
-	<system:String x:Key="string_createNewBackup">Neues Backup erstellen</system:String>
-	<system:String x:Key="string_gameNotInstalled">Spiel nicht installiert</system:String>
-	<system:String x:Key="string_gameNotInstalledRunOnce">Spiel nicht installiert. Führe es mindestens einmal aus, um sicher zu stellen, dass es vollständig eingerichtet ist</system:String>
-	<system:String x:Key="string_cantCreateBackup">Kann kein Backup erstellen</system:String>
-	<system:String x:Key="string_interp_XDoesNotSupportGameY">{0} unterstützt das Spiel {1} nicht</system:String>
-	<system:String x:Key="string_interp_copyDidntWorkX">Zieldatei existiert nach dem Kopieren der Datei nicht: {0}</system:String>
-	<system:String x:Key="string_interp_failedToLoadPackageXY">Paket {0} konnte nicht geladen werden: {1}</system:String>
-	<system:String x:Key="string_generatingMod">Generiere Mod</system:String>
-	<system:String x:Key="string_interp_dok_mustContainDescriptorX">DLCOptionKey-Structs müssen einen Deskriptor mit dem Namen „{0}“ enthalten.</system:String>
-	<system:String x:Key="string_interp_dok_withOptionXInstalled">(mit Option {0} installiert)</system:String>
-	<system:String x:Key="string_interp_dok_withOptionXNotInstalled">(mit Option {0} NICHT installiert)</system:String>
-	<system:String x:Key="string_dlcRequirementInvalidParenthesis">Die DLCRequirement-Eingabe ist ungültig: Die Version muss in Klammern eingeschlossen werden</system:String>
-	<system:String x:Key="string_interp_dlcRequirementInvalidBadVersion">DLCRequirement-Eingabe ist ungültig: Ungültige Versionsangabe '{0}'</system:String>
-	<system:String x:Key="string_interp_minVersionAppend">(Mindestversion: {0})</system:String>
-	<system:String x:Key="string_interp_maxVersionAppend">(Höchstversion: {0})</system:String>
-	<system:String x:Key="string_interp_drb_malformedDR">Bedingungen in DLCRequirementBase müssen in {0}{1}, durch Kommas getrennt und im Schlüssel=Wert-Format vorliegen. Ungültiger Wert: {2}</system:String>
-	<system:String x:Key="string_interp_drb_unknownDescriptor">Unbekannter Deskriptor in DLCRequirementBase: {0}</system:String>
-	<system:String x:Key="string_interp_drb_notInstalledWithOptionX">Nicht mit Option {0} installiert</system:String>
-	<system:String x:Key="string_interp_drb_installedWithIncompatibleOptionX">Mit inkompatibler Option {0} installiert</system:String>
-	<system:String x:Key="string_interp_drb_notInstalledWithAtLeastX">Nicht mit mindestens einer der folgenden erforderlichen Optionen installiert: {0}</system:String>
-	<system:String x:Key="string_interp_drb_withAtLeastOneOfTheFollowingX">(mit mindestens einer der folgenden Optionen installiert: {0})</system:String>
-	<system:String x:Key="string_synchronizingEmails">Synchronisierung von E-Mails</system:String>
-	<system:String x:Key="string_emailsNotMergedMessagesFileNotFound">E-Mails nicht zusammengeführt: Nachrichtendatei nicht gefunden</system:String>
-	<system:String x:Key="string_game2EmailMergeWrongGame">Spiel 2 Manifest zur E-Mail-Zusammenführung zielt auf das falsche Spiel ab</system:String>
-	<system:String x:Key="string_cannotBackupGame">Kann kein Backup des Spiels erstellen</system:String>
-	<system:String x:Key="string_interp_cannotBackupGameIsRunning">Kann kein Backup erstellen während {0} läuft.</system:String>
-	<system:String x:Key="string_ensureCorrectGameChosen">Stelle sicher, dass das richtige Spiel gewählt ist</system:String>
-	<system:String x:Key="string_warningLinkedTargetWillNotLoad">Es wird überprüft, ob der von dir angegebene Pfand ein vanilla Backup enthält. Bei Erfolg wird er als Backup markiert und Mod-Werkzeuge werden es nicht mehr verändern. Stelle sicher, dass dies nicht der Pfad deines aktiven Spiels ist, oder du wirst es nicht modden können.</system:String>
-	<system:String x:Key="string_iUnderstand">Ich verstehe</system:String>
-	<system:String x:Key="string_abortLinking">Verknüpfen abbrechen</system:String>
-	<system:String x:Key="string_cannotLinkTargetWrongGenerationLEneedOT">Dieses Ziel kann nicht als Backup benutzt werden: Es ist die Legendary Edition des Spiels, doch das Ziel das du versuchst zu verlinken ist die Version aus originalen Trilogie.</system:String>
-	<system:String x:Key="string_cannotLinkTargetWrongGenerationOTneedLE">Dieses Ziel kann nicht als Backup benutzt werden: Es ist die Version aus originalen Trilogie des Spiels, doch das Ziel das du versuchst zu verlinken ist die Legendary Edition.</system:String>
-	<system:String x:Key="string_interp_cannotBackupThisIsTheCurrentGamePath">Dieses Ziel kann nicht als Backup benutzt werden: Es ist der aktuelle Spielpfad für dieses Spiel.</system:String>
-	<system:String x:Key="string_interp_cannotBackupTargetReason">Dieses Ziel kann nicht als Backup benutzt werden: {0}</system:String>
-	<system:String x:Key="string_continueBackingUp">Backuperstellung fortsetzen</system:String>
-	<system:String x:Key="string_abortBackup">Backuperstellung abbrechen</system:String>
-	<system:String x:Key="string_selectEmptyBackupDestinationDirectory">Wähle einen leeren Zielordner für das Backup</system:String>
-	<system:String x:Key="string_interp_backingUpSinglePercentage">Backup wird erstellt {0} {1}%</system:String>
-	<system:String x:Key="string_errorCreatingBackup">Fehler beim Erstellen des Backups</system:String>
-	<system:String x:Key="string_interp_errorCreatingBackupX">Bei der Backuperstellung des Spiels ist ein Fehler aufgetreten: {0}. Die letzte Datei, deren Verarbeitung versucht wurde, war: {1}.</system:String>
-	<system:String x:Key="string_cannotRestoreGame">Spiel kann nicht wiederhergestellt werden</system:String>
-	<system:String x:Key="string_interp_cannotRestoreGameToGameWhileRunning">{0} kann nicht wiederhergestellt werden während eine Instanz läuft.</system:String>
-	<system:String x:Key="string_interp_restoringWillDeleteEverythingTitle">Wiederherstellen von {0} wird die existierende Installation löschen</system:String>
-	<system:String x:Key="string_interp_restoringWillDeleteEverythingMessage">Wiederherstellen von {0} wird die existierende Installation löschen, dein Backup an die ursprüngliche Stelle kopieren, und die Texturdetaileinstellungen (LOD) für dein spiel zurücksetzen.</system:String>
-	<system:String x:Key="string_selectDestinationLocationForRestore">Zielort für Wiederherstellung auswählen</system:String>
-	<system:String x:Key="string_selectADirectoryToRestoreTheGameToThisDirectoryMustBeEmpty">Wähle einen Ordner, an den das Spiel wiederhergestellt wird. Dieser Ordner muss leer sein.</system:String>
-	<system:String x:Key="string_restoreDestinationNotEmpty">Der Zielordner zum Wiederherstellen muss leer sein. Entferne alle Dateien und Ordner in diesem Zielordner oder wähle einen Anderen.</system:String>
-	<system:String x:Key="string_deletingExistingGameInstallation">Vorhandene Spiel-Installation wird gelöscht</system:String>
-	<system:String x:Key="string_couldNotDeleteGameDirectory">Spielordner konnte nicht gelöscht werden</system:String>
-	<system:String x:Key="string_interp_couldNotFullyDeleteGameDirectory">Spielordner von {0} konnte nicht gelöscht werden. Das Spiel ist nun in einem halb gelöschten Zustand - bitte lösche es manuell und stelle es dann an die selbe Stelle wieder her, um die Wiederherstellung abzuschließen.</system:String>
-	<system:String x:Key="string_errorDeletingGameDirectory">Fehler beim Löschen des Spielordners</system:String>
-	<system:String x:Key="string_interp_couldNotFullyDeleteGameDirectoryException">Spielordner von {0} konnte nicht gelöscht werden: {1}. Das Spiel ist nun in einem halb gelöschten Zustand - bitte lösche es manuell und stelle es dann an die selbe Stelle wieder her, um die Wiederherstellung abzuschließen.</system:String>
-	<system:String x:Key="string_preparingGameDirectory">Spielordner wird vorbereitet</system:String>
-	<system:String x:Key="string_errorCreatingGameDirectory">Fehler beim erstellen des Spielordners.</system:String>
-	<system:String x:Key="string_interp_couldNotCreateGameDirectoryNoPermission">Spielordner von {0} konnte nicht erstellt werden. Du hast möglicherweise keine Zugriffsrechte, um im Ordner, der das Spiel enthält, neue Ordner zu erstellen.</system:String>
-	<system:String x:Key="string_analyzingGameFiles">Spieldateien werden analysiert</system:String>
-	<system:String x:Key="string_checkingTexturetaggedPackages">Textur-markierte Ziele werden geprüft</system:String>
-	<system:String x:Key="string_restoringFromBackup">Wird aus Backup wiederhergestellt</system:String>
-	<system:String x:Key="string_restoringMovies">Filme werden wiederhergestellt</system:String>
-	<system:String x:Key="string_calculatingHowManyFilesWillBeRestored">Anzahl der wiederherzustellenden Dateien wird berechnet</system:String>
-	<system:String x:Key="string_comparingGameAgainstVanillaDatabase">Vergleich des Spiels mit der Vanilla-Datenbank</system:String>
-	<system:String x:Key="string_interp_invalidTargetMissingFile">Ungültiges Ziel: {0} wurde nicht im Spiel-Installationsordner gefunden.</system:String>
-	<system:String x:Key="string_invalidTargetProtectedByCmmvanilla">Ungültiges Ziel: Dies ist mittels cmm_vanilla-Datei als geschütztes Backup markiert</system:String>
-	<system:String x:Key="string_dialog_cannotRemoveActiveTarget" xml:space="preserve">Das aktive Ziel kann nicht gelöscht werden..\nÄndere das aktive Ziel mit der Liste im Hauptfenster um dieses Ziel entfernen zu können</system:String>
-	<system:String x:Key="string_tooltip_removeTargetFromM3">Löscht dieses Ziel aus der Mod Manager-Liste von Zielen zum Modden</system:String>
-	<system:String x:Key="string_unpacked">Ungepackt</system:String>
-	<system:String x:Key="string_cleaningUp">Wird aufgeräumt</system:String>
-	<system:String x:Key="string_restored">Wiederhergestellt</system:String>
-	<system:String x:Key="string_restore">Wiederherstellen</system:String>
-	<system:String x:Key="string_restoring">Wird wiederhergestellt</system:String>
-	<system:String x:Key="string_interp_asiStatus">In dieser Installation sind {0} ASI-Mod(s) installiert</system:String>
-	<system:String x:Key="string_thisInstallationHasNoASIModsInstalled">In dieser Installation sind keine ASI-Mods installiert</system:String>
-	<system:String x:Key="string_bypassInstalledASIAndDLCModsWillBeAbleToLoad">Umgehung installiert. ASI- und DLC-Mods können geladen werden</system:String>
-	<system:String x:Key="string_bypassNotInstalledASIAndDLCModsWillBeUnableToLoad">Umgehung nicht installiert. ASI- und DLC-Mods können nicht geladen werden</system:String>
-	<system:String x:Key="string_bypassInstalledASIModsWillBeAbleToLoad">Umgehung installiert. ASI-Mods können geladen werden</system:String>
-	<system:String x:Key="string_bypassNotInstalledASIModsWillBeUnableToLoad">Umgehung nicht installiert. ASI-Mods können nicht geladen werden</system:String>
-	<system:String x:Key="string_interp_unsupportedME1Version">Nicht unterstützte Spielversion: {0}. Die einzige unterstützte Version von MassEffect.exe ist 1.2.20608.0</system:String>
-	<system:String x:Key="string_interp_unsupportedME2Version">Nicht unterstützte Spielversion: {0}. Die einzige unterstützte Version von MassEffect2.exe ist 1.2.1604.0</system:String>
-	<system:String x:Key="string_interp_unsupportedME3Version">Nicht unterstützte Spielversion: {0}. Die einzige unterstützte Version von MassEffect3.exe ist 1.5.5427.124</system:String>
-	<system:String x:Key="string_binkw32ASILoader">Binkw32 ASI Loader</system:String>
-	<system:String x:Key="string_binkw32ASIBypass">Binkw32 ASI Bypass</system:String>
-	<system:String x:Key="string_bink2w64ASILoader">Bink2w64 ASI Loader</system:String>
-	<system:String x:Key="string_deleting">Lösche</system:String>
-	<system:String x:Key="string_installedByModManager">Von Mod Manager installiert</system:String>
-	<system:String x:Key="string_interp_installedByX">Von {0} installiert</system:String>
-	<system:String x:Key="string_notInstalledByModManager">Nicht von Mod Manager installiert</system:String>
-	<system:String x:Key="string_installationInformation">Installationsinformation</system:String>
-	<system:String x:Key="string_delete">Löschen</system:String>
-	<system:String x:Key="string_enable">Aktivieren</system:String>
-	<system:String x:Key="string_disable">Deaktivieren</system:String>
-	<system:String x:Key="string_disabled">Deaktiviert</system:String>
-	<system:String x:Key="string_tooltip_disableDLC" xml:space="preserve">Deaktiviert das Laden dieser DLC-Mod.&#10;Da keine Dateien verändert werden, ist dies auch nach der Installation von Texturmods sicher möglich</system:String>
-	<system:String x:Key="string_tooltip_enableDLC" xml:space="preserve">Aktiviert das Laden dieser DLC-Mod im Spiel.</system:String>
-	<system:String x:Key="string_other">Andere</system:String>
-	<system:String x:Key="string_m3ConsoleKeybinds">M3-Konsolentastenbelegungen</system:String>
-	<system:String x:Key="string_buildNotSigned">Unsignierte Version</system:String>
-	<system:String x:Key="string_preparingToCollectDiagnosticInfo">Sammeln von Diagnoseinformationen wird vorbereitet</system:String>
-	<system:String x:Key="string_interp_preparingMEMNoGUIX">MEM No GUI wird vorbereitet {0}%</system:String>
-	<system:String x:Key="string_collectingGameInformation">Spielinformationen werden gesammelt</system:String>
-	<system:String x:Key="string_collectingSystemInformation">Systeminformationen werden gesammelt</system:String>
-	<system:String x:Key="string_collectingDLCInformation">DLC-Informationen werden gesammelt</system:String>
-	<system:String x:Key="string_collectingTFCFileInformation">TFC-Dateiinformationen werden gesammelt</system:String>
-	<system:String x:Key="string_checkingTextureMapGameConsistency">Texture map &lt;-&gt; Spiel Übereinstimmung wird überprüft</system:String>
-	<system:String x:Key="string_interp_performingFullTexturesCheckX">Vollständige Texturüberprüfung wird ausgeführt {0}%</system:String>
-	<system:String x:Key="string_collectingASIFileInformation">ASI-Dateiinformationen werden gesammelt</system:String>
-	<system:String x:Key="string_collectingME1ApplicationLogs">ME1 Anwendungsereignisprotokolle werden gesammelt</system:String>
-	<system:String x:Key="string_collectingEventLogs">Ereignisprotokolle werden gesammelt</system:String>
-	<system:String x:Key="string_collectingME3SessionLog">ME3 Sitzungsereignisprotokoll wird gesammelt</system:String>
-	<system:String x:Key="string_gettingTextureInfo">Texturmodinformationen werden gesammelt</system:String>
-	<system:String x:Key="string_collectingASILogFiles">ASI-Ereignisprotokoll wird gesammelt</system:String>
-	<system:String x:Key="string_collectingBasegameFileModifications">Erfasse Änderungen an Basisspieldateien</system:String>
-	<system:String x:Key="string_checkingForBlacklistedModsMEM">Prüfe auf geblacklistete Mods (MEM)</system:String>
-	<system:String x:Key="string_collectingLODSettings">Erfasse LOD-Einstellungen</system:String>
-	<system:String x:Key="string_collectingTOCFileInformation">Sammle TOC-Dateiinformationen</system:String>
-	<system:String x:Key="string_interp_serverRejectedTheUpload">Der Server hat deinen Upload abgewiesen. Die Antwort lautete: {0}</system:String>
-	<system:String x:Key="string_interp_logWasUnableToUpload" xml:space="preserve">Das Ereignisprotokoll konnte nicht hochgeladen werden:\n{0}.\nBitte kontaktiere uns im ME3Tweaks Discord (Englisch) für Hilfe.</system:String>
-	<system:String x:Key="string_interp_requestTimedOutUploading">Anfragezeitüberschreitung beim Hochladen des Ereignisprotokolls.</system:String>
-	<system:String x:Key="string_compressingForUpload">Wird zum Hochladen komprimiert</system:String>
-	<system:String x:Key="string_uploadingToME3Tweaks">Wird zu ME3Tweaks hochgeladen</system:String>
-	<system:String x:Key="string_errorUploadingLogResponse">Fehler beim hochladen des Ereignisprotokolls: Antwortcode {0}</system:String>
-	<system:String x:Key="string_interp_serverRejectedLogUpload">Der Server hat das Hochladen abgewieder: {0}</system:String>
-	<system:String x:Key="string_interp_errorUploadingLog">Fehler beim Hochladen des Ereignisprotokolls: {0}</system:String>
-	<system:String x:Key="string_interp_currentLog">{0} - {1} - AKTUELLES PROTOKOLL</system:String>
-	<system:String x:Key="string_unpackingDLC">DLC wird entpackt</system:String>
-	<system:String x:Key="string_checkingGameData">Spieldaten werden geprüft</system:String>
-	<system:String x:Key="string_scanningGameTextures">Spieltexturen werden eingelesen</system:String>
-	<system:String x:Key="string_installingTextures">Texturen werden installiert</system:String>
-	<system:String x:Key="string_verifyingTextures">Texturen werden verifiziert</system:String>
-	<system:String x:Key="string_installingMarkers">Marker werden installiert</system:String>
-	<system:String x:Key="string_preparingToInstallTextures">Vorbereitung zur Installation von Texturen</system:String>
-	<system:String x:Key="string_interp_lastFileBeingProcessedWasX">Die letzte verarbeitete Datei war: {0}</system:String>
-	<system:String x:Key="string_interp_textureReferencesTFCNotFoundY">Eine Textur verweist auf eine TFC-Datei, die nicht im Spiel gefunden wird: {0}</system:String>
-	<system:String x:Key="string_interp_XIsNotCompatibleWithY">{0} ist nicht kompatibel mit {1}</system:String>
-	<system:String x:Key="string_interp_anErrorOccurredDuringInstallationX">Während der Installation ist ein Fehler aufgetreten: {0}</system:String>
-	<system:String x:Key="string_checkingCurrentInstallation">Überprüfung aktueller Installation</system:String>
-	<system:String x:Key="string_checkingForExistingMarkers">Überprüfung auf vorhandene Markierungen</system:String>
-	<system:String x:Key="string_checkingTextureMapConsistency">Überprüfung der Textur-Map-Konsistenz</system:String>
-	<system:String x:Key="string_interp_fileWasRemovedX">Datei wurde entfernt: {0}</system:String>
-	<system:String x:Key="string_interp_fileWasAddedX">Datei wurde hinzugefügt: {0}</system:String>
-	<system:String x:Key="string_interp_fileWasReplacedX">Datei wurde ersetzt: {0}</system:String>
-	<system:String x:Key="string_dialog_memRunningCloseAttempt">Texturen werden gerade installiert. Das Abbrechen dieses Vorgangs kann wahrscheinlich zu einem unbrauchbaren Zustand des Spiels führen.</system:String>
-	<system:String x:Key="string_extractingMassEffectModderNoGui">MassEffectModderNoGui wird entpackt</system:String>
-	<system:String x:Key="string_no">Nein</system:String>
-	<system:String x:Key="string_ok">OK</system:String>
-	<system:String x:Key="string_yes">Ja</system:String>
-	<system:String x:Key="string_nameNotListedInMemBrackets">[Name nicht in mem aufgeführt]</system:String>
-	<system:String x:Key="string_interp_targetGameXnotInstalled">Zielspiel ({0}) ist nicht installiert</system:String>
-	<system:String x:Key="string_interp_targetFileDoesntExistX">Zieldatei existiert nicht: {0}</system:String>
-	<system:String x:Key="string_interp_XhoursYMinutes">{0}h {1}m</system:String>
-	<system:String x:Key="string_narrative">Erzählung</system:String>
-	<system:String x:Key="string_casual">Leicht</system:String>
-	<system:String x:Key="string_normal">Normal</system:String>
-	<system:String x:Key="string_veteran">Veteran</system:String>
-	<system:String x:Key="string_hardcore">Extrem</system:String>
-	<system:String x:Key="string_insanity">Wahnsinn</system:String>
-	<system:String x:Key="string_debugDifficulty">Debug Schwierigkeitsgrad</system:String>
-	<system:String x:Key="string_interp_unknownDifficultyLevelX">Unbekannter Schwierigkeitsgrad: {0}</system:String>
-	<system:String x:Key="string_interp_onlineContentHashWrong">Prüfsumme der heruntergeladenen Datei ({0}) stimmt nicht mit der erwarteten Prüfsumme überein. Erwartet: {1}, erhalten: {2}</system:String>
-	<system:String x:Key="string_interp_plotManagerSyncForX">PlotManager-Synchronisierung für {0}</system:String>
-	<system:String x:Key="string_interp_errorCompilingFunctionReason" xml:space="preserve">Fehler beim Kompilieren der Funktion {0}: {1}</system:String>
-	<system:String x:Key="string_interp_fileLibInitFailedPlotManager">FileLib für PlotManagerSync konnte nicht initialisiert werden: {0}</system:String>
-	<system:String x:Key="string_insufficientDiskSpace">Nicht genug freier Speicherplatz</system:String>
-	<system:String x:Key="string_interp_restoringXpercent">Wird wiederhergestellt {0}%</system:String>
-	<system:String x:Key="string_interp_restoringX">Stelle {0} wieder her</system:String>
-	<system:String x:Key="string_restoringBasegame">Hauptspiel wird wiederhergestellt</system:String>
-	<system:String x:Key="string_noBackup">Kein Backup</system:String>
-	<system:String x:Key="string_error">Fehler!</system:String>
-	<system:String x:Key="string_fullGameRestore">Komplettes Spiel wiederherstellen</system:String>
-	<system:String x:Key="string_interp_copyingX">{0} wird kopiert</system:String>
-	<system:String x:Key="string_interp_directoryNotEmptyWillDeleteEverything">Das gewählte Verzeichnis ist nicht leer: {0}. ALLE NICHT-SPIELDATEIEN UND -ORDNER IN DIESEM VERZEICHNIS WERDEN GELÖSCHT. Bist du sicher, dass du fortfahren willst?</system:String>
-	<system:String x:Key="string_cannotRestore">Nicht wiederherstellbar</system:String>
-	<system:String x:Key="string_interp_invalidHenchNameSquadmateNameValueIsCaseSensitive">Ungültiger Hench-Name: {0}. Beim Wert muss die Groß-/Kleinschreibung beachtet werden.</system:String>
-	<system:String x:Key="string_errorReadingSquadmateOutfitManifestFileSeeLogs">Fehler beim Lesen der Manifestdatei für die Squadmitgliederoutfits für Mod(s), siehe Protokolle</system:String>
-	<system:String x:Key="string_someSquadmateOutfitsWereNotMergedSeeLogs">Einige Squadmitgliederoutfits wurden nicht zusammengeführt, siehe Protokolle</system:String>
-	<system:String x:Key="string_interp_errorCompilingConditionalFunction">Fehler beim Kompilieren der bedingten Funktion {0}: {1}</system:String>
-	<system:String x:Key="string_synchronizingSquadmateOutfits">Synchronisierung der Squadmitgliederoutfits</system:String>
-	<system:String x:Key="string_interp_sk_sqmNoBackup">Für {0} ist kein Backup verfügbar. Dateien für die Zusammenführen von Squadmitgliederoutfits können nicht erstellt werden.</system:String>
-	<system:String x:Key="string_interp_sk_sqmBackupMissingRequiredFile">Erforderliche Datei zum Zusammenführen von Squadmitgliederoutfits nicht im Backup verfügbar: {0}</system:String>
-	<system:String x:Key="string_skai_fileLibInitFailedMSM">Initialisierung der Filelib für das ModSettingsMenu-Datenpaket fehlgeschlagen: {0}</system:String>
-	<system:String x:Key="string_skai_failedToCompileParentClassMSM">Fehler beim Kompilieren der übergeordneten ModSettingsMenu-Klasse für das ModSettingsMenu-Datenpaket: {0}</system:String>
-	<system:String x:Key="string_skai_failedToCompileClassMSM">Fehler beim Kompilieren von {0} für das ModSettingsMenu-Datenpaket: {1}</system:String>
-	<system:String x:Key="string_interp_ssp_unopenedParenthsisFound">Fehler beim Parsen von klammergetrennter Liste: schließende Klammer gefunden, die nicht zu öffnender Klammer an Position {0} in String {1} passt</system:String>
-	<system:String x:Key="string_interp_ssp_unclosedParenthesisFound">Offene Klammer ohne passende schließende Klammer beim Parsen der klammergetrennten Liste in {0} gefunden</system:String>
-	<system:String x:Key="string_checkingBackup">Backup wird überprüft</system:String>
-	<system:String x:Key="string_interp_2damerge_invalidTargetFile">Bio2DA-Zusammenführung „Paketdatei“ ist ungültig: {0} – kann nicht in Nicht-Basisspiel-/Bring Down The Sky-2DA-Dateien zusammengeführt werden</system:String>
-	<system:String x:Key="string_interp_2damerge_couldNotFindTarget">Bio2DA-Zusammenführung „Paketdatei“ ist ungültig: {0} – konnte im Basisspiel Ordner CookedPCConsole des Ziels nicht gefunden werden</system:String>
-	<system:String x:Key="string_interp_2damerge_couldNotFindSourcePackage">Bio2DA-Zusammenführung „mergepackagefile“ ist ungültig: {0} – konnte im CookedPCConsole-Ordner der Mod nicht gefunden werden</system:String>
-	<system:String x:Key="string_interp_2damerge_invalidTableNameMissingPart">Bio2DA-Zusammenführungswert „Mergetables“ ist ungültig: {0} – der Basisname des Objekts endet nicht mit _part</system:String>
-	<system:String x:Key="string_interp_2damerge_invalidCouldNotFindSourceTableExport">Bio2DA-Zusammenführungswert „Mergetables“ ist ungültig: {0} – Tabelle mit dem instanziierten vollständigen Pfad konnte im Paket „{1}“ nicht gefunden werden.</system:String>
-	<system:String x:Key="string_interp_2damerge_invalidSourceObjectIsNot2DA">Bio2DA-Zusammenführungswert „Mergetables“ ist ungültig: {0} – Export ist keine Bio2DA oder keine Unterklasse. Er war: {1}</system:String>
-	<system:String x:Key="string_interp_2damerge_invalidCouldNotFindTargetTable">Bio2DA-Zusammenführungswert „Mergetables“ ist ungültig: {0} – Basisspieltabelle mit Basisnamen „{1}“ konnte im Paket „{2}“ nicht gefunden werden.</system:String>
-	<system:String x:Key="string_interp_2damerge_invalidNotAVanillaTable">Bio2DA-Zusammenführungswert „Mergetables“ ist ungültig: {0} – dies ist keine Standardtabelle. Bio2DA-Zusammenführung funktioniert nicht mit Nicht-Standardtabellen</system:String>
+<ResourceDictionary   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                      xmlns:system="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- Backup Creator-->
+    <system:String x:Key="string_validatingBackupSource">Überprüfe Backup-Quelle</system:String>
+    <system:String x:Key="string_waitingForUserInput">Warte auf Benutzereingabe</system:String>
+    <system:String x:Key="string_directoryIsNotEmptyMustBeEmpty">Ordner ist nicht leer. Ein Backup-Ziel muss leer sein.</system:String>
+    <system:String x:Key="string_directoryNotEmpty">Ordner ist nicht leer</system:String>
+    <system:String x:Key="string_interp_backingUpX">Backup von {0} wird erstellt</system:String>
+    <!-- 0 = string (name of DLC, BASEGAME, or Movies)-->
+    <system:String x:Key="string_creatingBackup">Backup wird erstellt</system:String>
+    <system:String x:Key="string_cannotBackupModifiedGame">Es kann kein Backup von einer modifizierten Installation erstellt werden</system:String>
+    <system:String x:Key="string_followingFilesDoNotMatchTheVanillaDatabase">Die folgenden Dateien stimmen nicht mit der Vanilla-Datenbank überein und scheinen modifiziert worden zu sein. Aufgrund dessen kann aus dieser Installation kein Backup erstellt werden.</system:String>
+    <system:String x:Key="string_inconsistentDLCDetected">Inkonsistentes DLC gefunden</system:String>
+    <system:String x:Key="string_dialogTheFollowingDLCAreInAnInconsistentState">Die folgenden DLCs sind in in einem inkonsistenten Zustand; sie enthalten sowohl gepackte SFAR-Dateien als auch ungepackte Spieldateien. Diese Konfiguration wird nicht unterstützt, die ungepackten Dateien müssen manuell entfernt werden.</system:String>
+    <system:String x:Key="string_dialogDLCModsWereDetectedCannotBackup">Die folgenden DLC-Ordner sind nicht Teil des offiziellen Spiels von BioWare. Backups können keine DLC-Mods enthalten - das Spiel muss unmodifiziert sein.</system:String>
+    <system:String x:Key="string_inconsistentDLCDetectedUnofficialGame">Inkonsistentes DLC wurde gefunden. Das könnte daran liegen, dass es sich um eine inoffizielle Kopie des Spiels handelt.</system:String>
+    <system:String x:Key="string_movies">Filme</system:String>
+    <system:String x:Key="string_basegame">Hauptspiel</system:String>
+    <system:String xml:space="preserve" x:Key="string_dialogInsufficientDiskSpace">Auf {0} ist nicht genügend freier Speicherplatz vorhanden, um dieses Backup zu erstellen.\n\nBenötigter Speicherplatz: {2}\nFreier Speicherplatz: {1}</system:String>
+    <!-- 0=drive letter path (e.g. C:\)  1=filepath 2=filepath -->
+    <system:String xml:space="preserve" x:Key="string_dialogBackupCannotBeSubdirectoryOfGame">Ein Backup kann nicht in einen Unterordner eines Installationsziels erstellt werden\n\nGewählter Pfad: {0}\nKollidierendes Ziel: {1}</system:String>
+    <!-- 0=filepath  1=filepath -->
+    <system:String x:Key="string_cannotCreateBackup">Backup kann nicht erstellt werden</system:String>
+    <system:String x:Key="string_someDlcNotInstalled">DLC nicht installiert</system:String>
+    <system:String x:Key="string_dialog_notAllDLCInstalled" xml:space="preserve">In diesem Ziel sind nicht alle OFFIZIELLEN DLCs installiert. Stelle sicher, dass du alle OFFIZIELLEN DLCs installiert hast, die dein Backup enthalten soll, ansonsten können nun fehlende DLCs nicht wiederhergestellt werden.\n\nDie folgenden DLCs sind nicht installiert:\n{0}\n\nHinweis: du brauchst nicht alle DLCs in einem Backup (z.B. wenn du ein DLC nicht besitzt), jedoch sind einige Mod Manager Funktionen von bestimmten DLCs abhängig und können dann nicht benutzt werden, wie beispielsweise ME3Tweaks ModMaker.\n\nBackup dieses Ziels erstellen?</system:String>
+    <!-- 0 = bulleted list of DLC -->
+    <system:String x:Key="string_interp_dialog_linkFailedSubdirectoryOfGameDocumentsFolder">Der Ordner Dokumente/BioWare/ (und Unterordner) können nicht als Ort für Backups benutzt werden, da das Spiel Dateien daraus lädt. Bitte wähle einen anderen Ordner.</system:String>
+    <system:String x:Key="string_locationNotAllowedForBackup">Ordner nicht für Backup zulässig</system:String>
+    <system:String x:Key="string_dialog_userAccountDoesntHaveWritePermissionsBackup">Dein Benutzerkonto hat keinen Schreibzugriff auf das gewählte Zielverzeichnis. Wähle ein anderes Verzeichnis.</system:String>
+    <system:String x:Key="string_leftoverTextureFilesFound">Übrig gebliebene Texturdateien gefunden</system:String>
+    <system:String x:Key="string_dialog_foundLeftoverTextureFiles">Zusätzliche Dateien von einer vorherigen Texturinstallation wurden gefunden. Es kann kein Backup erstellt werden, wenn Texturdateien im Spielverzeichnis übrig geblieben sind. Dies ist ein Zeichen, dass das Spielverzeichnis beim Wiederherstellen nicht vollständig gelöscht wurde.\n\nDu solltest das gesamte Spielverzeichnis löschen, das Spiel frisch installieren und dann ein Backup erstellen.</system:String>
+    <system:String x:Key="string_dialog_selectWhichLanguagesToIncludeInBackup">Wähle, welche Sprachen in deinem Backup vorhanden sein sollen. Nicht gewählte Sprachen werden nicht gesichert; wenn du das Spiel reparieren lässt, werden diese Sprachen neu heruntergeladen.</system:String>
+    <system:String x:Key="string_selectLanguages">Sprachen wählen</system:String>
+
+    <!-- Game Backup Controller -->
+    <system:String x:Key="string_cannotBackupGame">Kann kein Backup des Spiels erstellen</system:String>
+    <system:String x:Key="string_interp_cannotBackupGameIsRunning">Kann kein Backup erstellen während {0} läuft.</system:String>
+    <!-- 0={game name (mass effect, mass effect 2...)} -->
+    <system:String x:Key="string_ensureCorrectGameChosen">Stelle sicher, dass das richtige Spiel gewählt ist</system:String>
+    <system:String x:Key="string_warningLinkedTargetWillNotLoad">Es wird überprüft, ob der von dir angegebene Pfand ein vanilla Backup enthält. Bei Erfolg wird er als Backup markiert und Mod-Werkzeuge werden es nicht mehr verändern. Stelle sicher, dass dies nicht der Pfad deines aktiven Spiels ist, oder du wirst es nicht modden können.</system:String>
+    <system:String x:Key="string_iUnderstand">Ich verstehe</system:String>
+    <system:String x:Key="string_abortLinking">Verknüpfen abbrechen</system:String>
+    <system:String x:Key="string_cannotLinkTargetWrongGenerationLEneedOT">Dieses Ziel kann nicht als Backup benutzt werden: Es ist die Legendary Edition des Spiels, doch das Ziel das du versuchst zu verlinken ist die Version aus originalen Trilogie.</system:String>
+    <system:String x:Key="string_cannotLinkTargetWrongGenerationOTneedLE">Dieses Ziel kann nicht als Backup benutzt werden: Es ist die Version aus originalen Trilogie des Spiels, doch das Ziel das du versuchst zu verlinken ist die Legendary Edition.</system:String>
+    <system:String x:Key="string_interp_cannotBackupThisIsTheCurrentGamePath">Dieses Ziel kann nicht als Backup benutzt werden: Es ist der aktuelle Spielpfad für dieses Spiel.</system:String>
+    <system:String x:Key="string_interp_cannotBackupTargetReason">Dieses Ziel kann nicht als Backup benutzt werden: {0}</system:String>
+    <!-- 0={validationFailureReason} -->
+    <system:String x:Key="string_continueBackingUp">Backuperstellung fortsetzen</system:String>
+    <system:String x:Key="string_abortBackup">Backuperstellung abbrechen</system:String>
+    <system:String x:Key="string_selectEmptyBackupDestinationDirectory">Wähle einen leeren Zielordner für das Backup</system:String>
+    <system:String x:Key="string_interp_backingUpSinglePercentage">Backup wird erstellt {0} {1}%</system:String>
+    <!-- 0={filename} 1={number percent} -->
+    <system:String x:Key="string_errorCreatingBackup">Fehler beim Erstellen des Backups</system:String>
+    <system:String x:Key="string_interp_errorCreatingBackupX">Bei der Backuperstellung des Spiels ist ein Fehler aufgetreten: {0}. Die letzte Datei, deren Verarbeitung versucht wurde, war: {1}.</system:String>
+    <!-- 0={Error message} 1={The last processed filepath} -->
+    <system:String x:Key="string_dialog_backupUnableToDetermineFreeSpace">Es konnte kein freier Speicherplatz für den Backuport ermittelt werden: {0}</system:String>
+    <!-- 0={Backup path} -->
+    
+    <!-- Installation Information -->
+    <system:String x:Key="string_installedByModManager">Von Mod Manager installiert</system:String>
+    <system:String x:Key="string_interp_installedByX">Von {0} installiert</system:String>
+    <!-- 0 = noun of tool (alot installer, mod manager, etc)-->
+    <system:String x:Key="string_notInstalledByModManager">Nicht von Mod Manager installiert</system:String>
+    <system:String x:Key="string_installationInformation">Installationsinformation</system:String>
+    <system:String x:Key="string_delete">Löschen</system:String>
+    <system:String x:Key="string_enable">Aktivieren</system:String>
+    <system:String x:Key="string_disable">Deaktivieren</system:String>
+    <system:String x:Key="string_disabled">Deaktiviert</system:String>
+    <system:String xml:space="preserve" x:Key="string_tooltip_disableDLC">Deaktiviert das Laden dieser DLC-Mod.&#10;Da keine Dateien verändert werden, ist dies auch nach der Installation von Texturmods sicher möglich</system:String>
+    <system:String xml:space="preserve" x:Key="string_tooltip_enableDLC">Aktiviert das Laden dieser DLC-Mod im Spiel.</system:String>
+    <system:String  x:Key="string_other">Andere</system:String>
+
+    <!-- Log Uploader-->
+    <system:String x:Key="string_interp_serverRejectedTheUpload">Der Server hat deinen Upload abgewiesen. Die Antwort lautete: {0}</system:String>
+    <!-- 0 = error message-->
+    <system:String xml:space="preserve" x:Key="string_interp_logWasUnableToUpload">Das Ereignisprotokoll konnte nicht hochgeladen werden:\n{0}.\nBitte kontaktiere uns im ME3Tweaks Discord (Englisch) für Hilfe.</system:String>
+    <!-- 0 = error message-->
+    <system:String x:Key="string_interp_requestTimedOutUploading">Anfragezeitüberschreitung beim Hochladen des Ereignisprotokolls.</system:String>
+    <system:String x:Key="string_compressingForUpload">Wird zum Hochladen komprimiert</system:String>
+    <system:String x:Key="string_uploadingToME3Tweaks">Wird zu ME3Tweaks hochgeladen</system:String>
+    <system:String x:Key="string_errorUploadingLogResponse">Fehler beim hochladen des Ereignisprotokolls: Antwortcode {0}</system:String>
+    <!-- 0={Number} -->
+    <system:String x:Key="string_interp_serverRejectedLogUpload">Der Server hat das Hochladen abgewieder: {0}</system:String>
+    <!-- 0={server response string} -->
+    <system:String x:Key="string_interp_errorUploadingLog">Fehler beim Hochladen des Ereignisprotokolls: {0}</system:String>
+    <!-- 0={Exception message} -->
+    <system:String x:Key="string_interp_currentLog">{0} - {1} - AKTUELLES PROTOKOLL</system:String>
+    <!-- 0={Filepath} 1={File size (e.g. 7KB)} - This string is used to tell user what the current active log file is for the current session -->
+
+    <!-- Restore panel -->
+    <system:String x:Key="string_insufficientDiskSpace">Nicht genug freier Speicherplatz</system:String>
+    <system:String x:Key="string_interp_restoringXpercent">Wird wiederhergestellt {0}%</system:String>
+    <!-- 0 = number -->
+    <system:String x:Key="string_interp_restoringX">Stelle {0} wieder her</system:String>
+    <!-- 0 = filename or item like DLC name -->
+    <system:String x:Key="string_restoringBasegame">Hauptspiel wird wiederhergestellt</system:String>
+    <system:String x:Key="string_noBackup">Kein Backup</system:String>
+    <system:String x:Key="string_error">Fehler!</system:String>
+    <system:String x:Key="string_fullGameRestore">Komplettes Spiel wiederherstellen</system:String>
+    <system:String x:Key="string_interp_copyingX">{0} wird kopiert</system:String>
+    <!-- 0={File} -->
+    <system:String x:Key="string_interp_directoryNotEmptyWillDeleteEverything">Das gewählte Verzeichnis ist nicht leer: {0}. ALLE NICHT-SPIELDATEIEN UND -ORDNER IN DIESEM VERZEICHNIS WERDEN GELÖSCHT. Bist du sicher, dass du fortfahren willst?</system:String>
+    <!-- 0={Directory user chose} -->
+    <system:String x:Key="string_cannotRestore">Nicht wiederherstellbar</system:String>
+
+    <!-- Messageboxes -->
+    <system:String x:Key="string_no">Nein</system:String>
+    <system:String x:Key="string_ok">OK</system:String>
+    <system:String x:Key="string_yes">Ja</system:String>
+
+    <!-- GameTarget -->
+    <system:String x:Key="string_interp_invalidTargetMissingFile">Ungültiges Ziel: {0} wurde nicht im Spiel-Installationsordner gefunden.</system:String>
+    <!-- 0 = filename of file that is not found in game dir but should be there -->
+    <system:String x:Key="string_invalidTargetProtectedByCmmvanilla">Ungültiges Ziel: Dies ist mittels cmm_vanilla-Datei als geschütztes Backup markiert</system:String>
+    <system:String xml:space="preserve" x:Key="string_dialog_cannotRemoveActiveTarget">Das aktive Ziel kann nicht gelöscht werden..\nÄndere das aktive Ziel mit der Liste im Hauptfenster um dieses Ziel entfernen zu können</system:String>
+    <system:String x:Key="string_tooltip_removeTargetFromM3">Löscht dieses Ziel aus der Mod Manager-Liste von Zielen zum Modden</system:String>
+    <system:String x:Key="string_unpacked">Ungepackt</system:String>
+    <system:String x:Key="string_cleaningUp">Wird aufgeräumt</system:String>
+    <system:String x:Key="string_restored">Wiederhergestellt</system:String>
+    <system:String x:Key="string_restore">Wiederherstellen</system:String>
+    <system:String x:Key="string_restoring">Wird wiederhergestellt</system:String>
+    <system:String x:Key="string_interp_asiStatus">In dieser Installation sind {0} ASI-Mod(s) installiert</system:String>
+    <!-- 0={installedASIs.Count} -->
+    <system:String x:Key="string_thisInstallationHasNoASIModsInstalled">In dieser Installation sind keine ASI-Mods installiert</system:String>
+    <system:String x:Key="string_bypassInstalledASIAndDLCModsWillBeAbleToLoad">Umgehung installiert. ASI- und DLC-Mods können geladen werden</system:String>
+    <system:String x:Key="string_bypassNotInstalledASIAndDLCModsWillBeUnableToLoad">Umgehung nicht installiert. ASI- und DLC-Mods können nicht geladen werden</system:String>
+    <system:String x:Key="string_bypassInstalledASIModsWillBeAbleToLoad">Umgehung installiert. ASI-Mods können geladen werden</system:String>
+    <system:String x:Key="string_bypassNotInstalledASIModsWillBeUnableToLoad">Umgehung nicht installiert. ASI-Mods können nicht geladen werden</system:String>
+    <system:String x:Key="string_interp_unsupportedME1Version">Nicht unterstützte Spielversion: {0}. Die einzige unterstützte Version von MassEffect.exe ist 1.2.20608.0</system:String>
+    <system:String x:Key="string_interp_unsupportedME2Version">Nicht unterstützte Spielversion: {0}. Die einzige unterstützte Version von MassEffect2.exe ist 1.2.1604.0</system:String>
+    <system:String x:Key="string_interp_unsupportedME3Version">Nicht unterstützte Spielversion: {0}. Die einzige unterstützte Version von MassEffect3.exe ist 1.5.5427.124</system:String>
+    <system:String x:Key="string_binkw32ASILoader">Binkw32 ASI Loader</system:String>
+    <system:String x:Key="string_binkw32ASIBypass">Binkw32 ASI Bypass</system:String>
+    <system:String x:Key="string_bink2w64ASILoader">Bink2w64 ASI Loader</system:String>
+
+    <!-- Online Content -->
+    <system:String x:Key="string_interp_onlineContentHashWrong">Prüfsumme der heruntergeladenen Datei ({0}) stimmt nicht mit der erwarteten Prüfsumme überein. Erwartet: {1}, erhalten: {2}</system:String>
+    <!-- 0={url} 1={expected hash} 2={calculated hash} -->
+
+    <!-- ALOT Version Info -->
+    <system:String x:Key="string_textureModded">Textur modifiziert</system:String>
+    <system:String x:Key="string_interp_modNameByAuthorName">{0} von {1}</system:String>
+    <!-- 0={ModName} 1={AuthorName} -->
+
+    <!-- Vanilla Database Service -->
+    <system:String x:Key="string_checkingBackup">Backup wird überprüft</system:String>
+
+    <!--  Backup Service -->
+    <system:String x:Key="string_pleaseWait">Bitte warten</system:String>
+
+    <!-- Log Collector -->
+    <system:String x:Key="string_preparingToCollectDiagnosticInfo">Sammeln von Diagnoseinformationen wird vorbereitet</system:String>
+    <system:String x:Key="string_interp_preparingMEMNoGUIX">MEM No GUI wird vorbereitet {0}%</system:String>
+    <!-- 0={Percent} -->
+    <system:String x:Key="string_collectingGameInformation">Spielinformationen werden gesammelt</system:String>
+    <system:String x:Key="string_collectingSystemInformation">Systeminformationen werden gesammelt</system:String>
+    <system:String x:Key="string_collectingDLCInformation">DLC-Informationen werden gesammelt</system:String>
+    <system:String x:Key="string_collectingTFCFileInformation">TFC-Dateiinformationen werden gesammelt</system:String>
+    <system:String x:Key="string_checkingTextureMapGameConsistency">Texture map &lt;-&gt; Spiel Übereinstimmung wird überprüft</system:String>
+    <system:String x:Key="string_interp_performingFullTexturesCheckX">Vollständige Texturüberprüfung wird ausgeführt {0}%</system:String>
+    <!-- 0={Percent} -->
+    <system:String x:Key="string_collectingASIFileInformation">ASI-Dateiinformationen werden gesammelt</system:String>
+    <system:String x:Key="string_collectingME1ApplicationLogs">ME1 Anwendungsereignisprotokolle werden gesammelt</system:String>
+    <system:String x:Key="string_collectingEventLogs">Ereignisprotokolle werden gesammelt</system:String>
+    <system:String x:Key="string_collectingME3SessionLog">ME3 Sitzungsereignisprotokoll wird gesammelt</system:String>
+    <system:String x:Key="string_gettingTextureInfo">Texturmodinformationen werden gesammelt</system:String>
+    <system:String x:Key="string_collectingASILogFiles">ASI-Ereignisprotokoll wird gesammelt</system:String>
+    <system:String x:Key="string_collectingBasegameFileModifications">Erfasse Änderungen an Basisspieldateien</system:String>
+    <system:String x:Key="string_checkingForBlacklistedModsMEM">Prüfe auf geblacklistete Mods (MEM)</system:String>
+    <system:String x:Key="string_collectingLODSettings">Erfasse LOD-Einstellungen</system:String>
+    <system:String x:Key="string_collectingTOCFileInformation">Sammle TOC-Dateiinformationen</system:String>
+
+    <!-- StringStructParser-->
+    <system:String x:Key="string_interp_ssp_unopenedParenthsisFound">Fehler beim Parsen von klammergetrennter Liste: schließende Klammer gefunden, die nicht zu öffnender Klammer an Position {0} in String {1} passt</system:String>
+    <!-- 0={Position} 1={Original string} -->
+    <system:String x:Key="string_interp_ssp_unclosedParenthesisFound">Offene Klammer ohne passende schließende Klammer beim Parsen der klammergetrennten Liste in {0} gefunden</system:String>
+    <!-- 0={Original string} -->
+
+    <!-- ASI system -->
+    <system:String x:Key="string_outdatedVersionInstalled">Alte Version installiert</system:String>
+    <system:String x:Key="string_installed">Installiert</system:String>
+    <system:String x:Key="string_installLoader">Loader installieren</system:String>
+    <system:String x:Key="string_unknownASIDescription">Unbekannte ASI-Mod. Du solltest mit dieser ASI vorsichtig umgehen, da sie böswilligen Code enthalten könnte.</system:String>
+    <system:String x:Key="string_loaderInstalled">Loader installiert</system:String>
+    <system:String x:Key="string_aSILoaderInstalledASIModsWillLoad">ASI-Loader installiert. ASI-Mods werden geladen</system:String>
+    <system:String x:Key="string_aSILoaderNotInstalledASIModsWillNotLoad">ASI-Loader nicht installiert. ASI-Mods werden nicht geladen</system:String>
+    <system:String x:Key="string_interp_unsupportedGameIdInAsiManifest">Nicht unterstützte Spiel-ID in ASI Manifest: {0}</system:String>
+    <!-- 0={Number} -->
+    <system:String x:Key="string_interp_productNameX">Produkt: {0}</system:String>
+    <!-- 0={Dll Product String} -->
+    <system:String x:Key="string_interp_descriptionX">Beschreibung: {0}</system:String>
+    <!-- 0={Dll Description String} -->
+    <system:String x:Key="string_interp_companyX">Firma: {0}</system:String>
+    <!-- 0={Dll Company String} -->
+    <system:String x:Key="string_interp_versionX">Version: {0}</system:String>
+    <!-- 0={Version string} -->
+    <system:String x:Key="string_interp_failedToDownloadASIDependency">Download der ASI-Abhängigkeit {0} fehlgeschlagen</system:String>
+    <!-- 0={Filename} -->
+    <system:String x:Key="string_interp_asiDependencyNotAvailable">Die ASI-Abhängigkeit {0} ist nicht verfügbar.</system:String>
+    <!-- 0={Filename} -->
+
+    <!-- App Updater -->
+    <system:String x:Key="string_upd_betaBuildNotificationString">Dieses Update ist ein Beta Build. Du bekommst diese Update, weil du in den Einstellungen Beta-Versionen aktiviert hast.</system:String>
+    <system:String x:Key="string_upd_1DayAgo">Vor 1 Tag</system:String>
+    <system:String x:Key="string_upd_today">Heute</system:String>
+    <system:String x:Key="string_upd_interp_daysAgoDaysAgo">Vor {0} Tagen</system:String>
+    <!-- 0={Number - try to localize as best you can. This is only shown when the value is 2 or more days ago.} -->
+    <system:String xml:space="preserve" x:Key="string_upd_interp_releasedX">\nVeröffentlicht: {0}</system:String>
+    <!-- 0={X days ago (as shown above)} -->
+    <system:String x:Key="string_upd_interp_XYisAvailable">{0} {1} ist verfügbar</system:String>
+    <!-- 0={app name} 1={version number} -->
+    <system:String xml:space="preserve" x:Key="string_upd_interp_youAreCurrentlyUsingXWithSubInfo">Du benutzt aktuell Version {0}.{1}\n\n{2}</system:String>
+    <!-- 0={version string} 1={version string} 2={message} -->
+    <system:String x:Key="string_upd_update">Updaten</system:String>
+    <system:String x:Key="string_upd_later">Später</system:String>
+    <system:String x:Key="string_upd_interp_downloadingUpdateForX">Lade Update für {0} herunter...</system:String>
+    <!-- 0={app name string} -->
+    <system:String x:Key="string_upd_interp_forcedUpdateOutOfDate">Diese Version von {0} ist veraltet und muss geupdated werden.</system:String>
+    <!-- 0={app name string} -->
+    <system:String x:Key="string_upd_interp_updatingX">{0} wird geupdated</system:String>
+    <!-- 0={app name string} -->
+    <system:String x:Key="string_upd_updateFailed">Update fehlgeschlagen</system:String>
+    <system:String x:Key="string_upd_interp_errorDownloadingUpdateX">Es gab einen Fehler beim Herunterladen des Updates: {0}</system:String>
+    <!-- 0={downloadResult.errorMessage} -->
+    <system:String x:Key="string_upd_downloadWasIncomplete">Die heruntergeladene Datei war unvollständig.</system:String>
+    <system:String x:Key="string_upd_preparingToApplyUpdate">Update wird vorbereitet</system:String>
+    <system:String x:Key="string_upd_interp_applyingUpdateFailed">Anwenden des Updates ist fehlgeschlagen: {0}</system:String>
+    <!-- 0={updateFailedResult} -->
+    <system:String x:Key="string_upd_oldVersionsAreNotSupportedTitle">Alte Versionen werden nicht unterstützt</system:String>
+    <system:String x:Key="string_upd_interp_outdatedVersionsAreNotSupportedMsg">Alte Versionen von {0} werden nicht unterstützt und könnten in Zukunft nicht mehr funktionieren.</system:String>
+    <!-- 0={app name string} -->
+    <system:String x:Key="string_upd_buildingNewExecutable">Neue ausführbare Datei wird gebaut</system:String>
+    <system:String x:Key="string_upd_extractingUpdate">Update wird extrahiert</system:String>
+    <system:String x:Key="string_upd_interp_couldNotFindUpdateFileInArchive">Konnte {0} nicht im heruntergeladenen Archiv finden.</system:String>
+    <!-- 0={updateFileName} -->
+    <system:String x:Key="string_upd_updateExtractionFailed">Das Update-Archiv konnte nicht entpackt werden.</system:String>
+    <system:String x:Key="string_upd_verifyingUpdate">Update wird verifiziert</system:String>
+    <system:String x:Key="string_upd_invalidSignature">Die Update-Datei hat eine ungültige Signatur. Siehe Anwendungsereignisprotokoll für weitere Details.</system:String>
+    <system:String x:Key="string_upd_applyingUpdate">Update wird angewendet</system:String>
+    <system:String x:Key="string_upd_restartingApplication">Applikation wird neu gestartet</system:String>
+
+    <!-- MEM Updater -->
+    <system:String x:Key="string_extractingMassEffectModderNoGui">MassEffectModderNoGui wird entpackt</system:String>
+
+    <!-- Backup Status -->
+    <system:String x:Key="string_backedUp">Backup existiert</system:String>
+    <system:String x:Key="string_interp_backupStoredAtX">Backup gespeichert in {0}</system:String>
+    <!-- 0={bPath} -->
+    <system:String x:Key="string_unlinkBackup">Backup trennen</system:String>
+    <system:String x:Key="string_restoreGame">Spiel wiederherstellen</system:String>
+    <system:String x:Key="string_notBackedUp">Kein Backup</system:String>
+    <system:String x:Key="string_gameHasNotBeenBackedUp">Kein Backup dieses Spiels wurde erstellt</system:String>
+    <system:String x:Key="string_linkExistingBackup">Existierendes Backup verknüpfen</system:String>
+    <system:String x:Key="string_createBackup">Backup erstellen</system:String>
+    <system:String x:Key="string_backupUnavailable">Backup nicht verfügbar</system:String>
+    <system:String x:Key="string_interp_backupPathNotAccessibleX">Backup-Pfad nicht zugreifbar: {0}</system:String>
+    <!-- 0={bPath} -->
+    <system:String x:Key="string_createNewBackup">Neues Backup erstellen</system:String>
+    <system:String x:Key="string_gameNotInstalled">Spiel nicht installiert</system:String>
+    <system:String x:Key="string_gameNotInstalledRunOnce">Spiel nicht installiert. Führe es mindestens einmal aus, um sicher zu stellen, dass es vollständig eingerichtet ist</system:String>
+    <system:String x:Key="string_cantCreateBackup">Kann kein Backup erstellen</system:String>
+
+    <!-- Game restore controller -->
+    <system:String x:Key="string_cannotRestoreGame">Spiel kann nicht wiederhergestellt werden</system:String>
+    <system:String x:Key="string_interp_cannotRestoreGameToGameWhileRunning">{0} kann nicht wiederhergestellt werden während eine Instanz läuft.</system:String>
+    <!-- 0={Game name (Mass Effect, Mass Effect 2, etc)} -->
+    <system:String x:Key="string_interp_restoringWillDeleteEverythingTitle">Wiederherstellen von {0} wird die existierende Installation löschen</system:String>
+    <!-- 0={Game name (Mass Effect, Mass Effect 2, etc)} -->
+    <system:String x:Key="string_interp_restoringWillDeleteEverythingMessage">Wiederherstellen von {0} wird die existierende Installation löschen, dein Backup an die ursprüngliche Stelle kopieren, und die Texturdetaileinstellungen (LOD) für dein spiel zurücksetzen.</system:String>
+    <!-- 0={Game name (Mass Effect, Mass Effect 2, etc)} -->
+    <system:String x:Key="string_selectDestinationLocationForRestore">Zielort für Wiederherstellung auswählen</system:String>
+    <system:String x:Key="string_selectADirectoryToRestoreTheGameToThisDirectoryMustBeEmpty">Wähle einen Ordner, an den das Spiel wiederhergestellt wird. Dieser Ordner muss leer sein.</system:String>
+    <system:String x:Key="string_restoreDestinationNotEmpty">Der Zielordner zum Wiederherstellen muss leer sein. Entferne alle Dateien und Ordner in diesem Zielordner oder wähle einen Anderen.</system:String>
+    <system:String x:Key="string_deletingExistingGameInstallation">Vorhandene Spiel-Installation wird gelöscht</system:String>
+    <system:String x:Key="string_couldNotDeleteGameDirectory">Spielordner konnte nicht gelöscht werden</system:String>
+    <system:String x:Key="string_interp_couldNotFullyDeleteGameDirectory">Spielordner von {0} konnte nicht gelöscht werden. Das Spiel ist nun in einem halb gelöschten Zustand - bitte lösche es manuell und stelle es dann an die selbe Stelle wieder her, um die Wiederherstellung abzuschließen.</system:String>
+    <!-- 0={Game name (Mass Effect, Mass Effect 2, etc)} -->
+    <system:String x:Key="string_errorDeletingGameDirectory">Fehler beim Löschen des Spielordners</system:String>
+    <system:String x:Key="string_interp_couldNotFullyDeleteGameDirectoryException">Spielordner von {0} konnte nicht gelöscht werden: {1}. Das Spiel ist nun in einem halb gelöschten Zustand - bitte lösche es manuell und stelle es dann an die selbe Stelle wieder her, um die Wiederherstellung abzuschließen.</system:String>
+    <!-- 0={Game name (Mass Effect, Mass Effect 2, etc)} 1={ex.Message} -->
+    <system:String x:Key="string_preparingGameDirectory">Spielordner wird vorbereitet</system:String>
+    <system:String x:Key="string_errorCreatingGameDirectory">Fehler beim erstellen des Spielordners.</system:String>
+    <system:String x:Key="string_interp_couldNotCreateGameDirectoryNoPermission">Spielordner von {0} konnte nicht erstellt werden. Du hast möglicherweise keine Zugriffsrechte, um im Ordner, der das Spiel enthält, neue Ordner zu erstellen.</system:String>
+    <!-- 0={Game name (Mass Effect, Mass Effect 2, etc)} -->
+    <system:String x:Key="string_analyzingGameFiles">Spieldateien werden analysiert</system:String>
+    <system:String x:Key="string_checkingTexturetaggedPackages">Textur-markierte Ziele werden geprüft</system:String>
+    <system:String x:Key="string_restoringFromBackup">Wird aus Backup wiederhergestellt</system:String>
+    <system:String x:Key="string_restoringMovies">Filme werden wiederhergestellt</system:String>
+    <system:String x:Key="string_calculatingHowManyFilesWillBeRestored">Anzahl der wiederherzustellenden Dateien wird berechnet</system:String>
+    <system:String x:Key="string_comparingGameAgainstVanillaDatabase">Vergleich des Spiels mit der Vanilla-Datenbank</system:String>
+
+    <!-- DLC Requirement -->
+    <system:String x:Key="string_dlcRequirementInvalidParenthesis">Die DLCRequirement-Eingabe ist ungültig: Die Version muss in Klammern eingeschlossen werden</system:String>
+    <system:String x:Key="string_interp_dlcRequirementInvalidBadVersion">DLCRequirement-Eingabe ist ungültig: Ungültige Versionsangabe '{0}'</system:String>
+    <system:String x:Key="string_interp_minVersionAppend">(Mindestversion: {0})</system:String>
+    <!-- 0={invalid string value} -->
+    <system:String x:Key="string_interp_maxVersionAppend">(Höchstversion: {0})</system:String>
+    <!-- 0={invalid string value} -->
+    <system:String x:Key="string_interp_drb_malformedDR">Bedingungen in DLCRequirementBase müssen in {0}{1}, durch Kommas getrennt und im Schlüssel=Wert-Format vorliegen. Ungültiger Wert: {2}</system:String>
+    <!-- 0={openingChar} 1={closingChar} 2={inputString} -->
+    <system:String x:Key="string_interp_drb_unknownDescriptor">Unbekannter Deskriptor in DLCRequirementBase: {0}</system:String>
+    <!-- 0={string} -->
+    <system:String x:Key="string_interp_drb_notInstalledWithOptionX">Nicht mit Option {0} installiert</system:String>
+    <!-- 0={option name} -->
+    <system:String x:Key="string_interp_drb_installedWithIncompatibleOptionX">Mit inkompatibler Option {0} installiert</system:String>
+    <!-- 0={option name} -->
+    <system:String x:Key="string_interp_drb_notInstalledWithAtLeastX">Nicht mit mindestens einer der folgenden erforderlichen Optionen installiert: {0}</system:String>
+    <!-- 0={comma separated list of option names} -->
+    <system:String x:Key="string_interp_drb_withAtLeastOneOfTheFollowingX">(mit mindestens einer der folgenden Optionen installiert: {0})</system:String>
+    <!-- 0={comma separated list of option names} -->
+
+    <!-- MEM IPC Handler -->
+    <system:String x:Key="string_unpackingDLC">DLC wird entpackt</system:String>
+    <system:String x:Key="string_checkingGameData">Spieldaten werden geprüft</system:String>
+    <system:String x:Key="string_scanningGameTextures">Spieltexturen werden eingelesen</system:String>
+    <system:String x:Key="string_installingTextures">Texturen werden installiert</system:String>
+    <system:String x:Key="string_verifyingTextures">Texturen werden verifiziert</system:String>
+    <system:String x:Key="string_installingMarkers">Marker werden installiert</system:String>
+    <system:String x:Key="string_preparingToInstallTextures">Vorbereitung zur Installation von Texturen</system:String>
+    <system:String x:Key="string_interp_lastFileBeingProcessedWasX">Die letzte verarbeitete Datei war: {0}</system:String>
+    <!-- 0={Filename} -->
+    <system:String x:Key="string_interp_textureReferencesTFCNotFoundY">Eine Textur verweist auf eine TFC-Datei, die nicht im Spiel gefunden wird: {0}</system:String>
+    <!-- 0={Filename} -->
+    <system:String x:Key="string_interp_XIsNotCompatibleWithY">{0} ist nicht kompatibel mit {1}</system:String>
+    <!-- 0={Filename} 1={Game name (ME1, ME2, etc)} -->
+    <system:String x:Key="string_interp_anErrorOccurredDuringInstallationX">Während der Installation ist ein Fehler aufgetreten: {0}</system:String>
+    <!-- 0={Error message} -->
+    <system:String x:Key="string_checkingCurrentInstallation">Überprüfung aktueller Installation</system:String>
+    <system:String x:Key="string_checkingForExistingMarkers">Überprüfung auf vorhandene Markierungen</system:String>
+    <system:String x:Key="string_checkingTextureMapConsistency">Überprüfung der Textur-Map-Konsistenz</system:String>
+    <system:String x:Key="string_interp_fileWasRemovedX">Datei wurde entfernt: {0}</system:String>
+    <!-- 0={Filename} -->
+    <system:String x:Key="string_interp_fileWasAddedX">Datei wurde hinzugefügt: {0}</system:String>
+    <!-- 0={Filename} -->
+    <system:String x:Key="string_interp_fileWasReplacedX">Datei wurde ersetzt: {0}</system:String>
+    <!-- 0={Filename} -->
+    <system:String x:Key="string_dialog_memRunningCloseAttempt">Texturen werden gerade installiert. Das Abbrechen dieses Vorgangs kann wahrscheinlich zu einem unbrauchbaren Zustand des Spiels führen.</system:String>
+
+    <!-- General -->
+    <system:String x:Key="string_deleting">Lösche</system:String>
+
+    <!-- Mod Info Formats -->
+    <system:String x:Key="string_nameNotListedInMemBrackets">[Name nicht in mem aufgeführt]</system:String>
+    <system:String x:Key="string_interp_targetGameXnotInstalled">Zielspiel ({0}) ist nicht installiert</system:String>
+    <!-- 0={Game name} -->
+    <system:String x:Key="string_interp_targetFileDoesntExistX">Zieldatei existiert nicht: {0}</system:String>
+    <!-- 0={File path} -->
+
+    <!-- MSaveShared -->
+    <system:String x:Key="string_interp_XhoursYMinutes">{0}h {1}m</system:String>
+    <!-- 0={hours} 1={minutes}. This is 'how long played'. Localize to however it fits your localization -->
+    <system:String x:Key="string_narrative">Erzählung</system:String>
+    <system:String x:Key="string_casual">Leicht</system:String>
+    <system:String x:Key="string_normal">Normal</system:String>
+    <system:String x:Key="string_veteran">Veteran</system:String>
+    <system:String x:Key="string_hardcore">Extrem</system:String>
+    <system:String x:Key="string_insanity">Wahnsinn</system:String>
+    <system:String x:Key="string_debugDifficulty">Debug Schwierigkeitsgrad</system:String>
+    <!-- This may show up for users who dink around with save files -->
+    <system:String x:Key="string_interp_unknownDifficultyLevelX">Unbekannter Schwierigkeitsgrad: {0}</system:String>
+    <!-- 0={Number} -->
+
+    <!-- Config Asset Bundle -->
+    <system:String x:Key="string_interp_XDoesNotSupportGameY">{0} unterstützt das Spiel {1} nicht</system:String>
+    <!-- 0={Object name (e.g. ConfigAssetBundle)} 1={game name (ME1,ME2, etc)} -->
+
+    <!-- Diagnostic Tools -->
+    <system:String x:Key="string_interp_failedToLoadPackageXY">Paket {0} konnte nicht geladen werden: {1}</system:String>
+    <!-- 0={filepath} 1={exception message} -->
+
+    <!-- Copy Tools -->
+    <system:String x:Key="string_interp_copyDidntWorkX">Zieldatei existiert nach dem Kopieren der Datei nicht: {0}</system:String>
+    <!-- 0={File path} -->
+
+    <!-- DLC Mod Generator -->
+    <system:String x:Key="string_generatingMod">Generiere Mod</system:String>
+
+    <!-- Starter Kit Addins -->
+    <system:String x:Key="string_interp_sk_sqmNoBackup">Für {0} ist kein Backup verfügbar. Dateien für die Zusammenführen von Squadmitgliederoutfits können nicht erstellt werden.</system:String>
+    <!-- 0={game (ME1, ME2, etc)} -->
+    <system:String x:Key="string_interp_sk_sqmBackupMissingRequiredFile">Erforderliche Datei zum Zusammenführen von Squadmitgliederoutfits nicht im Backup verfügbar: {0}</system:String>
+    <!-- 0={filename} -->
+    <system:String x:Key="string_skai_fileLibInitFailedMSM">Initialisierung der Filelib für das ModSettingsMenu-Datenpaket fehlgeschlagen: {0}</system:String>
+    <!-- 0={errors, comma separated} -->
+    <system:String x:Key="string_skai_failedToCompileParentClassMSM">Fehler beim Kompilieren der übergeordneten ModSettingsMenu-Klasse für das ModSettingsMenu-Datenpaket: {0}</system:String>
+    <!-- 0={errors, comma separated} -->
+    <system:String x:Key="string_skai_failedToCompileClassMSM">Fehler beim Kompilieren von {0} für das ModSettingsMenu-Datenpaket: {1}</system:String>
+    <!-- 0={className} 1={errors, comma separated} -->
+
+    <!-- Squadmate Merge -->
+    <system:String x:Key="string_interp_invalidHenchNameSquadmateNameValueIsCaseSensitive">Ungültiger Hench-Name: {0}. Beim Wert muss die Groß-/Kleinschreibung beachtet werden.</system:String>
+    <!-- 0={Squadmate hench name (Marine, Tali, etc)} -->
+    <system:String x:Key="string_errorReadingSquadmateOutfitManifestFileSeeLogs">Fehler beim Lesen der Manifestdatei für die Squadmitgliederoutfits für Mod(s), siehe Protokolle</system:String>
+    <system:String x:Key="string_someSquadmateOutfitsWereNotMergedSeeLogs">Einige Squadmitgliederoutfits wurden nicht zusammengeführt, siehe Protokolle</system:String>
+    <system:String x:Key="string_interp_errorCompilingConditionalFunction">Fehler beim Kompilieren der bedingten Funktion {0}: {1}</system:String>
+    <!-- 0={Entry full name} 1={error messages}-->
+    <system:String x:Key="string_synchronizingSquadmateOutfits">Synchronisierung der Squadmitgliederoutfits</system:String>
+
+    <!-- LE1 Config Merge -->
+    <system:String x:Key="string_m3ConsoleKeybinds">M3-Konsolentastenbelegungen</system:String>
+    <!-- This is the name assigned to the entry that is shown in Modified Basegame Files when you set the keybinds for LE1 and they persist across merges. It's a mod name essentially, but its OK to localize for the user-->
+
+    <!-- Game 2 Email Merge -->
+    <system:String x:Key="string_synchronizingEmails">Synchronisiere E-Mails</system:String>
+    <system:String x:Key="string_emailsNotMergedMessagesFileNotFound">E-Mails nicht zusammengeführt: Nachrichtendatei nicht gefunden</system:String>
+    <system:String x:Key="string_game2EmailMergeWrongGame">Spiel 2 Manifest zur E-Mail-Zusammenführung zielt auf das falsche Spiel ab</system:String>
+
+    <!-- Plot Manager Merge -->
+    <system:String x:Key="string_interp_plotManagerSyncForX">PlotManager Synchronisierung für {0}</system:String>
+    <!-- 0={comma separated list of mod names} -->
+    <system:String xml:space="preserve" x:Key="string_interp_errorCompilingFunctionReason">Fehler beim Kompilieren der Funktion {0}: {1}</system:String>
+    <!-- 0={export name} 1={list of log messages} -->
+    <system:String x:Key="string_interp_fileLibInitFailedPlotManager">FileLib für PlotManagerSync konnte nicht initialisiert werden: {0}</system:String>
+    <!-- 0={Newline separated list of errors} -->
+    <system:String x:Key="string_dialog_invalidConditionalNumberSourceMod">Die Conditional {0} ist keine gültige Zahl. Quell-Mod: {1}</system:String>
+    <!-- 0={Number} 1={Mod name} -->
+
+    <!-- Library Consumer -->
+    <system:String x:Key="string_buildNotSigned">Unsignierte Version</system:String>
+    <!-- Application build is not signed by an authorized signer or is not signed at all -->
+
+    <!-- DLC Option Key -->
+    <system:String x:Key="string_interp_dok_mustContainDescriptorX">DLCOptionKey-Structs müssen einen Deskriptor mit dem Namen „{0}“ enthalten.</system:String>
+    <!-- 0={Name} -->
+    <system:String x:Key="string_interp_dok_withOptionXInstalled">(mit Option {0} installiert)</system:String>
+    <!-- 0={Option name} -->
+    <system:String x:Key="string_interp_dok_withOptionXNotInstalled">(mit Option {0} NICHT installiert)</system:String>
+    <!-- 0={Option name} -->
+
+    <!-- Bio2DA Merge -->
+    <system:String x:Key="string_interp_2damerge_invalidTargetFile">Bio2DA-Zusammenführung „Paketdatei“ ist ungültig: {0} – kann nicht in Nicht-Basisspiel-/Bring Down The Sky-2DA-Dateien zusammengeführt werden</system:String>
+    <!-- 0={Filename} -->
+    <system:String x:Key="string_interp_2damerge_couldNotFindTarget">Bio2DA-Zusammenführung „Paketdatei“ ist ungültig: {0} – konnte im Basisspiel Ordner CookedPCConsole des Ziels nicht gefunden werden</system:String>
+    <!-- 0={Filename} -->
+    <system:String x:Key="string_interp_2damerge_couldNotFindSourcePackage">Bio2DA-Zusammenführung „mergepackagefile“ ist ungültig: {0} – konnte im CookedPCConsole-Ordner der Mod nicht gefunden werden</system:String>
+    <!-- 0={Filename} -->
+    <system:String x:Key="string_interp_2damerge_invalidTableNameMissingPart">Bio2DA-Zusammenführungswert „Mergetables“ ist ungültig: {0} – der Basisname des Objekts endet nicht mit _part</system:String>
+    <!-- 0={Table InstancedFullPath string} -->
+    <system:String x:Key="string_interp_2damerge_invalidCouldNotFindSourceTableExport">Bio2DA-Zusammenführungswert „Mergetables“ ist ungültig: {0} – Tabelle mit dem instanziierten vollständigen Pfad konnte im Paket „{1}“ nicht gefunden werden.</system:String>
+    <!-- 0={Table InstancedFullPath string} 1={Filepath} -->
+    <system:String x:Key="string_interp_2damerge_invalidSourceObjectIsNot2DA">Bio2DA-Zusammenführungswert „Mergetables“ ist ungültig: {0} – Export ist keine Bio2DA oder keine Unterklasse. Er war: {1}</system:String>
+    <!-- 0={Table InstancedFullPath string} 1={Object class name} -->
+    <system:String x:Key="string_interp_2damerge_invalidCouldNotFindTargetTable">Bio2DA-Zusammenführungswert „Mergetables“ ist ungültig: {0} – Basisspieltabelle mit Basisnamen „{1}“ konnte im Paket „{2}“ nicht gefunden werden.</system:String>
+    <!-- 0={Table InstancedFullPath string} 1={Table name} 2={Filepath} -->
+    <system:String x:Key="string_interp_2damerge_invalidNotAVanillaTable">Bio2DA-Zusammenführungswert „Mergetables“ ist ungültig: {0} – dies ist keine Standardtabelle. Bio2DA-Zusammenführung funktioniert nicht mit Nicht-Standardtabellen</system:String>
+    <!-- 0={Table InstancedFullPath string} -->
+    <system:String x:Key="string_interp_bio2daMerge_incompatibleModDetected">'{0}' ist nicht mit der automatischen Bio2DA-Merge-Funktion kompatibel. Stell bitte sicher, dass deine Mod auf dem neuesten Stand ist und informiere den Mod-Entwickler darüber, dass Mods keine DLC-Überschreibungen von Merge-Zielen enthalten dürfen.</system:String>
+    <!-- 0={DLC foldername or Human name of DLC} -->
+    <system:String x:Key="string_vanillaAllM3DAsReverted">(Vanilla - alle M3DAs zurückgesetzt)</system:String>
+
+    <!-- DiagExtended -->
+    <system:String x:Key="string_testingPackageDecompression">Package-Dekomprimierung wird getestet</system:String>
+
+    <!-- Binary Texture Package-->
+    <system:String x:Key="string_interp_mismatchedBTMBTP">Die Metadatendatei {0} gehört nicht zu dieser BTP-Datei.</system:String>
+    <!-- 0={Filepath} -->
+    <system:String x:Key="string_interp_btpInvalidTFCReference">Ungültige TFC-Referenz erkannt, leere GUID für {0}</system:String>
+    <!-- 0={Name of TFC} - Guid in this case is a unique identifier, it is known as a guid internally in editor tools, a data structure concept -->
+    <system:String x:Key="string_interp_btpTFCNameTooLong">Der TFC-Name ist für das M3 Texture Override-System zu lang: {0}. Die maximal unterstützte Länge beträgt {1} Zeichen.</system:String>
+    <!-- 0={Name of TFC} 1={Number} -->
+
+    <!-- M3CTextureOverrideMerge -->
+    <system:String x:Key="string_buildingTextureOverridePackage">Baue Texture Override Package</system:String>
+
+    <!-- Texture Override Compiler -->
+    <system:String x:Key="string_interp_buildingTextureOverridePackage">Baue Texture Override Package</system:String>
+    <system:String x:Key="string_interp_btpBuildFailedSourceTextureMissing">Quell-Package „{0}“ für die Textur '{1}' existiert nicht, BTP kann nicht kompiliert werden.</system:String>
+    <!-- 0={Filename} 1={Texture path in package file} -->
+
+    <!-- TextureOverrideTextureEntry -->
+    <system:String x:Key="string_interp_toCouldNotFindIFP">textureifp {0} konnte in Package {1} nicht gefunden werden.</system:String>
+    <!-- 0={Texture path in package} 1={Packagefilename} - textureifp is the key name in the manifest file, it shouldn't be localized -->
+    <system:String x:Key="string_interp_toInvalidTexture">{0} ist kein Texturobjekt in {1} ({2})</system:String>
+    <!-- 0={Texture path in package} 1={Package filename} 2={Name of object class that was found} -->
+
+    <!-- Texture Override Manifest -->
+    <system:String x:Key="string_interp_toManifestGameMismatch1">Texture Override Manifeste können nicht für verschiedene Spiele verwendet werden: {0} &gt;-&lt; {1}</system:String>
+    <!-- 0={Game} 1={Game} -->
+    <system:String x:Key="string_interp_toManifestGameMismatch2">Das Texture Override-Manifest {0} zielt auf ein anderes Spiel ab: Das Manifest ist für {1}, wir laden für {2}</system:String>
+    <!-- 0={filePath} 1={Game} 2={Game} -->
+    <system:String x:Key="string_interp_toInvalidSourcePackageName">Das Texture Override-Manifest {0} hat einen ungültigen Quell-Package-Namen: {1} - Dateien MÜSSEN mit „TO_“ beginnen</system:String>
+    <!-- 0={filePath} 1={fileName} -->
+
+    <!-- Global Shader Merge-->
+    <system:String x:Key="string_interp_gsInvalidHeader">Ungültige m3gs-Datei: {0}. Datei hat einen ungültigen Header.</system:String>
+    <!-- 0={Filepath} -->
+    <system:String x:Key="string_interp_gsNotValidShader">Ungültige m3gs-Datei: {0}. Datei ist kein gültiger kompilierter Shader.</system:String>
+    <!-- 0={Filepath} -->
+
 </ResourceDictionary>

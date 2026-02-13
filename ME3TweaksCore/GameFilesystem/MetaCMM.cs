@@ -9,6 +9,7 @@ using LegendaryExplorerCore.Gammtek.Extensions.Collections.Generic;
 using LegendaryExplorerCore.Misc;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.Helpers;
+using ME3TweaksCore.ME3Tweaks.ModManager;
 using ME3TweaksCore.Objects;
 
 namespace ME3TweaksCore.GameFilesystem
@@ -43,7 +44,7 @@ namespace ME3TweaksCore.GameFilesystem
         public string ModdescSourcePath { get; set; }
 
         /// <summary>
-        /// The version for parsing moddesc-specific structs like requirements
+        /// The cmmver of the moddesc that was used to install this mod.
         /// </summary>
         public double ModDescFeatureLevel { get; set; }
         /// <summary>
@@ -229,12 +230,14 @@ namespace ME3TweaksCore.GameFilesystem
                                     // MetaCMM does not write things beyond version. I hope to not regret this decision
                                     // Someday i'll look at this and be like,
                                     // why did I not make this a static method for parsing a requirement? Why must I replace this 5 times?
-                                    var testreq = ModDescFeatureLevel >= 9.0
+                                    // Future Mgamerz note: The real issue is that I never deserialized ModDescFeatureLevel until 9.2
+                                    // even though this was added in 9.1
+                                    var testreq = ModDescFeatureLevel >= ModDescConsts.MODDESC_VERSION_9_0
                                         ? DLCRequirement.ParseRequirementKeyed(s, ModDescFeatureLevel)
-                                        : DLCRequirement.ParseRequirement(s, false, ModDescFeatureLevel >= 6.3);
+                                        : DLCRequirement.ParseRequirement(s, false, ModDescFeatureLevel >= ModDescConsts.MODDESC_VERSION_6_3);
                                     RequiredDLC.Add(testreq);
                                 }
-                                catch(Exception ex1)
+                                catch (Exception ex1)
                                 {
                                     MLog.Warning($@"Failed to read DLC requirement: {s} in metacmm file {metaFile}");
                                 }
@@ -282,6 +285,10 @@ namespace ME3TweaksCore.GameFilesystem
                         else if (line.StartsWith(PrefixModDescHash))
                         {
                             ModdescSourceHash = line.Substring(PrefixModDescHash.Length);
+                        }
+                        else if (line.StartsWith(PrefixModDescFeatureLevel))
+                        {
+                            ModDescFeatureLevel = ModFileFormats.NormalizeModescVersion(double.Parse(line.Substring(PrefixModDescFeatureLevel.Length)));
                         }
                         break;
                 }

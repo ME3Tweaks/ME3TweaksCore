@@ -2,7 +2,10 @@
 using LegendaryExplorerCore.Misc;
 using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
+using ME3TweaksCore.GameFilesystem;
+using ME3TweaksCore.Localization;
 using ME3TweaksCore.Objects;
+using ME3TweaksCore.Targets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System;
@@ -55,7 +58,7 @@ namespace ME3TweaksCore.TextureOverride
             if (target.Game != Game)
             {
                 MLog.Error($@"Cannot override textures from different games. {Game} <-> {target.Game}");
-                throw new Exception($"Cannot use texture override manifests for different games: {Game} <-> {target.Game}");
+                throw new Exception(LC.GetString(LC.string_interp_toManifestGameMismatch1, Game, target.Game));
             }
 
             if (this.Textures != null)
@@ -82,15 +85,55 @@ namespace ME3TweaksCore.TextureOverride
         /// </summary>
         /// <param name="sourceFolder">The base folder. For DLC this will be DLC_MOD_NAME/CookedPCConsole/</param>
         /// <param name="destFile">Where files are serialized to. For how ASI expects it, it should be DLC_MOD_NAME/TheFile</param>
-        public void CompileBinaryTexturePackage(string sourceFolder, string destFile, string dlcName, ProgressInfo pi = null)
+        public void CompileBinaryTexturePackage(GameTarget target, string dlcName, ProgressInfo pi = null)
         {
-            MLog.Information($@"Compiling Texture Override binary package to {destFile} with {Textures.Count} textures");
+            var btpDest = M3CTextureOverrideMerge.GetCombinedTexturePackagePath(target, dlcName);
+            MLog.Information($@"Compiling Texture Override binary package to {btpDest} with {Textures.Count} textures");
 
-            var metadataPackage = MEPackageHandler.CreateAndOpenPackage(Path.Combine(Directory.GetParent(destFile).FullName, @"BTPMetadata.btm"), Game);
-            using var btpStream = new FileStream(destFile, FileMode.Create);
+            var metadataPackage = MEPackageHandler.CreateAndOpenPackage(M3CTextureOverrideMerge.GetBTPMetadataPath(target, dlcName), Game);
+            metadataPackage.FindNameOrAdd(dlcName); // DLC name is first in name table.
+            using var btpStream = new FileStream(btpDest, FileMode.Create);
             var compiler = new TextureOverrideCompiler();
+            var sourceFolder = Path.Combine(target.GetDLCPath(), dlcName, target.Game.CookedDirName());
             compiler.BuildBTPFromTO(this, sourceFolder, btpStream, dlcName, pi, metadataPackage);
-            metadataPackage.Save();
+        }
+
+        /// <summary>
+        /// Does verification checks that this manifest adheres to the required standards
+        /// </summary>
+        /// <param name="filePath">Path for logging/showing in exceptions</param>
+        /// <param name="targetGame">Target game</param>
+        /// <param name="throwIfFailed">Set to true to make this method throw localized exceptions on failure.</param>
+        /// <returns></returns>
+        /// <exception cref="Exception">When verification fails and throwIfFailed is true</exception>
+        internal bool Verify(string filePath, MEGame targetGame, bool throwIfFailed = false)
+        {
+            if (Game != targetGame)
+            {
+                MLog.Error($@"Texture Override manifest {filePath} game mismatch in {filePath} (file targets {Game}, we are loading for {targetGame}), skipping this file.");
+                if (throwIfFailed)
+                {
+                    throw new Exception(LC.GetString(LC.string_interp_toManifestGameMismatch1, filePath, Game, targetGame));
+                }
+                return false;
+            }
+
+            foreach (var entry in Textures)
+            {
+                var fileName = Path.GetFileName(entry.CompilingSourcePackage);
+                if (!fileName.StartsWith(@"TO_"))
+                {
+                    MLog.Error($@"Texture Override manifest {filePath} has invalid source package name: {fileName} - files MUST start with 'TO_', skipping this file.");
+                    if (throwIfFailed)
+                    {
+                        throw new Exception(LC.GetString(LC.string_interp_toManifestGameMismatch2, filePath, fileName));
+                    }
+                    return false;
+                }
+            }
+
+
+            return true;
         }
     }
 }

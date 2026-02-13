@@ -7,10 +7,12 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using CliWrap;
 using CliWrap.EventStream;
 using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Packages;
+using LegendaryExplorerCore.Gammtek.Extensions;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.Localization;
 using ME3TweaksCore.Misc;
@@ -19,23 +21,44 @@ using ME3TweaksCore.Targets;
 namespace ME3TweaksCore.Helpers.MEM
 {
 
+    /// <summary>
+    /// Flags for specifying Level of Detail (LOD) settings for textures in Mass Effect (OT) games.
+    /// Can be combined using bitwise operations.
+    /// </summary>
     [Flags]
     public enum LodSetting
     {
+        /// <summary>
+        /// Vanilla game LOD settings (no modifications)
+        /// </summary>
         Vanilla = 0,
+        /// <summary>
+        /// 2K texture resolution limit
+        /// </summary>
         TwoK = 1,
+        /// <summary>
+        /// 4K texture resolution (no limit)
+        /// </summary>
         FourK = 2,
+        /// <summary>
+        /// Enable soft shadows mode
+        /// </summary>
         SoftShadows = 4,
     }
 
 
     /// <summary>
-    /// Utility class for interacting with MEM. Calls must be run on a background thread of
+    /// Utility class for interacting with MassEffectModderNoGui (MEM). 
+    /// Provides methods for texture modding operations including installation, verification, and LOD management.
+    /// All calls must be run on a background thread.
     /// </summary>
     public static class MEMIPCHandler
     {
         #region Static Property Changed
 
+        /// <summary>
+        /// Event raised when a static property value changes
+        /// </summary>
         public static event PropertyChangedEventHandler StaticPropertyChanged;
 
         /// <summary>
@@ -59,6 +82,10 @@ namespace ME3TweaksCore.Helpers.MEM
 
         private static short _memNoGuiVersionOT = -1;
 
+        /// <summary>
+        /// Gets or sets the version number of MassEffectModderNoGui for Original Trilogy games.
+        /// Returns -1 if the version has not been retrieved yet.
+        /// </summary>
         public static short MassEffectModderNoGuiVersionOT
         {
             get => _memNoGuiVersionOT;
@@ -67,6 +94,10 @@ namespace ME3TweaksCore.Helpers.MEM
 
         private static short _memNoGuiVersionLE = -1;
 
+        /// <summary>
+        /// Gets or sets the version number of MassEffectModderNoGui for Legendary Edition games.
+        /// Returns -1 if the version has not been retrieved yet.
+        /// </summary>
         public static short MassEffectModderNoGuiVersionLE
         {
             get => _memNoGuiVersionLE;
@@ -74,9 +105,10 @@ namespace ME3TweaksCore.Helpers.MEM
         }
 
         /// <summary>
-        /// Returns the version number for MEM, or 0 if it couldn't be retreived
+        /// Returns the version number for MEM, or 0 if it couldn't be retrieved
         /// </summary>
-        /// <returns></returns>
+        /// <param name="classicMEM">True for Original Trilogy MEM, false for Legendary Edition MEM</param>
+        /// <returns>The version number as a short, or 0 if retrieval failed</returns>
         public static short GetMemVersion(bool classicMEM)
         {
             // If the current version doesn't support the --version --ipc, we just assume it is 0.
@@ -98,6 +130,20 @@ namespace ME3TweaksCore.Helpers.MEM
             return classicMEM ? MassEffectModderNoGuiVersionOT : MassEffectModderNoGuiVersionLE;
         }
 
+        /// <summary>
+        /// Runs MassEffectModderNoGui with specified arguments and waits for it to exit.
+        /// Handles IPC communication and process lifecycle management.
+        /// </summary>
+        /// <param name="classicMEM">True for Original Trilogy MEM, false for Legendary Edition MEM</param>
+        /// <param name="arguments">Command-line arguments to pass to MEM</param>
+        /// <param name="shouldWaitforExit">Whether the call should wait for MEM to exit</param>
+        /// <param name="reasonCannotBeSafelyTerminated">Reason why this process cannot be safely terminated (if applicable)</param>
+        /// <param name="applicationStarted">Callback invoked when the application starts, receives process ID</param>
+        /// <param name="ipcCallback">Callback for handling IPC messages, receives command and parameter</param>
+        /// <param name="applicationStdErr">Callback for standard error output</param>
+        /// <param name="applicationExited">Callback invoked when application exits, receives exit code</param>
+        /// <param name="setMEMCrashLog">Callback to receive crash log content if MEM crashes</param>
+        /// <param name="cancellationToken">Token to cancel the operation</param>
         public static void RunMEMIPCUntilExit(bool classicMEM,
             string arguments,
             bool shouldWaitforExit,
@@ -109,14 +155,21 @@ namespace ME3TweaksCore.Helpers.MEM
             Action<string> setMEMCrashLog = null,
             CancellationToken cancellationToken = default)
         {
-
-            object lockObject = new object();
+            TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
 
             void appStart(int processID)
             {
                 MLog.Information($@"MassEffectModderNoGui launched, process ID: {processID}");
                 applicationStarted?.Invoke(processID);
-                MEMProcessHandler.AddProcess(Process.GetProcessById(processID), shouldWaitforExit, reasonCannotBeSafelyTerminated);
+                try
+                {
+                    MEMProcessHandler.AddProcess(Process.GetProcessById(processID), shouldWaitforExit, reasonCannotBeSafelyTerminated);
+                }
+                catch (Exception e)
+                {
+                    // Couldn't add process, may have aleady existed
+                    MLog.Warning($@"Couldn't add process to tracker - it may have already terminated: {e.Message}");
+                }
             }
 
             void appExited(int code)
@@ -128,37 +181,51 @@ namespace ME3TweaksCore.Helpers.MEM
                     MLog.Error($@"MassEffectModderNoGui exited abnormally with code {code}");
 
                 applicationExited?.Invoke(code);
-                lock (lockObject)
-                {
-                    Monitor.Pulse(lockObject);
-                }
+                tcs.TrySetResult(true);
             }
 
             StringBuilder crashLogBuilder = new StringBuilder();
+            object crashLogLock = new object();
 
             void memCrashLogOutput(string str)
             {
-                crashLogBuilder.AppendLine(str);
+                lock (crashLogLock)
+                {
+                    crashLogBuilder.AppendLine(str);
+                }
             }
 
             // Run MEM
-            MEMIPCHandler.RunMEMIPC(classicMEM, arguments, appStart, ipcCallback, applicationStdErr, appExited,
+            var memTask = MEMIPCHandler.RunMEMIPC(classicMEM, arguments, appStart, ipcCallback, applicationStdErr, appExited,
                 memCrashLogOutput,
                 cancellationToken);
 
             // Wait until exit
-            lock (lockObject)
-            {
-                Monitor.Wait(lockObject);
-            }
+            tcs.Task.Wait(cancellationToken);
 
-            if (crashLogBuilder.Length > 0)
+            lock (crashLogLock)
             {
-                setMEMCrashLog?.Invoke(crashLogBuilder.ToString().Trim());
+                if (crashLogBuilder.Length > 0)
+                {
+                    setMEMCrashLog?.Invoke(crashLogBuilder.ToString().Trim());
+                }
             }
         }
 
-        private static async void RunMEMIPC(bool classicMEM, string arguments, Action<int> applicationStarted = null,
+        /// <summary>
+        /// Runs MassEffectModderNoGui asynchronously with IPC communication enabled.
+        /// Processes standard output, standard error, and IPC commands.
+        /// </summary>
+        /// <param name="classicMEM">True for Original Trilogy MEM, false for Legendary Edition MEM</param>
+        /// <param name="arguments">Command-line arguments to pass to MEM</param>
+        /// <param name="applicationStarted">Callback invoked when the application starts</param>
+        /// <param name="ipcCallback">Callback for handling IPC messages</param>
+        /// <param name="applicationStdErr">Callback for standard error output</param>
+        /// <param name="applicationExited">Callback invoked when application exits</param>
+        /// <param name="memCrashLine">Callback for individual crash log lines</param>
+        /// <param name="cancellationToken">Token to cancel the operation</param>
+        /// <returns>A task representing the asynchronous operation</returns>
+        private static async Task RunMEMIPC(bool classicMEM, string arguments, Action<int> applicationStarted = null,
             Action<string, string> ipcCallback = null, Action<string> applicationStdErr = null,
             Action<int> applicationExited = null, Action<string> memCrashLine = null,
             CancellationToken cancellationToken = default)
@@ -200,7 +267,6 @@ namespace ME3TweaksCore.Helpers.MEM
             Encoding encoding = mvi.FileMajorPart > 421 ? Encoding.Unicode : Encoding.UTF8; //? Is UTF8 the default for windows console
 
             await foreach (var cmdEvent in cmd.ListenAsync(encoding, cancellationToken))
-
             {
                 switch (cmdEvent)
                 {
@@ -258,10 +324,11 @@ namespace ME3TweaksCore.Helpers.MEM
         }
 
         /// <summary>
-        /// Converts MEM IPC output to command, param for handling. This method assumes string starts with [IPC] always.
+        /// Converts MEM IPC output to command and parameter for handling. 
+        /// This method assumes string starts with [IPC] always.
         /// </summary>
-        /// <param name="str"></param>
-        /// <returns></returns>
+        /// <param name="str">The IPC string to parse, must start with [IPC]</param>
+        /// <returns>A tuple containing the command name and its parameter value</returns>
         private static (string command, string param) breakdownIPC(string str)
         {
             string command = str.Substring(5);
@@ -278,11 +345,13 @@ namespace ME3TweaksCore.Helpers.MEM
         /// <summary>
         /// Sets the path MEM will use for the specified game
         /// </summary>
-        /// <param name="targetGame"></param>
-        /// <param name="targetPath"></param>
-        /// <returns>True if exit code is zero</returns>
+        /// <param name="classicMEM">True for Original Trilogy MEM, false for Legendary Edition MEM</param>
+        /// <param name="targetGame">The game to set the path for</param>
+        /// <param name="targetPath">The filesystem path to the game installation</param>
+        /// <returns>True if exit code is zero (success), false otherwise</returns>
         public static bool SetGamePath(bool classicMEM, MEGame targetGame, string targetPath)
         {
+            // This doesn't work very well with LE on Windows as of version 533
             int exitcode = 0;
 
             string args = $@"--set-game-data-path --gameid {targetGame.ToMEMGameNum()} --path ""{targetPath}""";
@@ -299,24 +368,25 @@ namespace ME3TweaksCore.Helpers.MEM
         /// <summary>
         /// Sets MEM up to use the specified target for texture modding
         /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
+        /// <param name="target">The game target containing game type and installation path</param>
+        /// <returns>True if the game path was set successfully, false otherwise</returns>
         public static bool SetGamePath(GameTarget target)
         {
             return SetGamePath(target.Game.IsOTGame(), target.Game, target.TargetPath);
         }
 
         /// <summary>
-        /// Sets the LODs as specified in the setting bitmask with MEM for the specified game
+        /// Sets the LODs (Level of Detail) as specified in the setting bitmask with MEM for the specified game.
+        /// Only works for Original Trilogy games.
         /// </summary>
-        /// <param name="game"></param>
-        /// <param name="setting"></param>
-        /// <returns></returns>
+        /// <param name="game">The game to apply LOD settings to</param>
+        /// <param name="setting">The LOD settings flags to apply</param>
+        /// <returns>True if LODs were set successfully, false otherwise</returns>
         public static bool SetLODs(MEGame game, LodSetting setting)
         {
             if (game.IsLEGame())
             {
-                MLog.Error(@"Cannot set LODs for LE games! This is a bug.");
+                MLog.Error(@"Cannot set LODs for LE games! This call shouldn't have been made, this is a bug.");
                 return false;
             }
 
@@ -356,12 +426,13 @@ namespace ME3TweaksCore.Helpers.MEM
         }
 
         /// <summary>
-        /// Gets list of files in an archive
+        /// Gets list of files in a compressed archive
         /// </summary>
-        /// <param name="file"></param>
-        /// <returns></returns>
+        /// <param name="file">Path to the archive file</param>
+        /// <returns>List of file paths contained in the archive</returns>
         public static List<string> GetFileListing(string file)
         {
+            // Used by Linux
             string args = $"--list-archive --input \"{file}\" --ipc"; //do not localize
             List<string> fileListing = new List<string>();
 
@@ -379,18 +450,17 @@ namespace ME3TweaksCore.Helpers.MEM
                 applicationExited: x => exitcode = x); //Change to catch exit code of non zero.        
             if (exitcode != 0)
             {
-                MLog.Error(
-                    $@"MassEffectModderNoGui had error getting file listing of archive {file}, exit code {exitcode}");
+                MLog.Error($@"MassEffectModderNoGui had error getting file listing of archive {file}, exit code {exitcode}");
             }
 
             return fileListing;
         }
 
         /// <summary>
-        /// Fetches the list of LODs for the specified game
+        /// Fetches the list of LODs (Level of Detail settings) for the specified game
         /// </summary>
-        /// <param name="game"></param>
-        /// <returns></returns>
+        /// <param name="game">The game to retrieve LOD information for</param>
+        /// <returns>Dictionary mapping LOD identifiers to their values, or null if an error occurred</returns>
         public static Dictionary<string, string> GetLODs(MEGame game)
         {
             Dictionary<string, string> lods = new Dictionary<string, string>();
@@ -429,24 +499,30 @@ namespace ME3TweaksCore.Helpers.MEM
         }
 
         /// <summary>
-        /// Used to pass data back to installer core. DO NOT CHANGE VALUES AS
-        /// THEY ARE INDIRECTLY REFERENCED
+        /// Enumeration used to pass game directory data back to ALOT Installer Core. 
+        /// DO NOT CHANGE VALUES AS THEY ARE INDIRECTLY REFERENCED
         /// </summary>
         public enum GameDirPath
         {
+            /// <summary>Mass Effect 1 game installation path</summary>
             ME1GamePath,
+            /// <summary>Mass Effect 1 configuration path</summary>
             ME1ConfigPath,
+            /// <summary>Mass Effect 2 game installation path</summary>
             ME2GamePath,
+            /// <summary>Mass Effect 2 configuration path</summary>
             ME2ConfigPath,
+            /// <summary>Mass Effect 3 game installation path</summary>
             ME3GamePath,
+            /// <summary>Mass Effect 3 configuration path</summary>
             ME3ConfigPath,
         }
 
         /// <summary>
-        /// Returns location of the game and config paths (on linux) as defined by MEM, or null if game can't be found.
+        /// Returns location of the game and config paths (on Linux) as defined by MEM, or null if game can't be found.
         /// </summary>
-        /// <param name="game"></param>
-        /// <returns></returns>
+        /// <param name="originalTrilogy">True for Original Trilogy, false for Legendary Edition</param>
+        /// <returns>Dictionary mapping GameDirPath enums to their filesystem paths</returns>
         public static Dictionary<GameDirPath, string> GetGameLocations(bool originalTrilogy)
         {
             Dictionary<GameDirPath, string> result = new Dictionary<GameDirPath, string>();
@@ -495,20 +571,26 @@ namespace ME3TweaksCore.Helpers.MEM
             return result;
         }
 
-#if !WINDOWS
-                // Only works on Linux builds of MEM
-                public static bool SetConfigPath(MEGame game, string itemValue)
-                {
-                    int exitcode = 0;
-                    string args =
- $"--set-game-user-path --gameid {game.ToGameNum()} --path \"{itemValue}\""; //do not localize
-                    MEMIPCHandler.RunMEMIPCUntilExit(args, applicationExited: x => exitcode = x);
-                    if (exitcode != 0)
-                    {
-                        MLog.Error($@"Non-zero MassEffectModderNoGui exit code setting game config path: {exitcode}");
-                    }
-                    return exitcode == 0;
-                }
+        // This was when this project could run on Linux. Leaving for reference.
+#if ALOT && !WINDOWS
+        /// <summary>
+        /// Sets the configuration path for a game (Linux only).
+        /// Only works on Linux builds of MEM.
+        /// </summary>
+        /// <param name="game">The game to set the config path for</param>
+        /// <param name="itemValue">The configuration directory path</param>
+        /// <returns>True if the config path was set successfully, false otherwise</returns>
+        public static bool SetConfigPath(MEGame game, string itemValue)
+        {
+            int exitcode = 0;
+            string args = $"--set-game-user-path --gameid {game.ToGameNum()} --path \"{itemValue}\""; //do not localize
+            MEMIPCHandler.RunMEMIPCUntilExit(args, applicationExited: x => exitcode = x);
+            if (exitcode != 0)
+            {
+                MLog.Error($@"Non-zero MassEffectModderNoGui exit code setting game config path: {exitcode}");
+            }
+            return exitcode == 0;
+        }
 #endif
 
 
@@ -522,6 +604,7 @@ namespace ME3TweaksCore.Helpers.MEM
         /// <param name="progressCallback">Percentage-based progress indicator for the current stage</param>
         /// <param name="setGamePath">If the game path should be set. Setting to false can save a bit of time if you know the path is already correct.</param>
         /// <param name="skipMarkers">If the markers step should be skipped in install</param>
+        /// <returns>MEMSessionResult containing installation results, errors, and exit code</returns>
         public static MEMSessionResult InstallMEMFiles(GameTarget target, string memFileListFile, Action<string> currentActionCallback = null, Action<int> progressCallback = null, bool setGamePath = true, bool skipMarkers = false)
         {
             MEMSessionResult result = new MEMSessionResult(); // Install session flag is set during stage context switching
@@ -533,7 +616,8 @@ namespace ME3TweaksCore.Helpers.MEM
             currentActionCallback?.Invoke(LC.GetString(LC.string_preparingToInstallTextures));
             var cmdParams = $@"--install-mods --gameid {target.Game.ToMEMGameNum()} --input ""{memFileListFile}"" --verify --ipc";
 
-            if (skipMarkers) {
+            if (skipMarkers)
+            {
                 cmdParams += $@" --skip-markers";
             }
 
@@ -627,11 +711,14 @@ namespace ME3TweaksCore.Helpers.MEM
         }
 
         /// <summary>
-        /// Checks a target for texture install markers, and returns a list of packages containing texture markers on them. This only is run on a game target that is not texture modded.
+        /// Checks a target for texture install markers, and returns a list of packages containing texture markers on them. 
+        /// This only is run on a game target that is not texture modded.
         /// </summary>
-        /// <param name="target"></param>
-        /// <param name="currentActionCallback"></param>
-        /// <param name="progressCallback"></param>
+        /// <param name="target">The game target to check for markers</param>
+        /// <param name="currentActionCallback">Callback to update UI with current action text</param>
+        /// <param name="progressCallback">Callback to report progress percentage</param>
+        /// <param name="setGamePath">Whether to set the game path before checking</param>
+        /// <returns>MEMSessionResult containing found markers in the Errors list, or null if target is already texture modded</returns>
         public static MEMSessionResult CheckForMarkers(GameTarget target, Action<string> currentActionCallback = null, Action<int> progressCallback = null, bool setGamePath = true)
         {
             if (target.TextureModded) return null;
@@ -701,9 +788,14 @@ namespace ME3TweaksCore.Helpers.MEM
         }
 
         /// <summary>
-        /// Checks the texture map for consistency to the current game state (added/removed and replaced). This is run in two stages and only is run on games that are not already texture modded.
+        /// Checks the texture map for consistency to the current game state (added/removed and replaced files). 
+        /// This is run in two stages and only is run on games that are already texture modded.
         /// </summary>
-        /// <returns>Object containing all texture map desynchronizations in the errors list.</returns>
+        /// <param name="target">The game target to check texture map consistency for</param>
+        /// <param name="currentActionCallback">Callback to update UI with current action text</param>
+        /// <param name="progressCallback">Callback to report progress percentage</param>
+        /// <param name="setGamePath">Whether to set the game path before checking</param>
+        /// <returns>Object containing all texture map desynchronizations in the errors list, or null if target is not texture modded</returns>
         public static MEMSessionResult CheckTextureMapConsistencyAddedRemoved(GameTarget target, Action<string> currentActionCallback = null, Action<int> progressCallback = null, bool setGamePath = true)
         {
             if (!target.TextureModded) return null; // We have nothing to check
@@ -784,10 +876,10 @@ namespace ME3TweaksCore.Helpers.MEM
         }
 
         /// <summary>
-        /// Determines if file is ignored by texture consistency check
+        /// Determines if a file should be ignored by texture consistency check
         /// </summary>
-        /// <param name="s"></param>
-        /// <returns></returns>
+        /// <param name="s">The file path to check</param>
+        /// <returns>True if the file should be ignored, false otherwise</returns>
         private static bool IsIgnoredFile(string s)
         {
             if (string.IsNullOrWhiteSpace(s)) return false; // ???
@@ -802,6 +894,11 @@ namespace ME3TweaksCore.Helpers.MEM
             }
         }
 
+        /// <summary>
+        /// Converts a Legendary Edition relative path to a shorter display path by removing the /Game/MEX/ prefix
+        /// </summary>
+        /// <param name="LERelativePath">The full relative path from LE</param>
+        /// <returns>Shortened path with prefix removed, or original path if too short or null</returns>
         private static string GetShortPath(string LERelativePath)
         {
             if (string.IsNullOrWhiteSpace(LERelativePath) || LERelativePath.Length < 11) return LERelativePath;

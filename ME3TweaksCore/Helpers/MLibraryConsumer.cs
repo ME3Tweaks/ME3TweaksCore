@@ -42,11 +42,12 @@ namespace ME3TweaksCore.Helpers
         /// Returns the hosting processes' name, without extension
         /// </summary>
         /// <returns></returns>
-#if (!WINDOWS && DEBUG)
+#if (DEBUG)
         // running process will be 'dotnet' in this mode
         public static string GetHostingProcessname() => @"ME3TweaksCore";
 #else
         public static string GetHostingProcessname() => Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().MainModule.ModuleName);
+#endif
 
         /// <summary>
         /// Gets the signing date of the executable. Depends on it being signed
@@ -64,6 +65,5 @@ namespace ME3TweaksCore.Helpers
 
             return LC.GetString(LC.string_buildNotSigned);
         }
-#endif
     }
 }

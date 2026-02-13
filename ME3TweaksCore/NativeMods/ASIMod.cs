@@ -72,5 +72,10 @@ namespace ME3TweaksCore.NativeMods
             // No false conditions occurred
             return true;
         }
+
+        public override string ToString()
+        {
+            return $@"ASIMod - {LatestVersionIncludingHidden}";
+        }
     }
 }

@@ -65,7 +65,7 @@ namespace ME3TweaksCore.Helpers
             }
             else
             {
-                // Keep it awake.
+                // Keep it awake, do not renew though.
                 MLog.Information($@"The system is not allowed to go to sleep for another {RemainingMinutesAwake + 1} minutes due to previous request by {AwakeReason}");
                 SetThreadExecutionState(ExecutionState.EsContinuous | ExecutionState.EsSystemRequired);
             }
@@ -91,7 +91,7 @@ namespace ME3TweaksCore.Helpers
                 {
                     _wakeTimer.Stop();
                     _wakeTimer.Elapsed -= keepAwakeTimerTick;
-                    _wakeTimer.Dispose(); //08/19/2025 - dispose of timer
+                    _wakeTimer.Dispose(); // 08/19/2025 - dispose of timer
                     _wakeTimer = null;
                 }
             }

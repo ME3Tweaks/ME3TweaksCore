@@ -41,6 +41,9 @@
 	<system:String x:Key="string_interp_productNameX">Продукт: {0}</system:String>
 	<system:String x:Key="string_interp_descriptionX">Описание: {0}</system:String>
 	<system:String x:Key="string_interp_companyX">Компания: {0}</system:String>
+	<system:String x:Key="string_interp_versionX">Версия: {0}</system:String>
+	<system:String x:Key="string_interp_failedToDownloadASIDependency">Не удалось скачать зависимый объект ASI {0}</system:String>
+	<system:String x:Key="string_interp_asiDependencyNotAvailable">Зависимый объект ASI {0} недоступен</system:String>
 	<system:String x:Key="string_validatingBackupSource">Валидация источника архива</system:String>
 	<system:String x:Key="string_waitingForUserInput">Ожидание пользовательского ввода</system:String>
 	<system:String x:Key="string_directoryIsNotEmptyMustBeEmpty">Директория не пуста. Место сохранения архива должно быть пустым.</system:String>
@@ -82,6 +85,9 @@
 	<system:String x:Key="string_gameNotInstalled">Игра не установлена</system:String>
 	<system:String x:Key="string_gameNotInstalledRunOnce">Игра не установлена. Запустите игру хотя бы один раз для завершения настройки.</system:String>
 	<system:String x:Key="string_cantCreateBackup">Невозможно создать архив</system:String>
+	<system:String x:Key="string_interp_mismatchedBTMBTP">Файл метаданных {0} не предназначен для данного BTP-файла.</system:String>
+	<system:String x:Key="string_interp_btpInvalidTFCReference">Обнаружена недопустимая ссылка TFC, пустой guid для {0}</system:String>
+	<system:String x:Key="string_interp_btpTFCNameTooLong">Имя TFC слишком длинное для использования в системе M3 Texture Override: {0}. Максимально допустимая длина - {1} символов.</system:String>
 	<system:String x:Key="string_interp_2damerge_invalidTargetFile">Недопустимый Bio2DA merge 'packagefile': {0} - невозможно осуществить merge в неисходные/Bring Down the Sky 2DA файлы</system:String>
 	<system:String x:Key="string_interp_2damerge_couldNotFindTarget">Недопустимый Bio2DA merge 'packagefile': {0} - отсутствует в исходной папке CookedPCConsole целевой игры</system:String>
 	<system:String x:Key="string_interp_2damerge_couldNotFindSourcePackage">Недопустимый Bio2DA merge 'packagefile': {0} - отсутствует в папке CookedPCConsole мода</system:String>
@@ -90,8 +96,11 @@
 	<system:String x:Key="string_interp_2damerge_invalidSourceObjectIsNot2DA">Недопустимое значение Bio2DA merge 'mergetables': {0} - экспорт не является Bio2DA или подклассом. Он является: {1}</system:String>
 	<system:String x:Key="string_interp_2damerge_invalidCouldNotFindTargetTable">Недопустимое значение Bio2DA merge 'mergetables': {0} - отсутствует исходная таблица с базовым именем '{1}' в пакетном файле '{2}'</system:String>
 	<system:String x:Key="string_interp_2damerge_invalidNotAVanillaTable">Недопустимое значение Bio2DA merge 'mergetables': {0} - это неоригинальная таблица. Bio2DA merge не работает с неоригинальными таблицами</system:String>
+	<system:String x:Key="string_interp_bio2daMerge_incompatibleModDetected">'{0}' несовместим с автоматической функцией Bio2DA Merge. Пожалуйста, удостоверьтесь, что ваш мод актуален и уведомите разработчика, что моды не могут содержать DLC-overrides целей merge.</system:String>
+	<system:String x:Key="string_vanillaAllM3DAsReverted">(Оригинал - все M3DA отменены)</system:String>
 	<system:String x:Key="string_interp_XDoesNotSupportGameY">{0} не поддерживает игру {1}</system:String>
 	<system:String x:Key="string_interp_copyDidntWorkX">Конечный файл не существует после копирования: {0}</system:String>
+	<system:String x:Key="string_testingPackageDecompression">Декомпрессия пакетного файла текстур</system:String>
 	<system:String x:Key="string_interp_failedToLoadPackageXY">Ошибка загрузки пакетного файла {0}: {1}</system:String>
 	<system:String x:Key="string_generatingMod">Генерация мода</system:String>
 	<system:String x:Key="string_interp_dok_mustContainDescriptorX">Структура DLCOptionKey должна содержать дескриптор с именем '{0}'</system:String>
@@ -126,6 +135,7 @@
 	<system:String x:Key="string_interp_backingUpSinglePercentage">Создание архива {0} {1}%</system:String>
 	<system:String x:Key="string_errorCreatingBackup">Ошибка создания архива</system:String>
 	<system:String x:Key="string_interp_errorCreatingBackupX">Возникла ошибка архивации игры: {0}. Последним файлом в обработке был: {1}.</system:String>
+	<system:String x:Key="string_dialog_backupUnableToDetermineFreeSpace">Невозможно определить свободное место для сохранения архива: {0}</system:String>
 	<system:String x:Key="string_cannotRestoreGame">Невозможно восстановить игру</system:String>
 	<system:String x:Key="string_interp_cannotRestoreGameToGameWhileRunning">Невозможно восстановить {0} пока игра запущена</system:String>
 	<system:String x:Key="string_interp_restoringWillDeleteEverythingTitle">Восстановление {0} удалит существующую установку игры</system:String>
@@ -169,6 +179,8 @@
 	<system:String x:Key="string_binkw32ASIBypass">Байпас Binkw32 ASI</system:String>
 	<system:String x:Key="string_bink2w64ASILoader">Загрузчик Bink2w64 ASI</system:String>
 	<system:String x:Key="string_deleting">Удаление</system:String>
+	<system:String x:Key="string_interp_gsInvalidHeader">Недопустимый файл m3gs: {0}. Файл содержит недопустимый заголовок.</system:String>
+	<system:String x:Key="string_interp_gsNotValidShader">Недопустимый файл m3gs: {0}. Файл не является допустимым скомпилированным шейдером.</system:String>
 	<system:String x:Key="string_installedByModManager">Установлено через Mod Manager</system:String>
 	<system:String x:Key="string_interp_installedByX">Установлено через {0}</system:String>
 	<system:String x:Key="string_notInstalledByModManager">Не установлено через Mod Manager</system:String>
@@ -209,6 +221,7 @@
 	<system:String x:Key="string_interp_serverRejectedLogUpload">На сервере отказано в загрузке: {0}</system:String>
 	<system:String x:Key="string_interp_errorUploadingLog">Ошибка загрузки лога: {0}</system:String>
 	<system:String x:Key="string_interp_currentLog">{0} - {1} - ТЕКУЩИЙ ЛОГ</system:String>
+	<system:String x:Key="string_buildingTextureOverridePackage">Сборка пакетного файла texture override</system:String>
 	<system:String x:Key="string_unpackingDLC">Распаковка DLC</system:String>
 	<system:String x:Key="string_checkingGameData">Проверка данных игры</system:String>
 	<system:String x:Key="string_scanningGameTextures">Сканирование игровых текстур</system:String>
@@ -247,6 +260,7 @@
 	<system:String x:Key="string_interp_plotManagerSyncForX">Синхронизация PlotManager для {0}</system:String>
 	<system:String x:Key="string_interp_errorCompilingFunctionReason" xml:space="preserve">Ошибка компиляции функции {0}: {1}</system:String>
 	<system:String x:Key="string_interp_fileLibInitFailedPlotManager">Невозможно инициализировать FileLib для PlotManagerSync: {0}</system:String>
+	<system:String x:Key="string_dialog_invalidConditionalNumberSourceMod">Условный номер {0} недопустим для использования. Исходный мод: {1}</system:String>
 	<system:String x:Key="string_insufficientDiskSpace">Недостаточно места на диске</system:String>
 	<system:String x:Key="string_interp_restoringXpercent">Восстановление {0}%</system:String>
 	<system:String x:Key="string_interp_restoringX">Восстановление {0}</system:String>
@@ -269,5 +283,12 @@
 	<system:String x:Key="string_skai_failedToCompileClassMSM">Ошибка компиляции {0} для пакета данных ModSettingsMenu: {1}</system:String>
 	<system:String x:Key="string_interp_ssp_unopenedParenthsisFound">Ошибка парсинга списка разделяющих скобок: Обнаружина закрывающая скобка, несоответствующаая открывающей скобке на позиции {0} в строке {1}</system:String>
 	<system:String x:Key="string_interp_ssp_unclosedParenthesisFound">В {0} обнаружена незакрытая открывающая скобка при парсинге списка разделяющих скобок</system:String>
+	<system:String x:Key="string_interp_buildingTextureOverridePackage">Сборка пакетного файла texture override</system:String>
+	<system:String x:Key="string_interp_btpBuildFailedSourceTextureMissing">Исходный пакетный файл '{0}' для текстуры '{1}' не существует, BTP не может быть скомпилирован.</system:String>
+	<system:String x:Key="string_interp_toManifestGameMismatch1">Невозможно использовать манифесты texture override для разных игр: {0} &gt;-&lt; {1}</system:String>
+	<system:String x:Key="string_interp_toManifestGameMismatch2">Манифест Texture Override {0} указывает на другую игру: Манифест предназначен для {1}, мы загружаем для {2}</system:String>
+	<system:String x:Key="string_interp_toInvalidSourcePackageName">Манифест Texture Override {0} содержит недопустимое имя исходного пакетного файла: {1} - имена файлов ДОЛЖНЫ начинаться с 'TO_'</system:String>
+	<system:String x:Key="string_interp_toCouldNotFindIFP">Невозможно найти textureifp {0} в пакетном файле {1}</system:String>
+	<system:String x:Key="string_interp_toInvalidTexture">{0} не является текстурным объектом в {1} ({2})</system:String>
 	<system:String x:Key="string_checkingBackup">Проверка архива</system:String>
 </ResourceDictionary>

@@ -7,14 +7,18 @@ using LegendaryExplorerCore.Compression;
 using LegendaryExplorerCore.Helpers;
 using ME3TweaksCore.Helpers;
 using ME3TweaksCore.Localization;
-using Serilog;
 
 namespace ME3TweaksCore.Diagnostics
 {
     public static class LogUploader
     {
+        //12/14/2025
+        // Is this used anymore? Was this for ALOT Installer? MER doesn't use it
+        
         /// <summary>
-        /// Uploads a log to the specified endpoint, using the lzma upload method. The receiver must accept and return a link to the diagnostic, or an error reason which will be returned to the caller. This method is synchronous and should not be run on a UI thread
+        /// Uploads a log to the specified endpoint, using the lzma upload method. 
+        /// The receiver must accept and return a link to the diagnostic, or an error reason which will be returned to the caller. 
+        /// This method is synchronous and should not be run on a UI thread.
         /// </summary>
         /// <param name="logtext">The log text to upload</param>
         /// <param name="endpoint">The endpoint to upload to</param>

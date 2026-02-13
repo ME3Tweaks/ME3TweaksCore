@@ -1,4 +1,6 @@
-﻿namespace ME3TweaksCore.NativeMods.Interfaces
+﻿using System.Diagnostics;
+
+namespace ME3TweaksCore.NativeMods.Interfaces
 {
     public interface IUnknownInstalledASIMod : IInstalledASIMod
     {
@@ -8,8 +10,13 @@
         public string UnmappedFilename { get; set; }
 
         /// <summary>
-        /// Description read from the metadata of the file (if any was supplied)
+        /// Returns a multi line string blob representation of the dll's version info
         /// </summary>
         public string DllDescription { get; set; }
+
+        /// <summary>
+        /// Version information on the Dll
+        /// </summary>
+        public FileVersionInfo DllVersionInfo { get; init; }
     }
 }

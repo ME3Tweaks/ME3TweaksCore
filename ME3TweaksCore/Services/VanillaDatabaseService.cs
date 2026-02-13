@@ -17,6 +17,7 @@ using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Helpers;
 using ME3TweaksCore.Helpers.ME1;
 using ME3TweaksCore.Localization;
+using ME3TweaksCore.Objects;
 using ME3TweaksCore.Services.Backup;
 using ME3TweaksCore.Targets;
 using Serilog;
@@ -424,7 +425,7 @@ namespace ME3TweaksCore.Services
         /// <param name="failedValidationCallback"></param>
         /// <param name="strictCheck">If true, TOC files and bink files are included in the check.</param>
         /// <returns></returns>
-        public static bool ValidateTargetAgainstVanilla(GameTarget target, Action<string> failedValidationCallback, bool strictCheck, bool md5check = false)
+        public static bool ValidateTargetAgainstVanilla(GameTarget target, Action<string> failedValidationCallback, bool strictCheck, bool md5check = false, ProgressInfo pi = null)
         {
             bool isVanilla = true;
             CaseInsensitiveConcurrentDictionary<List<(int size, string md5)>> vanillaDB = null;
@@ -471,8 +472,14 @@ namespace ME3TweaksCore.Services
             var di = new DirectoryInfo(target.TargetPath);
             if (di.Exists)
             {
-                foreach (var file in di.GetFiles("*", SearchOption.AllDirectories))
+                var files = di.GetFiles("*", SearchOption.AllDirectories);
+                pi?.Value = 0;
+                var done = 0;
+                foreach (var file in files)
                 {
+                    done++;
+                    pi?.Value = (done * 100.0f / files.Length);
+                    pi?.OnUpdate(pi);
                     if (!strictCheck)
                     {
                         var fname = Path.GetFileName(file.Name).ToLower();

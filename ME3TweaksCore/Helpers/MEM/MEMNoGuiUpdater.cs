@@ -38,6 +38,7 @@ namespace ME3TweaksCore.Helpers.MEM
         /// <summary>
         /// Checks for and updates mem if necessary. This method is blocking.
         /// </summary>
+        /// <returns>If MEM is now available after this call. Returns false if there's errors updating.</returns>
         public static bool UpdateMEM(bool classicMEM, bool bypassSoakGate, Action<long, long> downloadProgressChanged = null, Action<Exception> exceptionUpdating = null, Action<string> statusMessageUpdate = null, bool forceOnlineUpdate = false)
         {
             int memVersion = 0;
@@ -65,13 +66,6 @@ namespace ME3TweaksCore.Helpers.MEM
                     MLog.Warning(@"The local MEMNoGui version is higher than the supported version. We are forcibly downgrading this client.");
                     memVersion = 0;
                 }
-
-                // TODO: THIS HAS TO BE RE-ENABLED FOR ALOT SOMEHOW
-                //else if (memVersion > SoakTestingMEMVersion && !bypassSoakGate)
-                //{
-                //    MLog.Information(@"We are downgrading this client's MEMNoGui version to a supported version for stable");
-                //    memVersion = 0;
-                //}
 
                 Release latestReleaseWithApplicableAsset = null;
                 if (releases.Any())

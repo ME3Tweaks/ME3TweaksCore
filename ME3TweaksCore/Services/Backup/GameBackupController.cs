@@ -109,12 +109,12 @@ namespace ME3TweaksCore.Services.Backup
 
             GameLanguage[] allGameLangauges = targetToBackup.Game != MEGame.LELauncher ? GameLanguage.GetLanguagesForGame(targetToBackup.Game) : null;
             GameLanguage[] selectedLanguages = null;
-            
+
             if (!targetToBackup.IsCustomOption)
             {
                 MLog.Information($@"PerformBackup() on {targetToBackup.TargetPath}");
                 // Backup target
-                if (MUtilities.IsGameRunning(targetToBackup.Game))
+                if (MRunningGameInfo.IsGameRunning(targetToBackup.Game))
                 {
                     MLog.Error(@"PerformBackup: Cannot backup game while game is running");
                     EndBackup();
@@ -601,15 +601,22 @@ namespace ME3TweaksCore.Services.Backup
             {
 
                 //Check space
-                DriveInfo di = new DriveInfo(backupPath);
+                if (!MUtilities.DriveFreeBytes(backupPath, out ulong freespace))
+                {
+                    MLog.Error($@"Failed to get free space for backup path: {backupPath}");
+                    EndBackup();
+                    BlockingActionCallback?.Invoke(LC.GetString(LC.string_cannotCreateBackup), LC.GetString(LC.string_dialog_backupUnableToDetermineFreeSpace, backupPath));
+                    return false;
+                }
+
                 var requiredSpace = (long)(MUtilities.GetSizeOfDirectory(new DirectoryInfo(targetToBackup.TargetPath)) * 1.1); //10% buffer
-                MLog.Information($@"Backup space check. Backup size required: {FileSize.FormatSize(requiredSpace)}, free space: {FileSize.FormatSize(di.AvailableFreeSpace)}");
-                if (di.AvailableFreeSpace < requiredSpace)
+                MLog.Information($@"Backup space check. Backup size required: {FileSize.FormatSize(requiredSpace)}, free space: {FileSize.FormatSize((long)freespace)}");
+                if ((long)freespace < requiredSpace)
                 {
                     //Not enough space.
                     MLog.Error($@"Not enough disk space to create backup at {backupPath}");
                     EndBackup();
-                    BlockingActionCallback?.Invoke(LC.GetString(LC.string_insufficientDiskSpace), LC.GetString(LC.string_dialogInsufficientDiskSpace, Path.GetPathRoot(backupPath), FileSize.FormatSize(di.AvailableFreeSpace), FileSize.FormatSize(requiredSpace)));
+                    BlockingActionCallback?.Invoke(LC.GetString(LC.string_insufficientDiskSpace), LC.GetString(LC.string_dialogInsufficientDiskSpace, Path.GetPathRoot(backupPath), FileSize.FormatSize((long)freespace), FileSize.FormatSize(requiredSpace)));
                     return false;
                 }
 

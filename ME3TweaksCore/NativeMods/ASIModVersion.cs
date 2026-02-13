@@ -1,6 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using LegendaryExplorerCore.Packages;
+using ME3TweaksCore.Diagnostics;
+using ME3TweaksCore.Targets;
 using PropertyChanged;
 
 namespace ME3TweaksCore.NativeMods
@@ -18,7 +22,7 @@ namespace ME3TweaksCore.NativeMods
         public string DownloadLink { get; internal set; }
         /// <summary>
         /// The link to the source code of the ASI
-        /// </summary>c3
+        /// </summary>
         public string SourceCodeLink { get; internal set; }
 
         /// <summary>
@@ -49,6 +53,30 @@ namespace ME3TweaksCore.NativeMods
         /// The description of this ASI
         /// </summary>
         public string Description { get; internal set; }
+
+        /// <summary>
+        /// Dependencies required by this ASI - extra dlls, essentially
+        /// </summary>
+        public ASIDependency[] Dependencies { get; internal set; }
+
+        /// <summary>
+        /// Description but with the newlines \\n replaced with \n.
+        /// </summary>
+        public string DescriptionFormatted
+        {
+            get
+            {
+                if (Description == null)
+                {
+                    return @"";
+                }
+
+                // Convert actual \n to newlines.
+                return Description.Replace(@"\n", "\n");
+
+            }
+        }
+
         /// <summary>
         /// If this ASI version is marked as not being production ready - users of the library will need to filter this as appropriate
         /// </summary>
@@ -96,6 +124,18 @@ namespace ME3TweaksCore.NativeMods
         public override string ToString()
         {
             return $@"{Name} - v{Version}";
+        }
+
+        internal async Task InstallDependencies(GameTarget target)
+        {
+            if (Dependencies == null || Dependencies.Length == 0)
+                return;
+
+            MLog.Information($@"Installing dependencies for ASI {Name} v{Version}...");
+            foreach (var dependency in Dependencies)
+            {
+                await dependency.InstallToTarget(target);
+            }
         }
     }
 }

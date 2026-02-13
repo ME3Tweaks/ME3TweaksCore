@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿#if ALOT
+using System.IO;
 using ME3TweaksCore.Helpers;
 
 namespace ME3TweaksCore.Diagnostics
@@ -33,3 +34,4 @@ namespace ME3TweaksCore.Diagnostics
         public static bool IsQuickFixEnabled(QuickFixName fixname) => File.Exists(Path.Combine(MLibraryConsumer.GetExecutingAssemblyFolder(), $@"_{fixname}"));
     }
 }
+#endif

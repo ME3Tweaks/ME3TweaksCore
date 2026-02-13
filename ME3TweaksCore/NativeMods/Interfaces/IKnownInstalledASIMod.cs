@@ -1,5 +1,6 @@
-﻿using System.Linq;
-using ME3TweaksCore.Localization;
+﻿using ME3TweaksCore.Localization;
+using ME3TweaksCore.Targets;
+using System.Linq;
 
 namespace ME3TweaksCore.NativeMods.Interfaces
 {
@@ -33,5 +34,12 @@ namespace ME3TweaksCore.NativeMods.Interfaces
         /// The installation status string of the ASI
         /// </summary>
         public string InstallStatus => Outdated ? LC.GetString(LC.string_outdatedVersionInstalled) : LC.GetString(LC.string_installed);
+
+        /// <summary>
+        /// Verifies dependencies on this ASI mod. If they are not met the ASI is not considered installed as it will simply fail to load in game.
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public bool VerifyDependencies(GameTarget target);
     }
 }

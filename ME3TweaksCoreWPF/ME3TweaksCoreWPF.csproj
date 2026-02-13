@@ -2,15 +2,22 @@
 
 	<PropertyGroup>
 		<!--Version info-->
-		<Description>Core library for ME3Tweaks software - UI extensions</Description>
+		<Description>Core library for ME3Tweaks software - Windows Presentation Foundation (WPF) extensions</Description>
 		<Company>ME3Tweaks</Company>
 		<Authors>ME3Tweaks</Authors>
 		<Version>10.0</Version>
-		<!-- Windows 2004 -->
 		<TargetFrameworks>net10.0-windows</TargetFrameworks>
 		<UseWPF>true</UseWPF>
 		<Platforms>x64</Platforms>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Remove="LogViewer\Web.zip" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Include="LogViewer\Web.zip" />
+	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\ME3TweaksCore\ME3TweaksCore.csproj" />
 		<ProjectReference Include="..\ME3TweaksCore\submodules\LegendaryExplorer\LegendaryExplorer\LegendaryExplorerCore\LegendaryExplorerCore.csproj" />
@@ -25,6 +32,7 @@
 		<PackageReference Include="FontAwesome5" Version="2.1.11" />
 		<PackageReference Include="PropertyChanged.Fody" Version="4.1.0" />
 		<PackageReference Include="WindowsAPICodePack-Shell" Version="1.1.1" />
+		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3650.58" />
 	</ItemGroup>
 
 </Project>
