@@ -32,6 +32,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
             { MEGame.LE1, new GSMFileInfo(@"29be3e69c5b1f5139b88e3764f018af6", 1506125) },
             { MEGame.LE2, new GSMFileInfo(@"69de7c7b796bd9e376325195914ebfb4", 1526420) },
             { MEGame.LE3, new GSMFileInfo(@"997970d72635b082f7c039802f39ef27", 2212817) },
+            { MEGame.LMP, new GSMFileInfo(@"997970d72635b082f7c039802f39ef27", 2212817) },
         };
 
         /// <summary>
