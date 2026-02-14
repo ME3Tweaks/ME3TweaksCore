@@ -33,7 +33,6 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
         /// File extension suffix for Bio2DA merge manifest files.
         /// </summary>
         private const string BIO2DA_MERGE_FILE_SUFFIX = @".m3da";
-        private const string BIO2DA_BGFIS_DATA_BLOCK = @"BGFIS-Bio2DAMerge";
 
         /// <summary>
         /// Block identifier for Bio2DA merge data in the Basegame File Identification Service.
@@ -192,8 +191,6 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                         // Merge failed. // Todo: Hook up to the UI in M3 via the params
                     }
                 }
-
-
             }
 
             var records = new List<BasegameFileRecord>();
@@ -206,7 +203,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                     var outStream = file.SaveToStream(true); // We only support LE1 so its always true
 
                     recordedApplications.TryGetValue(file.FilePath, out var recordedMergesForFile);
-                    var record = CreateRecord(target, packageContainer, file, outStream, recordedMergesForFile, false, out var savedVanilla);
+                    var record = CreateRecord(target, packageContainer, file, outStream, recordedMergesForFile, out var savedVanilla);
                     if (!savedVanilla)
                     {
                         outStream.WriteToFile(file.FilePath); // Save to disk
