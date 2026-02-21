@@ -213,7 +213,44 @@ namespace ME3TweaksCore.Diagnostics.Modules
 
         private static string GetProcessorInformationForDiagWine()
         {
-            return new ComputerInfo().CPUName;
+            var cpuInfo = new ComputerInfo();
+            string str = "";
+            try
+            {
+                if (cpuInfo.CPUName != null)
+                {
+                    str += cpuInfo.CPUName;
+                    str += "\n"; //do not localize
+                }
+
+                if (cpuInfo.CPUMaxClock != 0)
+                {
+                    str += @"Maximum reported clock speed: ";
+                    str += (cpuInfo.CPUMaxClock/1000).ToString();
+                    str += " Mhz\n"; //do not localize
+                }
+
+                if (cpuInfo.CPUPhysicalCores != 0)
+                {
+                    str += @"Cores: ";
+                    str += cpuInfo.CPUPhysicalCores.ToString();
+                    str += "\n"; //do not localize
+                }
+
+                if (cpuInfo.CPULogicalCores != 0)
+                {
+                    str += @"Logical processors: ";
+                    str += cpuInfo.CPULogicalCores.ToString();
+                    str += "\n"; //do not localize
+                }
+
+                return str;
+            }
+            catch (Exception e)
+            {
+                MLog.Error($@"Error getting processor information: {e.Message}");
+                return $"Error getting processor information: {e.Message}\n"; //do not localize
+            }
         }
 
 #pragma warning disable CA1416 // Validate platform compatibility
