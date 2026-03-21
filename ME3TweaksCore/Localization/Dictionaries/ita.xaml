@@ -14,22 +14,22 @@
 	<system:String x:Key="string_upd_later">Dopo</system:String>
 	<system:String x:Key="string_upd_interp_downloadingUpdateForX">Scaricamento dell'aggiornamento per {0}...</system:String>
 	<system:String x:Key="string_upd_interp_forcedUpdateOutOfDate">Questa copia di {0} è datata e deve essere aggiornata.</system:String>
-	<system:String x:Key="string_upd_interp_updatingX">Aggiornamento di {0}</system:String>
+	<system:String x:Key="string_upd_interp_updatingX">Aggiornamento di {0} in corso</system:String>
 	<system:String x:Key="string_upd_updateFailed">Aggiornamento fallito</system:String>
 	<system:String x:Key="string_upd_interp_errorDownloadingUpdateX">C'è stato un errore durante il download dell'aggiornamento: {0}</system:String>
 	<system:String x:Key="string_upd_downloadWasIncomplete">Il file scaricato era incompleto.</system:String>
-	<system:String x:Key="string_upd_preparingToApplyUpdate">Preparazione all'applicazione dell'aggiornamento</system:String>
+	<system:String x:Key="string_upd_preparingToApplyUpdate">Preparazione all'applicazione dell'aggiornamento in corso</system:String>
 	<system:String x:Key="string_upd_interp_applyingUpdateFailed">Applicazione dell'aggiornamento fallita: {0}</system:String>
 	<system:String x:Key="string_upd_oldVersionsAreNotSupportedTitle">Le versioni vecchie non sono supportate</system:String>
 	<system:String x:Key="string_upd_interp_outdatedVersionsAreNotSupportedMsg">Le versioni datate di {0} non sono supportate e potrebbero smettere di funzionare in futuro.</system:String>
 	<system:String x:Key="string_upd_buildingNewExecutable">Creazione del nuovo eseguibile</system:String>
-	<system:String x:Key="string_upd_extractingUpdate">Estrazione dell'aggiornamento</system:String>
+	<system:String x:Key="string_upd_extractingUpdate">Estrazione dell'aggiornamento in corso</system:String>
 	<system:String x:Key="string_upd_interp_couldNotFindUpdateFileInArchive">Impossibile trovare {0} nell'archivio scaricato</system:String>
 	<system:String x:Key="string_upd_updateExtractionFailed">Fallimento durante l'estrazione dell'archivio dell'aggiornamento</system:String>
-	<system:String x:Key="string_upd_verifyingUpdate">Verifica dell'aggiornamento</system:String>
+	<system:String x:Key="string_upd_verifyingUpdate">Verifica dell'aggiornamento in corso</system:String>
 	<system:String x:Key="string_upd_invalidSignature">L'aggiornamento ha una firma non valida. Guarda il log dell'applicazione per maggiori dettagli.</system:String>
-	<system:String x:Key="string_upd_applyingUpdate">Applicazione dell'aggiornamento</system:String>
-	<system:String x:Key="string_upd_restartingApplication">Riavvio dell'applicazione</system:String>
+	<system:String x:Key="string_upd_applyingUpdate">Applicazione dell'aggiornamento in corso</system:String>
+	<system:String x:Key="string_upd_restartingApplication">Riavvio dell'applicazione in corso</system:String>
 	<system:String x:Key="string_outdatedVersionInstalled">È Installata una versione non aggiornata</system:String>
 	<system:String x:Key="string_installed">Installato</system:String>
 	<system:String x:Key="string_installLoader">Installa il loader</system:String>
@@ -37,19 +37,19 @@
 	<system:String x:Key="string_loaderInstalled">Loader installato</system:String>
 	<system:String x:Key="string_aSILoaderInstalledASIModsWillLoad">L'ASI loader è installato. Le Mod ASI verranno caricate</system:String>
 	<system:String x:Key="string_aSILoaderNotInstalledASIModsWillNotLoad">L'ASI loader non è installato. Le Mod ASI non verranno caricate</system:String>
-	<system:String x:Key="string_interp_unsupportedGameIdInAsiManifest">Id del gioco non supportato nel manifest asi: {0}</system:String>
+	<system:String x:Key="string_interp_unsupportedGameIdInAsiManifest">Id del gioco non supportato nel manifest ASI: {0}</system:String>
 	<system:String x:Key="string_interp_productNameX">Prodotto: {0}</system:String>
 	<system:String x:Key="string_interp_descriptionX">Descrizione: {0}</system:String>
-	<system:String x:Key="string_interp_companyX">Compagnia: {0}</system:String>
+	<system:String x:Key="string_interp_companyX">Azienda: {0}</system:String>
 	<system:String x:Key="string_interp_versionX">Versione: {0}</system:String>
 	<system:String x:Key="string_interp_failedToDownloadASIDependency">Impossibile scaricare la dipendenza ASI: {0}</system:String>
 	<system:String x:Key="string_interp_asiDependencyNotAvailable">La dipendenza ASI {0} non è disponibile</system:String>
-	<system:String x:Key="string_validatingBackupSource">Validamento della sorgente del backup</system:String>
+	<system:String x:Key="string_validatingBackupSource">Validamento della sorgente del backup in corso</system:String>
 	<system:String x:Key="string_waitingForUserInput">In attesa dell'input utente</system:String>
 	<system:String x:Key="string_directoryIsNotEmptyMustBeEmpty">La cartella non è vuota. La destinazione di un backup deve essere vuota.</system:String>
 	<system:String x:Key="string_directoryNotEmpty">La cartella non è vuota</system:String>
-	<system:String x:Key="string_interp_backingUpX">Backup di {0}</system:String>
-	<system:String x:Key="string_creatingBackup">Creazione del backup</system:String>
+	<system:String x:Key="string_interp_backingUpX">Backup di {0} in corso</system:String>
+	<system:String x:Key="string_creatingBackup">Creazione del backup in corso</system:String>
 	<system:String x:Key="string_cannotBackupModifiedGame">Impossibile eseguire il backup di un gioco modificato</system:String>
 	<system:String x:Key="string_followingFilesDoNotMatchTheVanillaDatabase">I seguenti file non corrispondono al database vanilla e sembrano essere modificati. A causa della modifica di questi file, non è possibile eseguire un backup di questa installazione.</system:String>
 	<system:String x:Key="string_inconsistentDLCDetected">Rilevato DLC inconsistente</system:String>
@@ -113,11 +113,11 @@
 	<system:String x:Key="string_interp_drb_malformedDR">Le condizioni all'interno di DLCRequirementBase devono trovarsi tra {0}{1}, essere separate da virgole, e utilizzare il formato chiave=valore. Valore non valido: {2}</system:String>
 	<system:String x:Key="string_interp_drb_unknownDescriptor">Descrittore sconosciuto all'interno di DLCRequirementBase: {0}</system:String>
 	<system:String x:Key="string_interp_drb_notInstalledWithOptionX">Non installato con opzione {0}</system:String>
-	<system:String x:Key="string_interp_drb_installedWithIncompatibleOptionX">Installato con opzione incompativile {0}</system:String>
+	<system:String x:Key="string_interp_drb_installedWithIncompatibleOptionX">Installato con opzione incompatibile {0}</system:String>
 	<system:String x:Key="string_interp_drb_notInstalledWithAtLeastX">Non installato con almeno una delle seguenti opzioni richieste: {0}</system:String>
 	<system:String x:Key="string_interp_drb_withAtLeastOneOfTheFollowingX">(con almeno una delle seguenti opzioni installate: {0})</system:String>
-	<system:String x:Key="string_synchronizingEmails">Sincronizzazione Email in corso</system:String>
-	<system:String x:Key="string_emailsNotMergedMessagesFileNotFound">Merge Email non effettuato: file Messaggi non trovato</system:String>
+	<system:String x:Key="string_synchronizingEmails">Sincronizzazione email in corso</system:String>
+	<system:String x:Key="string_emailsNotMergedMessagesFileNotFound">Merge delle email non effettuato: file Messages non trovato</system:String>
 	<system:String x:Key="string_game2EmailMergeWrongGame">Il manifesto di merge delle email del gioco 2 puntano al gioco sbagliato</system:String>
 	<system:String x:Key="string_cannotBackupGame">Impossibile eseguire il backup del gioco</system:String>
 	<system:String x:Key="string_interp_cannotBackupGameIsRunning">Impossibile eseguire il backup mentre {0} è in esecuzione.</system:String>
@@ -132,7 +132,7 @@
 	<system:String x:Key="string_continueBackingUp">Continua il backup</system:String>
 	<system:String x:Key="string_abortBackup">Annulla il backup</system:String>
 	<system:String x:Key="string_selectEmptyBackupDestinationDirectory">Seleziona una cartella di destinazione vuota</system:String>
-	<system:String x:Key="string_interp_backingUpSinglePercentage">Backup di {0} {1}%</system:String>
+	<system:String x:Key="string_interp_backingUpSinglePercentage">Backup di {0} in corso ({1}%)</system:String>
 	<system:String x:Key="string_errorCreatingBackup">Errore durante la creazione del backup</system:String>
 	<system:String x:Key="string_interp_errorCreatingBackupX">C'è stato un errore durante il backup del gioco: {0}. L'ultimo file che si è cercato di processare è stato: {1}.</system:String>
 	<system:String x:Key="string_dialog_backupUnableToDetermineFreeSpace">Impossibile determinare lo spazio libero per la destinazione del backup: {0}</system:String>
@@ -153,7 +153,7 @@
 	<system:String x:Key="string_interp_couldNotCreateGameDirectoryNoPermission">Impossibile creare la cartella del gioco per {0}. Potresti non avere i permessi per creare cartelle nella cartella contenente la cartella del gioco.</system:String>
 	<system:String x:Key="string_analyzingGameFiles">Analisi dei file di gioco</system:String>
 	<system:String x:Key="string_checkingTexturetaggedPackages">Controllo dei package texture-marcati</system:String>
-	<system:String x:Key="string_restoringFromBackup">Ripristino dal backup</system:String>
+	<system:String x:Key="string_restoringFromBackup">Ripristino dal backup in corso</system:String>
 	<system:String x:Key="string_restoringMovies">Ripristino dei filmati</system:String>
 	<system:String x:Key="string_calculatingHowManyFilesWillBeRestored">Calcolo del numero di file che verranno ripristinati</system:String>
 	<system:String x:Key="string_comparingGameAgainstVanillaDatabase">Confronto del gioco rispetto al database vanilla in corso</system:String>
@@ -178,7 +178,7 @@
 	<system:String x:Key="string_binkw32ASILoader">Bwink32 ASI Loader</system:String>
 	<system:String x:Key="string_binkw32ASIBypass">Bwink32 ASI Bypass</system:String>
 	<system:String x:Key="string_bink2w64ASILoader">Bink2w64 ASI Loader</system:String>
-	<system:String x:Key="string_deleting">Rimozione</system:String>
+	<system:String x:Key="string_deleting">Eliminazione in corso</system:String>
 	<system:String x:Key="string_interp_gsInvalidHeader">File m3gs non valido: {0}. Il file ha un header non valido.</system:String>
 	<system:String x:Key="string_interp_gsNotValidShader">File m3gs non valido: {0}. Il file non è uno shader compilato valido.</system:String>
 	<system:String x:Key="string_installedByModManager">Installato con il Mod Manager</system:String>
@@ -219,7 +219,7 @@
 	<system:String x:Key="string_uploadingToME3Tweaks">Caricamento su ME3Tweaks in corso</system:String>
 	<system:String x:Key="string_errorUploadingLogResponse">Log di Errore durante il caricamento: Codice di risposta {0}</system:String>
 	<system:String x:Key="string_interp_serverRejectedLogUpload">Il server ha rifiutato il caricamento: {0}</system:String>
-	<system:String x:Key="string_interp_errorUploadingLog">Log di Errore durante il caricamento: {0}</system:String>
+	<system:String x:Key="string_interp_errorUploadingLog">Errore durante il caricamento del log: {0}</system:String>
 	<system:String x:Key="string_interp_currentLog">{0} - {1} - LOG CORRENTE</system:String>
 	<system:String x:Key="string_buildingTextureOverridePackage">Compilazione del package di texture override</system:String>
 	<system:String x:Key="string_unpackingDLC">Spacchettamento del DLC in corso</system:String>
@@ -264,8 +264,8 @@
 	<system:String x:Key="string_interp_fileLibInitFailedPlotManager">Impossibile inizializzare il FileLib per PlotManagerSync: {0}</system:String>
 	<system:String x:Key="string_dialog_invalidConditionalNumberSourceMod">Il Condizionale {0} non è un numero valido per l'utilizzo. Mod sorgente: {1}</system:String>
 	<system:String x:Key="string_insufficientDiskSpace">Spazio su disco insufficiente</system:String>
-	<system:String x:Key="string_interp_restoringXpercent">Ripristino {0}%</system:String>
-	<system:String x:Key="string_interp_restoringX">Ripristino di {0}</system:String>
+	<system:String x:Key="string_interp_restoringXpercent">Ripristino in corso ({0}%)</system:String>
+	<system:String x:Key="string_interp_restoringX">Ripristino di {0} in corso</system:String>
 	<system:String x:Key="string_restoringBasegame">Ripristino del Gioco Base</system:String>
 	<system:String x:Key="string_noBackup">Nessun backup</system:String>
 	<system:String x:Key="string_error">Errore!</system:String>
@@ -274,7 +274,7 @@
 	<system:String x:Key="string_interp_directoryNotEmptyWillDeleteEverything">La cartella selezionata non è vuota: {0}. TUTTI I FILE NON DI GIOCO E LE CARTELLE PRESENTI IN QUESTA CARTELLA VERRANNO ELIMINATI. Sei sicuro di voler continuare?</system:String>
 	<system:String x:Key="string_cannotRestore">Impossibile ripristinare</system:String>
 	<system:String x:Key="string_interp_invalidHenchNameSquadmateNameValueIsCaseSensitive">Nome hench non valido: {0}. Il valore è sensibile a maiuscole e minuscole.</system:String>
-	<system:String x:Key="string_errorReadingSquadmateOutfitManifestFileSeeLogs">Errore nella lettura del file manifesto degli outfit dei compagni di squadra per la/e mod, vedi i log</system:String>
+	<system:String x:Key="string_errorReadingSquadmateOutfitManifestFileSeeLogs">Errore nella lettura del file manifest degli outfit dei compagni di squadra per la/e mod, vedi i log</system:String>
 	<system:String x:Key="string_someSquadmateOutfitsWereNotMergedSeeLogs">Impossibile effettuare il merge degli outfit di alcuni compagni di squadra, vedi i log</system:String>
 	<system:String x:Key="string_interp_errorCompilingConditionalFunction">Errore nella compilazione della funzione condizionale {0}: {1}</system:String>
 	<system:String x:Key="string_synchronizingSquadmateOutfits">Sincronizzazione degli outfit dei compagni di squadra in corso</system:String>
@@ -285,7 +285,7 @@
 	<system:String x:Key="string_skai_failedToCompileClassMSM">Impossibile compilare {0} per il package dati ModSettingsMenu: {1}</system:String>
 	<system:String x:Key="string_interp_ssp_unopenedParenthsisFound">Errore durante l'analisi della lista divisa con parentesi: Trovata una parentesi chiusa non corrispondente a un'altra aperta alla posizione {0} della stringa {1}</system:String>
 	<system:String x:Key="string_interp_ssp_unclosedParenthesisFound">Trovata una parentesi di apertura senza corrispondente di chiusura durante l'analisi della lista divisa con parentesi in {0}</system:String>
-	<system:String x:Key="string_interp_buildingTextureOverridePackage">Compilazione del package di texture override</system:String>
+	<system:String x:Key="string_interp_buildingTextureOverridePackage">Compilazione del package di texture override in corso</system:String>
 	<system:String x:Key="string_interp_btpBuildFailedSourceTextureMissing">Il sourcepackage '{0}' per la texture '{1}' non esiste, il BTP non può essere compilato.</system:String>
 	<system:String x:Key="string_interp_toManifestGameMismatch1">Impossibile usare i manifest dei texture override per giochi diversi: {0} &gt;-&lt; {1}</system:String>
 	<system:String x:Key="string_interp_toManifestGameMismatch2">Il manifest del Texture Override {0} fa riferimento a un gioco diverso: Il manifest è per {1}, sta venendo caricato per {2}</system:String>
@@ -294,3 +294,4 @@
 	<system:String x:Key="string_interp_toInvalidTexture">{0} non è un oggetto texture in {1} ({2})</system:String>
 	<system:String x:Key="string_checkingBackup">Controllo del backup in corso</system:String>
 </ResourceDictionary>
+
