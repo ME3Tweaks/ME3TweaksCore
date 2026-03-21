@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ME3TweaksCore.Misc
 {
@@ -12,13 +9,12 @@ namespace ME3TweaksCore.Misc
     /// </summary>
     public class FallbackLink
     {
-        public string MainURL { get; init; }
-        public string FallbackURL { get; init; }
-
         /// <summary>
-        /// If URL randomly switches between main and fallback for load balancing
+        /// If this URL should randomly pick one of the two links to reduce load
         /// </summary>
         public bool LoadBalancing { get; init; }
+        public string MainURL { get; init; }
+        public string FallbackURL { get; init; }
 
         /// <summary>
         /// Fetches in order all populated links.
