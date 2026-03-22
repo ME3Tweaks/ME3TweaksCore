@@ -101,50 +101,50 @@ namespace ME3TweaksCore.TextureOverride
                     // Bubble up the error message
                     return ex.Message;
                 }
+            }
 
-                // Generate the binary package
-                if (combinedManifest.Textures.Count > 0)
+            // Generate the binary package
+            if (combinedManifest.Textures.Count > 0)
+            {
+                pi?.Status = LC.GetString(LC.string_buildingTextureOverridePackage);
+                pi?.Value = 0;
+                pi?.OnUpdate(pi);
+                try
                 {
-                    pi?.Status = LC.GetString(LC.string_buildingTextureOverridePackage);
-                    pi?.Value = 0;
-                    pi?.OnUpdate(pi);
-                    try
+                    combinedManifest.CompileBinaryTexturePackage(target, dlcFolderName, pi);
+                }
+                catch (Exception ex)
+                {
+                    // Remove this file cause it could crash game if left around
+                    var binPath = GetCombinedTexturePackagePath(target, dlcFolderName);
+                    if (File.Exists(binPath))
                     {
-                        combinedManifest.CompileBinaryTexturePackage(target, dlcFolderName, pi);
+                        File.Delete(binPath);
                     }
-                    catch (Exception ex)
+
+                    var metadataPath = GetBTPMetadataPath(target, dlcFolderName);
+                    if (File.Exists(metadataPath))
                     {
-                        // Remove this file cause it could crash game if left around
-                        var binPath = GetCombinedTexturePackagePath(target, dlcFolderName);
-                        if (File.Exists(binPath))
-                        {
-                            File.Delete(binPath);
-                        }
-
-                        var metadataPath = GetBTPMetadataPath(target, dlcFolderName);
-                        if (File.Exists(metadataPath))
-                        {
-                            File.Delete(metadataPath);
-                        }
-
-                        // Bubble up the error message
-                        return ex.Message;
+                        File.Delete(metadataPath);
                     }
-                    // Now delete TO_ packages, as we don't want them clogging up the game.
-                    if (deleteTOFiles)
+
+                    // Bubble up the error message
+                    return ex.Message;
+                }
+                // Now delete TO_ packages, as we don't want them clogging up the game.
+                if (deleteTOFiles)
+                {
+                    var toFiles = Directory.GetFiles(cookedDir, @"TO_*.pcc", SearchOption.AllDirectories);
+                    foreach (var tof in toFiles)
                     {
-                        var toFiles = Directory.GetFiles(cookedDir, @"TO_*.pcc", SearchOption.AllDirectories);
-                        foreach (var tof in toFiles)
+                        try
                         {
-                            try
-                            {
-                                MLog.Information($@"Deleting texture override file from game: {tof}");
-                                File.Delete(tof);
-                            }
-                            catch (Exception e)
-                            {
-                                MLog.Error($@"Unable to delete TO_ file after merge: {tof}, {e.Message}");
-                            }
+                            MLog.Information($@"Deleting texture override file from game: {tof}");
+                            File.Delete(tof);
+                        }
+                        catch (Exception e)
+                        {
+                            MLog.Error($@"Unable to delete TO_ file after merge: {tof}, {e.Message}");
                         }
                     }
                 }

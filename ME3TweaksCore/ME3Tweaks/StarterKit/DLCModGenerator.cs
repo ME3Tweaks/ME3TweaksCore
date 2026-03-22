@@ -51,16 +51,20 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
             var cookedDir = Directory.CreateDirectory(Path.Combine(contentDirectory, skOption.ModGame.CookedDirName())).FullName;
             if (skOption.ModGame.IsGame1())
             {
-                //AutoLoad.ini
-                var autoload = new DuplicatingIni();
-                autoload[@"Packages"][@"GlobalTalkTable1"].Value = $@"{dlcFolderName}_GlobalTlk.GlobalTlk_tlk";
+                // AutoLoad.ini using AutoloadIni representation
+                var autoload = new AutoloadIni();
+                // Add GlobalTalkTable entry
+                autoload.GlobalTalkTables.Add($@"{dlcFolderName}_GlobalTlk.GlobalTlk_tlk");
 
-                autoload[@"GUI"][@"NameStrRef"].Value = skOption.ModInternalTLKID.ToString();
+                // GUI NameStrRef
+                autoload.DLCModNameStrRef = skOption.ModInternalTLKID;
 
-                autoload[@"ME1DLCMOUNT"][@"ModName"].Value = skOption.ModName;
-                autoload[@"ME1DLCMOUNT"][@"ModMount"].Value = skOption.ModMountPriority.ToString();
+                // ME1 DLC mount info
+                autoload.ModName = skOption.ModName;
+                autoload.ModMount = skOption.ModMountPriority;
+
                 MLog.Information($@"Saving autoload.ini for {skOption.ModGame} mod");
-                autoload.WriteToFile(Path.Combine(contentDirectory, @"AutoLoad.ini"), new UTF8Encoding(false));
+                File.WriteAllText(Path.Combine(contentDirectory, @"AutoLoad.ini"), autoload.ToString(), new UTF8Encoding(false));
 
                 //TLK
                 var dialogdir = skOption.ModGame == MEGame.ME1

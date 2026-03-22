@@ -1,4 +1,4 @@
-﻿<?xml version="1.0"?>
+<?xml version="1.0"?>
 <ASIManifest>
   <updategroup groupid="0" game="3">
     <asimod>
@@ -610,6 +610,17 @@
       <downloadlink>https://github.com/ME3Tweaks/LE1-ASI-Plugins/releases/download/LE1AutoloadEnabler-v8.0/LE1AutoloadEnabler-v8.0.asi</downloadlink>
       <m3cdeploy>1</m3cdeploy>
     </asimod>
+    <asimod>
+      <name>Autoload Enabler</name>
+      <installedname>LE1AutoloadEnabler</installedname>
+      <author>ME3Tweaks</author>
+      <description>This ASI enables the autoload.ini feature, which is a critical component for LE1 DLC mods. Without this, DLC cannot fully mount. This version registers TFC and ISB files for use by the game, so you can include these files in your DLC mod folder. It also will register startup files when declared as a GlobalPackage in Autoload.ini. Use the console command 'profile autoload' to show what autoload data was loaded.</description>
+      <version>11</version>
+      <hash>03728ed7c7cdd6a5ad66a771d10d8ce0</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/Autoload</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/Autoload-v11/LE1AutoloadEnabler-v11.0.asi</downloadlink>
+      <m3cdeploy>1</m3cdeploy>
+    </asimod>
   </updategroup>
   <updategroup groupid="33" game="3">
     <asimod>
@@ -672,6 +683,17 @@
       <downloadlink>https://github.com/ME3Tweaks/LE1-ASI-Plugins/releases/download/LE1StreamingLevelsHUD-v3.0/LE1StreamingLevelsHUD-v3.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
+    <asimod>
+      <name>Streaming Levels HUD</name>
+      <installedname>LE1StreamingLevelsHUD</installedname>
+      <author>ME3Tweaks</author>
+      <description>This ASI draws the list of streaming levels on the top left of the screen, as well as their current loaded state. It also shows the last touched BioTriggerStream, as well as the current and maximum amount of memory the process has used. The HUD can be toggled on and off by pressing CTRL + T.</description>
+      <version>5</version>
+      <hash>cdf4735431facc101ada9f65b461b47a</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/StreamingLevelsHUD</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/StreamingLevelsHUD-v5/LE1StreamingLevelsHUD-v5.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
   </updategroup>
   <updategroup groupid="36" game="4">
     <asimod>
@@ -705,6 +727,17 @@
       <hash>c3ec20104e399913b9c79c0edf01fba2</hash>
       <sourcecode>https://github.com/ME3Tweaks/LE1-ASI-Plugins/tree/main/KismetLogger</sourcecode>
       <downloadlink>https://github.com/ME3Tweaks/LE1-ASI-Plugins/releases/download/LE1KismetLogger-v3.0/LE1KismetLogger-v3.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
+    <asimod>
+      <name>Kismet Logger</name>
+      <installedname>LE1KismetLogger</installedname>
+      <author>ME3Tweaks</author>
+      <description>This plugin logs kismet sequence object activations to the console and to its log file. You can trace the execution of this log with Legendary Explorer's Sequence Editor.</description>
+      <version>4</version>
+      <hash>b00cae590c073081b6ff009ebec09dec</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/KismetLogger</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/KismetLogger-v4/LE1KismetLogger-v4.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
   </updategroup>
@@ -742,6 +775,19 @@
       <downloadlink>https://github.com/ME3Tweaks/LE1-ASI-Plugins/releases/download/LE1SeqActLogEnabler-v4.0/LE1SeqActLogEnabler-v4.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
+    <asimod>
+      <name>SeqActLog Enabler</name>
+      <installedname>LE1SeqActLogEnabler</installedname>
+      <author>ME3Tweaks</author>
+      <description>Prints the contents of SeqVars attached to SeqAct_Log sequence objects to the screen. Useful for debugging sequences. For full logs, install the m_objComment enabler mod from ME3Tweaks Dev Mods.
+
+Toggle the on-screen messages with CTRL + G.</description>
+      <version>5</version>
+      <hash>326c8a82277b0ca0d7fdd32bdb374c96</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/SeqActLogEnabler</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/SeqActLogEnabler-v5/LE1SeqActLogEnabler-v5.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
   </updategroup>
   <updategroup groupid="38" game="5">
     <asimod>
@@ -764,6 +810,17 @@
       <hash>8f032b028e85fb3a91cb64d1022ddae7</hash>
       <sourcecode>https://github.com/ME3Tweaks/LE2-ASI-Plugins/tree/master/LE2StreamingLevelsHUD</sourcecode>
       <downloadlink>https://github.com/ME3Tweaks/LE2-ASI-Plugins/releases/download/LE2StreamingLevelsHUD-v2.0/LE2StreamingLevelsHUD-v2.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
+    <asimod>
+      <name>Streaming Levels HUD</name>
+      <installedname>LE2StreamingLevelsHUD</installedname>
+      <author>ME3Tweaks</author>
+      <description>This ASI draws the list of streaming levels on the top left of the screen, as well as their current loaded state. It also shows the last touched BioTriggerStream, as well as the current and maximum amount of memory the process has used. The HUD can be toggled on and off by pressing CTRL + T.</description>
+      <version>5</version>
+      <hash>407ee3d071758f2bcec4b69d0580830f</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/StreamingLevelsHUD</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/StreamingLevelsHUD-v5/LE2StreamingLevelsHUD-v5.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
   </updategroup>
@@ -825,6 +882,17 @@
       <downloadlink>https://github.com/ME3Tweaks/LE3-ASI-Plugins/releases/download/LE3KismetLogger-v3.0/LE3KismetLogger-v3.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
+    <asimod>
+      <name>Kismet Logger</name>
+      <installedname>LE3KismetLogger</installedname>
+      <author>ME3Tweaks</author>
+      <description>This plugin logs kismet sequence object activations to the console and to its log file. You can trace the execution of this log with Legendary Explorer's Sequence Editor.</description>
+      <version>4</version>
+      <hash>b0b00db12145150d610f760443a1bc40</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/KismetLogger</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/KismetLogger-v4/LE3KismetLogger-v4.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
   </updategroup>
   <updategroup groupid="41" game="5">
     <asimod>
@@ -847,6 +915,17 @@
       <hash>477b3d53124253aabb481141a4a82d04</hash>
       <sourcecode>https://github.com/ME3Tweaks/LE2-ASI-Plugins/tree/master/LE2KismetLogger</sourcecode>
       <downloadlink>https://github.com/ME3Tweaks/LE2-ASI-Plugins/releases/download/LE2KismetLogger-v2.0/LE2KismetLogger-v2.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
+    <asimod>
+      <name>Kismet Logger</name>
+      <installedname>LE2KismetLogger</installedname>
+      <author>ME3Tweaks</author>
+      <description>This plugin logs kismet sequence object activations to the console and to its log file. You can trace the execution of this log with Legendary Explorer's Sequence Editor.</description>
+      <version>4</version>
+      <hash>da601f36fe2ef1320b3101bf4fe1ebf3</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/KismetLogger</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/KismetLogger-v4/LE2KismetLogger-v4.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
   </updategroup>
@@ -935,6 +1014,17 @@
       <downloadlink>https://github.com/ME3Tweaks/LE1-ASI-Plugins/releases/download/LE12DAPrinter-v2.0/2DAPrinter-v2.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
+    <asimod>
+      <name>Bio2DA Printer</name>
+      <installedname>LE1Bio2DAPrinter</installedname>
+      <author>ME3Tweaks</author>
+      <description>This ASI prints the loaded Bio2DA and Bio2DANumberedRows objects from memory to its log file. To initiate the print, press CTRL + 2 when the directions text is on screen at the top right.</description>
+      <version>3</version>
+      <hash>03546ae1776bcfb7a375ca6ce365bddf</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/2DAPrinter</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/Bio2DAPrinter-v3/LE1Bio2DAPrinter-v3.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
   </updategroup>
   <updategroup groupid="44" game="4">
     <asimod>
@@ -946,6 +1036,16 @@
       <hash>38029821ac3a00d26570b4e21cd32056</hash>
       <sourcecode>https://github.com/ME3Tweaks/LE1-ASI-Plugins/tree/main/PNGScreenshots</sourcecode>
       <downloadlink>https://github.com/ME3Tweaks/LE1-ASI-Plugins/releases/download/LE1PNGScreenShots-v1.0/LE1PNGScreenShots-v1.0.asi</downloadlink>
+    </asimod>
+    <asimod>
+      <name>PNG Screenshots</name>
+      <installedname>LE1PNGScreenshots</installedname>
+      <author>ME3Tweaks</author>
+      <description>This ASI makes screenshots (either through photo mode, or its backing console command 'screenshot') save as .png files instead of .bmp files. This saves significant disk space and makes them easier to share. Files are stored in a game-specific subdirectory of the ScreenShots folder.</description>
+      <version>2</version>
+      <hash>a3a1cbbf319da54c479d4607fd1f09be</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/PNGScreenshots</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/PNGScreenshots-v2/LE1PNGScreenshots-v2.0.asi</downloadlink>
     </asimod>
   </updategroup>
   <updategroup groupid="45" game="5">
@@ -959,6 +1059,16 @@
       <sourcecode>https://github.com/ME3Tweaks/LE2-ASI-Plugins/tree/master/LE2PNGScreenshots</sourcecode>
       <downloadlink>https://github.com/ME3Tweaks/LE2-ASI-Plugins/releases/download/LE2PNGScreenShots-v1.0/LE2PNGScreenShots-v1.0.asi</downloadlink>
     </asimod>
+    <asimod>
+      <name>PNG Screenshots</name>
+      <installedname>LE2PNGScreenshots</installedname>
+      <author>ME3Tweaks</author>
+      <description>This ASI makes screenshots (either through photo mode, or its backing console command 'screenshot') save as .png files instead of .bmp files. This saves significant disk space and makes them easier to share. Files are stored in a game-specific subdirectory of the ScreenShots folder.</description>
+      <version>2</version>
+      <hash>4c44ea608b37f65dd6b8e361587fda2c</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/PNGScreenshots</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/PNGScreenshots-v2/LE2PNGScreenshots-v2.0.asi</downloadlink>
+    </asimod>
   </updategroup>
   <updategroup groupid="46" game="6">
     <asimod>
@@ -970,6 +1080,16 @@
       <hash>f4322b4be564b683ac35fa6e893a59dd</hash>
       <sourcecode>https://github.com/ME3Tweaks/LE3-ASI-Plugins/tree/master/LE3PNGScreenshots</sourcecode>
       <downloadlink>https://github.com/ME3Tweaks/LE3-ASI-Plugins/releases/download/LE3PNGScreenShots-v1.0/LE3PNGScreenShots-v1.0.asi</downloadlink>
+    </asimod>
+    <asimod>
+      <name>PNG Screenshots</name>
+      <installedname>LE3PNGScreenshots</installedname>
+      <author>ME3Tweaks</author>
+      <description>This ASI makes screenshots (either through photo mode, or its backing console command 'screenshot') save as .png files instead of .bmp files. This saves significant disk space and makes them easier to share. Files are stored in a game-specific subdirectory of the ScreenShots folder.</description>
+      <version>2</version>
+      <hash>812bf29ec11684ac49f1993326c83efc</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/PNGScreenshots</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/PNGScreenshots-v2/LE3PNGScreenshots-v2.0.asi</downloadlink>
     </asimod>
   </updategroup>
   <updategroup groupid="47" game="4">
@@ -995,6 +1115,20 @@
       <downloadlink>https://github.com/ME3Tweaks/LE1-ASI-Plugins/releases/download/LE1LinkerPrinter-v2.0/LE1LinkerPrinter-v2.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
+    <asimod>
+      <name>Linker Printer</name>
+      <installedname>LE1LinkerPrinter</installedname>
+      <author>ME3Tweaks</author>
+      <description>This ASI internally tracks the file source of every object loaded into memory from disk. Objects with the same name already in memory are not loaded from disk; the in-memory version is used instead, which is a common problem due to asset duplication.
+
+Press CTRL + O to log all loaded objects' sources to the log.
+</description>
+      <version>5</version>
+      <hash>5b67853b8ad7bc9298e874701b2e112e</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/LinkerPrinter</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/LinkerPrinter-v5/LE1LinkerPrinter-v5.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
   </updategroup>
   <updategroup groupid="48" game="5">
     <asimod>
@@ -1017,6 +1151,20 @@
       <hash>6280bc920f2154a956053731f8e985bb</hash>
       <sourcecode>https://github.com/ME3Tweaks/LE2-ASI-Plugins/tree/master/LE2LinkerPrinter</sourcecode>
       <downloadlink>https://github.com/ME3Tweaks/LE2-ASI-Plugins/releases/download/LE2LinkerPrinter-v2.0/LE2LinkerPrinter-v2.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
+    <asimod>
+      <name>Linker Printer</name>
+      <installedname>LE2LinkerPrinter</installedname>
+      <author>ME3Tweaks</author>
+      <description>This ASI internally tracks the file source of every object loaded into memory from disk. Objects with the same name already in memory are not loaded from disk; the in-memory version is used instead, which is a common problem due to asset duplication.
+
+Press CTRL + O to log all loaded objects' sources to the log.
+</description>
+      <version>5</version>
+      <hash>ad1931614f62c2d7d75214146a831728</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/LinkerPrinter</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/LinkerPrinter-v5/LE2LinkerPrinter-v5.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
   </updategroup>
@@ -1054,6 +1202,20 @@ Press CTRL + O to log all loaded objects' sources to a file named LE3LinkerPrint
       <hash>39a53b842080b24a63e73f005bb6510b</hash>
       <sourcecode>https://github.com/ME3Tweaks/LE3-ASI-Plugins/tree/master/LE3LinkerPrinter</sourcecode>
       <downloadlink>https://github.com/ME3Tweaks/LE3-ASI-Plugins/releases/download/LE3LinkerPrinter-v4.0/LE3LinkerPrinter-v4.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
+    <asimod>
+      <name>Linker Printer</name>
+      <installedname>LE3LinkerPrinter</installedname>
+      <author>ME3Tweaks</author>
+      <description>This ASI internally tracks the file source of every object loaded into memory from disk. Objects with the same name already in memory are not loaded from disk; the in-memory version is used instead, which is a common problem due to asset duplication.
+
+Press CTRL + O to log all loaded objects' sources to the log.
+</description>
+      <version>5</version>
+      <hash>41c2e217d3f952fdca4e6d073ef72a0c</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/LinkerPrinter</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/LinkerPrinter-v5/LE3LinkerPrinter-v5.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
   </updategroup>
@@ -1136,6 +1298,17 @@ Press CTRL + O to log all loaded objects' sources to a file named LE3LinkerPrint
       <downloadlink>https://github.com/ME3Tweaks/LE1-ASI-Plugins/releases/download/LE1DebugLogger-v6.0/LE1DebugLogger-v6.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
+    <asimod>
+      <name>Debug Logger</name>
+      <installedname>LE1DebugLogger</installedname>
+      <author>ME3Tweaks</author>
+      <description>This ASI logs various things from the game that can be useful for development and debugging the game. It includes things such as error messages, some game crash scenarios, package loading, and failed imports. The log is stored in a file next to the game executable. To generate export creation logs, run the game with the -debugexportcreation command line parameter.</description>
+      <version>8</version>
+      <hash>69cec505fcc2b5d0950c7e6c7a894f9c</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/DebugLogger</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/DebugLogger-v8/LE1DebugLogger-v8.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
   </updategroup>
   <updategroup groupid="71" game="5">
     <asimod>
@@ -1180,6 +1353,17 @@ Press CTRL + O to log all loaded objects' sources to a file named LE3LinkerPrint
       <hash>921f507ce1c75f4f0d13cc062a1171a2</hash>
       <sourcecode>https://github.com/ME3Tweaks/LE2-ASI-Plugins/tree/master/LE2DebugLogger</sourcecode>
       <downloadlink>https://github.com/ME3Tweaks/LE2-ASI-Plugins/releases/download/LE2DebugLogger-v4.0/LE2DebugLogger-v4.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
+    <asimod>
+      <name>Debug Logger</name>
+      <installedname>LE2DebugLogger</installedname>
+      <author>ME3Tweaks</author>
+      <description>This ASI logs various things from the game that can be useful for development and debugging the game. It includes things such as error messages, some game crash scenarios, package loading, and failed imports. The log is stored in a file next to the game executable. To generate export creation logs, run the game with the -debugexportcreation command line parameter.</description>
+      <version>8</version>
+      <hash>74ced5046cb2f571895bbc6a5ab82a4e</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/DebugLogger</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/DebugLogger-v8/LE2DebugLogger-v8.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
   </updategroup>
@@ -1239,6 +1423,17 @@ Press CTRL + O to log all loaded objects' sources to a file named LE3LinkerPrint
       <downloadlink>https://github.com/ME3Tweaks/LE3-ASI-Plugins/releases/download/LE3DebugLogger-v6.0/LE3DebugLogger-v6.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
+    <asimod>
+      <name>Debug Logger</name>
+      <installedname>LE3DebugLogger</installedname>
+      <author>ME3Tweaks</author>
+      <description>This ASI logs various things from the game that can be useful for development and debugging the game. It includes things such as error messages, some game crash scenarios, package loading, and failed imports. The log is stored in a file next to the game executable. To generate export creation logs, run the game with the -debugexportcreation command line parameter.</description>
+      <version>8</version>
+      <hash>7793f3575f8663be3521c60e7293a713</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/DebugLogger</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/DebugLogger-v8/LE3DebugLogger-v8.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
   </updategroup>
   <updategroup groupid="73" game="5">
     <asimod>
@@ -1250,6 +1445,19 @@ Press CTRL + O to log all loaded objects' sources to a file named LE3LinkerPrint
       <hash>5635ad85fd9b4c3ec582dfd3867d456a</hash>
       <sourcecode>https://github.com/ME3Tweaks/LE2-ASI-Plugins/tree/master/LE2SeqAct_LogEnabler</sourcecode>
       <downloadlink>https://github.com/ME3Tweaks/LE2-ASI-Plugins/releases/download/LE2SeqAct_LogEnabler-v.4.0/LE2SeqAct_LogEnabler-v4.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
+    <asimod>
+      <name>SeqActLog Enabler</name>
+      <installedname>LE2SeqActLogEnabler</installedname>
+      <author>ME3Tweaks</author>
+      <description>Prints the contents of SeqVars attached to SeqAct_Log sequence objects to the screen. Useful for debugging sequences. For full logs, install the m_objComment enabler mod from ME3Tweaks Dev Mods.
+
+Toggle the on-screen messages with CTRL + G.</description>
+      <version>5</version>
+      <hash>e292033e60cdffe8aa3da6a37ab038b3</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/SeqActLogEnabler</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/SeqActLogEnabler-v5/LE2SeqActLogEnabler-v5.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
   </updategroup>
@@ -1265,6 +1473,20 @@ Press CTRL + O to log all loaded objects' sources to a file named LE3LinkerPrint
       <downloadlink>https://github.com/ME3Tweaks/LE3-ASI-Plugins/releases/download/LE3SeqAct_LogEnabler-v4.0/LE3SeqAct_LogEnabler-v4.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
+    <asimod>
+      <name>SeqActLog Enabler</name>
+      <installedname>LE3SeqActLogEnabler</installedname>
+      <author>ME3Tweaks</author>
+      <description>Prints the contents of SeqVars attached to SeqAct_Log sequence objects to the screen. Useful for debugging sequences. For full logs, install the m_objComment enabler mod from ME3Tweaks Dev Mods.
+
+Toggle the on-screen messages with CTRL + G.
+</description>
+      <version>5</version>
+      <hash>d83b241ecc9a0131fccd8300b59ab679</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/SeqActLogEnabler</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/SeqActLogEnabler-v5/LE3SeqActLogEnabler-v5.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
   </updategroup>
   <updategroup groupid="75" game="4">
     <asimod>
@@ -1278,6 +1500,17 @@ Press CTRL + O to log all loaded objects' sources to a file named LE3LinkerPrint
       <downloadlink>https://github.com/ME3Tweaks/LE1-ASI-Plugins/releases/download/LE1ConsoleExtension-v1.0/LE1ConsoleExtension-v1.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
+    <asimod>
+      <name>Console Extension</name>
+      <installedname>LE1ConsoleExtension</installedname>
+      <author>ME3Tweaks</author>
+      <description>The Console Extension ASI adds new useful developer console commands to Mass Effect 1 Legendary Edition. See the source code link for the commands added by this ASI.</description>
+      <version>3</version>
+      <hash>961891a014e94e64a728b3aa179fab54</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/ConsoleExtension</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/ConsoleExtension-v3/LE1ConsoleExtension-v3.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
   </updategroup>
   <updategroup groupid="76" game="5">
     <asimod>
@@ -1289,6 +1522,17 @@ Press CTRL + O to log all loaded objects' sources to a file named LE3LinkerPrint
       <hash>5db24a07eb45bd3e1a1c3d78941d4b48</hash>
       <sourcecode>https://github.com/ME3Tweaks/LEASIMods/tree/master/Shared-ASI/ConsoleExtension</sourcecode>
       <downloadlink>https://github.com/ME3Tweaks/LE2-ASI-Plugins/releases/download/LE2ConsoleExtension-v1.0/LE2ConsoleExtension-v1.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
+    <asimod>
+      <name>Console Extension</name>
+      <installedname>LE2ConsoleExtension</installedname>
+      <author>ME3Tweaks</author>
+      <description>The Console Extension ASI adds new useful developer console commands to Mass Effect 1 Legendary Edition. See the source code link for the commands added by this ASI.</description>
+      <version>3</version>
+      <hash>37d608f7502ceeafda7447e910329832</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/ConsoleExtension</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/ConsoleExtension-v3/LE2ConsoleExtension-v3.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
   </updategroup>
@@ -1315,6 +1559,17 @@ Press CTRL + O to log all loaded objects' sources to a file named LE3LinkerPrint
       <downloadlink>https://github.com/ME3Tweaks/LE3-ASI-Plugins/releases/download/LE3ConsoleExtension-v2.0/LE3ConsoleExtension-v2.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
+    <asimod>
+      <name>Console Extension</name>
+      <installedname>LE3ConsoleExtension</installedname>
+      <author>ME3Tweaks</author>
+      <description>The Console Extension ASI adds new useful developer console commands to Mass Effect 1 Legendary Edition. See the source code link for the commands added by this ASI.</description>
+      <version>3</version>
+      <hash>0eda18a468ff994df40791572b12ff40</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/ConsoleExtension</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/ConsoleExtension-v3/LE3ConsoleExtension-v3.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
   </updategroup>
   <updategroup groupid="78" game="5">
     <asimod>
@@ -1326,6 +1581,17 @@ Press CTRL + O to log all loaded objects' sources to a file named LE3LinkerPrint
       <hash>d35166e3e03da15afcc6736bdd60fbb9</hash>
       <sourcecode>https://github.com/ME3Tweaks/LE2-ASI-Plugins/tree/master/LE2HotReload</sourcecode>
       <downloadlink>https://github.com/ME3Tweaks/LE2-ASI-Plugins/releases/download/LE2HotReload-v1.0/LE2HotReload-v1.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
+    <asimod>
+      <name>Hot Reload</name>
+      <installedname>LE2HotReload</installedname>
+      <author>ME3Tweaks</author>
+      <description>This ASI makes LE2 open files with read/write sharing, rather than read-only sharing (no write). This allows you to modify packages on disk and easily reload them while the game is still running, something that both LE1 and LE3 do.</description>
+      <version>2</version>
+      <hash>a3884aeddc49fcef49d128bc70b23849</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/HotReload</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/HotReload-v2/LE2HotReload-v2.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
   </updategroup>
@@ -1493,6 +1759,17 @@ Press CTRL + O to log all loaded objects' sources to a file named LE3LinkerPrint
       <downloadlink>https://github.com/ME3Tweaks/LE1-ASI-Plugins/releases/download/LE1FunctionLogger-v3.0/LE1FunctionLogger-v3.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
+    <asimod>
+      <name>Function Logger</name>
+      <installedname>LE1FunctionLogger</installedname>
+      <author>ME3Tweaks</author>
+      <description>Function Logger can be used to help trace the exact method call that crashed a game. This ASI will generate a very large amount of disk writes and use a very large amount of disk space - only install when trying to trace unrealscript calls.</description>
+      <version>4</version>
+      <hash>195e4c634db355078860af71e145659a</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/FunctionLogger</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/FunctionLogger-v4/LE1FunctionLogger-v4.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
   </updategroup>
   <updategroup groupid="84" game="5">
     <asimod>
@@ -1506,6 +1783,17 @@ Press CTRL + O to log all loaded objects' sources to a file named LE3LinkerPrint
       <downloadlink>https://github.com/ME3Tweaks/LE2-ASI-Plugins/releases/download/LE2FunctionLogger-v3.0/LE2FunctionLogger-v3.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
+    <asimod>
+      <name>Function Logger</name>
+      <installedname>LE2FunctionLogger</installedname>
+      <author>ME3Tweaks</author>
+      <description>Function Logger can be used to help trace the exact method call that crashed a game. This ASI will generate a very large amount of disk writes and use a very large amount of disk space - only install when trying to trace unrealscript calls.</description>
+      <version>4</version>
+      <hash>13ab2b476c2b018f2d72a0d348d9b14d</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/FunctionLogger</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/FunctionLogger-v4/LE2FunctionLogger-v4.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
   </updategroup>
   <updategroup groupid="85" game="6">
     <asimod>
@@ -1517,6 +1805,17 @@ Press CTRL + O to log all loaded objects' sources to a file named LE3LinkerPrint
       <hash>8fd38d8bd637b5408b0f81eb45493e5c</hash>
       <sourcecode>https://github.com/ME3Tweaks/LE3-ASI-Plugins/tree/master/LE3FunctionLogger</sourcecode>
       <downloadlink>https://github.com/ME3Tweaks/LE3-ASI-Plugins/releases/download/LE3FunctionLogger-v3.0/LE3FunctionLogger-v3.0.asi</downloadlink>
+      <devsonly>1</devsonly>
+    </asimod>
+    <asimod>
+      <name>Function Logger</name>
+      <installedname>LE3FunctionLogger</installedname>
+      <author>ME3Tweaks</author>
+      <description>Function Logger can be used to help trace the exact method call that crashed a game. This ASI will generate a very large amount of disk writes and use a very large amount of disk space - only install when trying to trace unrealscript calls.</description>
+      <version>4</version>
+      <hash>7f1cd8ad67370dab56b01c9e469a712d</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/FunctionLogger</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/FunctionLogger-v4/LE3FunctionLogger-v4.0.asi</downloadlink>
       <devsonly>1</devsonly>
     </asimod>
   </updategroup>

@@ -114,7 +114,7 @@ namespace ME3TweaksCore.Services.Backup
             {
                 MLog.Information($@"PerformBackup() on {targetToBackup.TargetPath}");
                 // Backup target
-                if (MUtilities.IsGameRunning(targetToBackup.Game))
+                if (MRunningGameInfo.IsGameRunning(targetToBackup.Game))
                 {
                     MLog.Error(@"PerformBackup: Cannot backup game while game is running");
                     EndBackup();

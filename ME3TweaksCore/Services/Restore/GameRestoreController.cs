@@ -136,7 +136,7 @@ namespace ME3TweaksCore.Services.Restore
         /// <returns></returns>
         public bool PerformRestore(GameTarget restoreTarget, string destinationDirectory)
         {
-            if (MUtilities.IsGameRunning(Game))
+            if (MRunningGameInfo.IsGameRunning(Game))
             {
                 BlockingErrorCallback?.Invoke(LC.GetString(LC.string_cannotRestoreGame), LC.GetString(LC.string_interp_cannotRestoreGameToGameWhileRunning, Game.ToGameName()));
                 return false;

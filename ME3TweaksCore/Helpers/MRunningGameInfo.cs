@@ -1,4 +1,4 @@
-﻿using LegendaryExplorerCore.GameFilesystem;
+using LegendaryExplorerCore.GameFilesystem;
 using LegendaryExplorerCore.Packages;
 using System;
 using System.Diagnostics;
@@ -32,7 +32,6 @@ namespace ME3TweaksCore.Helpers
         private static object gameRunningSyncObjLE3 = new object();
         private static object gameRunningSyncObjLEL = new object();
 
-
         /// <summary>
         /// Returns the object used to enforce concurrency when checking if a game is running
         /// </summary>
@@ -47,7 +46,6 @@ namespace ME3TweaksCore.Helpers
             MEGame.LE2 => gameRunningSyncObjLE2,
             MEGame.LE3 => gameRunningSyncObjLE3,
             MEGame.LELauncher => gameRunningSyncObjLEL,
-            _ => throw new NotImplementedException(),
         };
 
         /// <summary>
