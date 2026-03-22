@@ -80,12 +80,16 @@ namespace ME3TweaksCore.NativeMods
             }
 
             var shouldNotFetch = forceLocal || (!overrideThrottling && !MOnlineContent.CanFetchContentThrottleCheck()) && File.Exists(ManifestLocation);
-            if (!shouldNotFetch) //this cannot be triggered if forceLocal is true
+            if (!shouldNotFetch) //this cannot be triggered if forceLocal is true (and local file exists)
             {
                 string onlineManifest = null;
                 if (preloadedManifestData == null)
                 {
-                    MLog.Error(@"Fetching ASI manifest failed: As of 11/16/2023, data must come from combined services. This is a bug.");
+                    MLog.Error(@"Fetching ASI manifest failed: As of 11/16/2023, data must come from combined services. This is probably a bug.");
+                    MLog.Error($@"Debug Info:");
+                    MLog.Error($@"  Local file exists: {File.Exists(ManifestLocation)}");
+                    MLog.Error($@"  MOnlineContent.CanFetchContentThrottleCheck(): {MOnlineContent.CanFetchContentThrottleCheck()}");
+                    MLog.Error($@"  overrideThrottling: {overrideThrottling}");
                     Debugger.Break();
                 }
                 else
