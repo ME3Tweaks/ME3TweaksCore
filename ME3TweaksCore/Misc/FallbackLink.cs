@@ -23,13 +23,9 @@ namespace ME3TweaksCore.Misc
         public List<string> GetAllLinks()
         {
             var urls = new List<string>();
-            if (LoadBalancing && new Random().Next(2) == 0)
-            {
-                // Load balance - swap url order
-                if (FallbackURL != null) urls.Add(FallbackURL);
-                if (MainURL != null) urls.Add(MainURL);
-            }
-            else
+            if (MainURL != null) urls.Add(MainURL);
+            if (FallbackURL != null) urls.Add(FallbackURL);
+            if (LoadBalancing)
             {
                 urls = urls.Shuffle().ToList();
             }
