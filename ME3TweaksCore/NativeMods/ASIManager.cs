@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using LegendaryExplorerCore.Gammtek.Extensions;
 using LegendaryExplorerCore.Helpers;
+using LegendaryExplorerCore.Misc.ME3Tweaks;
 using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.GameFilesystem;
@@ -423,26 +424,14 @@ namespace ME3TweaksCore.NativeMods
                 // Todo: Put into server manifest
                 // once we have unveiled things.
 
-                // Add AutoTOC
-                updateGroups.Add(new ASIMod()
-                {
-                    UpdateGroupId = 500,
-                    Game = MEGame.LMP,
-                    Versions = [new ASIModVersion {
-                        Name = @"LMP AutoTOC",
-                        InstalledPrefix="AutoTOC",
-                        Author = "ME3Tweaks",
-                        Version = 2,
-                        Description = "AutoTOC for LMP",
-                        Hash = "6e0418e9208743ea9addf5cf4aa94add",
-                        SourceCodeLink = "https://github.com/SirCxyrtyx/AutoTOC-asi/tree/master",
-                        DownloadLink = "https://github.com/SirCxyrtyx/AutoTOC-asi/releases/download/LEv2/AutoTOC_LE-v2.asi",
-                        IsBeta = false,
-                        Hidden = false,
-                        DevModeOnly = false,
-                        Game = MEGame.LMP
-                    }]
-                });
+                // Add LE3 ASIs that we want
+                // This prevents duplication into the manifest
+                // Once public we can have new flag for LMP cloning.
+                updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_AUTOTOC), MEGame.LMP, 1200));
+                updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_TEXTURE_OVERRIDE), MEGame.LMP, 1201));
+                updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_LINKER_PRINTER), MEGame.LMP, 1202));
+                updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_STREAMING_LEVELS_HUD), MEGame.LMP, 1203));
+                updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_DEBUGLOGGER_DEV), MEGame.LMP, 1204));
 
                 // Add MilanHost
                 updateGroups.Add(new ASIMod()

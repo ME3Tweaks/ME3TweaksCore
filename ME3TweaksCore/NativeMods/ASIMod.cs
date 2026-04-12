@@ -11,6 +11,53 @@ namespace ME3TweaksCore.NativeMods
     [DebuggerDisplay(@"ASIMod - {LatestVersionIncludingHidden}")]
     public class ASIMod
     {
+        public ASIMod() { }
+
+        /// <summary>
+        /// Copy constructor with optional new game.
+        /// </summary>
+        /// <param name="source"></param>
+        public ASIMod(ASIMod source, MEGame? newGame = null, int? newGroupId = null)
+        {
+            var game = newGame ?? source.Game;
+            var groupId = newGroupId ?? source.UpdateGroupId;
+            UpdateGroupId = groupId;
+            Game = game;
+            IsHidden = source.IsHidden;
+            Versions = source.Versions.Select(v => new ASIModVersion
+            {
+                Name = v.Name,
+                InstalledPrefix = v.InstalledPrefix,
+                Author = v.Author,
+                Version = v.Version,
+                Description = v.Description,
+                Hash = v.Hash,
+                SourceCodeLink = v.SourceCodeLink,
+                DownloadLink = v.DownloadLink,
+                IsBeta = v.IsBeta,
+                Hidden = v.Hidden,
+                DevModeOnly = v.DevModeOnly,
+                Game = game,
+                Dependencies = v.Dependencies?.Select(d => new ASIDependency
+                {
+                    Filename = d.Filename,
+                    StorageFilename = d.StorageFilename,
+                    Filesize = d.Filesize,
+                    Hash = d.Hash,
+                    ServerAssetCompressed = d.ServerAssetCompressed,
+                    CompressedFilesize = d.CompressedFilesize,
+                    CompressedHash = d.CompressedHash,
+                }).ToArray() ?? [],
+            }).ToList();
+
+            foreach (var v in Versions)
+            {
+                v.OwningMod = this;
+                var sourceVersion = source.Versions.First(sv => sv.Version == v.Version);
+                v.OtherGroupsToDeleteOnInstall.AddRange(sourceVersion.OtherGroupsToDeleteOnInstall);
+            }
+        }
+
         /// <summary>
         /// Versions of this ASI
         /// </summary>
