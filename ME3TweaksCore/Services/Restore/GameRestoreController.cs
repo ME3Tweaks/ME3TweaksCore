@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Timers;
 using LegendaryExplorerCore.GameFilesystem;
 using LegendaryExplorerCore.Gammtek.Extensions;
@@ -298,9 +299,6 @@ namespace ME3TweaksCore.Services.Restore
             backupStatus.BackupStatus = LC.GetString(LC.string_restoringFromBackup);
             UpdateStatusCallback?.Invoke(backupStatus.BackupStatus);
 
-            string currentRoboCopyFile = null;
-
-            // Backup gamersettings.ini
             string gamerSettings = null;
             if (destTarget != null && destTarget.Game.IsLEGame())
             {
@@ -312,9 +310,39 @@ namespace ME3TweaksCore.Services.Restore
                 }
             }
 
-            // This doesn't work on Linux
+            var destinationPath = destinationPathOverride ?? destTarget?.TargetPath;
+            if (string.IsNullOrWhiteSpace(destinationPath))
+            {
+                MLog.Error(@"Restore destination path was not specified.");
+                SetSleepPrevention(false);
+                return;
+            }
+
+            if (WineWorkarounds.WineDetected)
+            {
+                ExecuteRestoreUsingRsync(backupPath, destinationPath, backupStatus, logEachFileCopied);
+            }
+            else
+            {
+                ExecuteRestoreUsingRobocopy(backupPath, destinationPath, backupStatus, logEachFileCopied);
+            }
+
+            SetSleepPrevention(false);
+
+            if (gamerSettings != null)
+            {
+                var gamerSettingsF = MEDirectories.GetLODConfigFile(destTarget.Game, destTarget.TargetPath);
+                Directory.GetParent(gamerSettingsF).Create();
+                File.WriteAllText(gamerSettingsF, gamerSettings);
+                MLog.Information(@"Restored gamersettings.ini");
+            }
+        }
+
+        private void ExecuteRestoreUsingRobocopy(string backupPath, string destinationPath, GameBackupStatus backupStatus, bool logEachFileCopied)
+        {
+            string currentRoboCopyFile = null;
             RoboCommand rc = new RoboCommand();
-            rc.CopyOptions.Destination = destinationPathOverride ?? destTarget.TargetPath;
+            rc.CopyOptions.Destination = destinationPath;
             rc.CopyOptions.Source = backupPath;
             rc.CopyOptions.Mirror = true;
             rc.CopyOptions.MultiThreadedCopiesCount = 2;
@@ -336,23 +364,158 @@ namespace ME3TweaksCore.Services.Restore
                     }
                     backupStatus.BackupLocationStatus = LC.GetString(LC.string_interp_copyingX, currentRoboCopyFile);
                     UpdateStatusCallback?.Invoke(backupStatus.BackupLocationStatus);
-
                 }
             };
-            MLog.Information($@"Beginning robocopy restore: {backupPath} -> {rc.CopyOptions.Destination}");
-            rc.Start().Wait();
-            SetSleepPrevention(false);
-            MLog.Information(@"Robocopy restore has completed");
 
-            // Restore gamersettings
-            if (gamerSettings != null)
+            MLog.Information($@"Beginning robocopy restore: {backupPath} -> {destinationPath}");
+            rc.Start().Wait();
+            MLog.Information(@"Robocopy restore has completed");
+        }
+
+        private void ExecuteRestoreUsingRsync(string backupPath, string destinationPath, GameBackupStatus backupStatus, bool logEachFileCopied)
+        {
+            var rsyncSource = GetRsyncCompatiblePath(backupPath);
+            var rsyncDestination = GetRsyncCompatiblePath(destinationPath);
+            string rsyncArgs = $"-a --delete --info=progress2 --out-format=\"%n\" -- {QuoteCommandArgument(rsyncSource)} {QuoteCommandArgument(rsyncDestination)}";
+
+            MLog.Information($@"Beginning rsync restore: {rsyncSource} -> {rsyncDestination}");
+            using var process = new Process();
+            process.StartInfo = new ProcessStartInfo
             {
-                var gamerSettingsF = MEDirectories.GetLODConfigFile(destTarget.Game, destTarget.TargetPath);
-                Directory.GetParent(gamerSettingsF).Create();
-                File.WriteAllText(gamerSettingsF, gamerSettings);
-                MLog.Information(@"Restored gamersettings.ini");
+                FileName = @"rsync",
+                Arguments = rsyncArgs,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+
+            var progressRegex = new Regex(@"(\d{1,3})%", RegexOptions.Compiled);
+            process.OutputDataReceived += (sender, args) =>
+            {
+                var outputLine = args.Data;
+                if (string.IsNullOrWhiteSpace(outputLine))
+                {
+                    return;
+                }
+
+                var progressMatch = progressRegex.Match(outputLine);
+                if (progressMatch.Success && int.TryParse(progressMatch.Groups[1].Value, out var percentProgress))
+                {
+                    SetProgressIndeterminateCallback?.Invoke(false);
+                    ProgressValue = percentProgress;
+                    ProgressMax = 100;
+                    UpdateProgressCallback?.Invoke(ProgressValue, ProgressMax);
+                    return;
+                }
+
+                if (outputLine.StartsWith(@"sent ") || outputLine.StartsWith(@"total size is "))
+                {
+                    return;
+                }
+
+                if (logEachFileCopied)
+                {
+                    MLog.Debug($@"Rsync copying {outputLine}");
+                }
+
+                backupStatus.BackupLocationStatus = LC.GetString(LC.string_interp_copyingX, outputLine);
+                UpdateStatusCallback?.Invoke(backupStatus.BackupLocationStatus);
+            };
+
+            process.ErrorDataReceived += (sender, args) =>
+            {
+                if (!string.IsNullOrWhiteSpace(args.Data))
+                {
+                    MLog.Warning($@"rsync: {args.Data}");
+                }
+            };
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            process.WaitForExit();
+
+            if (process.ExitCode != 0)
+            {
+                MLog.Warning($@"rsync restore completed with exit code {process.ExitCode}");
+            }
+            else
+            {
+                MLog.Information(@"Rsync restore has completed");
             }
         }
+
+        private static string GetRsyncCompatiblePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return path;
+            }
+
+            var convertedPath = TryConvertWinePathToUnix(path);
+            if (!string.IsNullOrWhiteSpace(convertedPath))
+            {
+                return convertedPath;
+            }
+
+            if (path.Length > 2 && path[1] == ':' && (path[2] == '\\' || path[2] == '/'))
+            {
+                var driveLetter = char.ToLowerInvariant(path[0]);
+                var normalizedPath = path.Substring(2).Replace('\\', '/');
+                if (driveLetter == 'z')
+                {
+                    return normalizedPath;
+                }
+
+                return $"/{driveLetter}{normalizedPath}";
+            }
+
+            return path.Replace('\\', '/');
+        }
+
+        private static string TryConvertWinePathToUnix(string path)
+        {
+            try
+            {
+                using var winePathProcess = new Process();
+                winePathProcess.StartInfo = new ProcessStartInfo
+                {
+                    FileName = @"winepath",
+                    Arguments = $"-u {QuoteCommandArgument(path)}",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+
+                winePathProcess.Start();
+                var output = winePathProcess.StandardOutput.ReadToEnd();
+                winePathProcess.WaitForExit();
+
+                if (winePathProcess.ExitCode == 0)
+                {
+                    return output.Trim();
+                }
+            }
+            catch (Exception e)
+            {
+                MLog.Warning($@"Unable to convert path via winepath: {e.Message}");
+            }
+
+            return null;
+        }
+
+        private static string QuoteCommandArgument(string argument)
+        {
+            if (argument == null)
+            {
+                return "\"\"";
+            }
+
+            return $"\"{argument.Replace("\"", "\\\"")}\"";
+        }
+
 
         /// <summary>
         /// Prevents the system from going to sleep during the restore operation
