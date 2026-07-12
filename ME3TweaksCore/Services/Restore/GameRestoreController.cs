@@ -376,74 +376,188 @@ namespace ME3TweaksCore.Services.Restore
         {
             var rsyncSource = GetRsyncCompatiblePath(backupPath);
             var rsyncDestination = GetRsyncCompatiblePath(destinationPath);
-            string rsyncArgs = $"-a --delete --info=progress2 --out-format=\"%n\" -- {QuoteCommandArgument(rsyncSource)} {QuoteCommandArgument(rsyncDestination)}";
+            string rsyncArgs = BuildRsyncArgs(rsyncSource, rsyncDestination);
 
             MLog.Information($@"Beginning rsync restore: {rsyncSource} -> {rsyncDestination}");
-            using var process = new Process();
-            process.StartInfo = new ProcessStartInfo
+            var started = TryExecuteRsyncProcess(@"rsync", rsyncArgs, backupStatus, logEachFileCopied, out var exitCode);
+            if (!started)
             {
-                FileName = @"rsync",
-                Arguments = rsyncArgs,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
+                MLog.Warning(@"Direct rsync invocation failed to start. Falling back to bash wrapper for Wine.");
+                exitCode = ExecuteRestoreUsingRsyncViaBash(rsyncArgs, backupStatus, logEachFileCopied);
+            }
 
-            var progressRegex = new Regex(@"(\d{1,3})%", RegexOptions.Compiled);
-            process.OutputDataReceived += (sender, args) =>
+            if (exitCode != 0)
             {
-                var outputLine = args.Data;
-                if (string.IsNullOrWhiteSpace(outputLine))
-                {
-                    return;
-                }
-
-                var progressMatch = progressRegex.Match(outputLine);
-                if (progressMatch.Success && int.TryParse(progressMatch.Groups[1].Value, out var percentProgress))
-                {
-                    SetProgressIndeterminateCallback?.Invoke(false);
-                    ProgressValue = percentProgress;
-                    ProgressMax = 100;
-                    UpdateProgressCallback?.Invoke(ProgressValue, ProgressMax);
-                    return;
-                }
-
-                if (outputLine.StartsWith(@"sent ") || outputLine.StartsWith(@"total size is "))
-                {
-                    return;
-                }
-
-                if (logEachFileCopied)
-                {
-                    MLog.Debug($@"Rsync copying {outputLine}");
-                }
-
-                backupStatus.BackupLocationStatus = LC.GetString(LC.string_interp_copyingX, outputLine);
-                UpdateStatusCallback?.Invoke(backupStatus.BackupLocationStatus);
-            };
-
-            process.ErrorDataReceived += (sender, args) =>
-            {
-                if (!string.IsNullOrWhiteSpace(args.Data))
-                {
-                    MLog.Warning($@"rsync: {args.Data}");
-                }
-            };
-
-            process.Start();
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-            process.WaitForExit();
-
-            if (process.ExitCode != 0)
-            {
-                MLog.Warning($@"rsync restore completed with exit code {process.ExitCode}");
+                MLog.Warning($@"rsync restore completed with exit code {exitCode}");
             }
             else
             {
                 MLog.Information(@"Rsync restore has completed");
             }
+        }
+
+        private bool TryExecuteRsyncProcess(string executableName, string arguments, GameBackupStatus backupStatus, bool logEachFileCopied, out int exitCode)
+        {
+            exitCode = -1;
+            try
+            {
+                using var process = new Process();
+                process.StartInfo = new ProcessStartInfo
+                {
+                    FileName = executableName,
+                    Arguments = arguments,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+
+                process.OutputDataReceived += (sender, args) => HandleRsyncOutputLine(args.Data, backupStatus, logEachFileCopied);
+                process.ErrorDataReceived += (sender, args) =>
+                {
+                    if (!string.IsNullOrWhiteSpace(args.Data))
+                    {
+                        HandleRsyncOutputLine(args.Data, backupStatus, logEachFileCopied);
+                    }
+                };
+
+                process.Start();
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+                process.WaitForExit();
+                exitCode = process.ExitCode;
+                return true;
+            }
+            catch (Exception e)
+            {
+                MLog.Warning($@"Unable to start rsync process '{executableName}': {e.Message}");
+                return false;
+            }
+        }
+
+        private int ExecuteRestoreUsingRsyncViaBash(string rsyncArgs, GameBackupStatus backupStatus, bool logEachFileCopied)
+        {
+            var logFile = Path.Combine(Path.GetTempPath(), $"m3-rsync-{Guid.NewGuid():N}.log");
+            var shellCommand = $"rsync {rsyncArgs} > {EscapeBashArgument(logFile)} 2>&1";
+            var bashArguments = $"-lc {QuoteCommandArgument(shellCommand)}";
+
+            if (!TryStartAndMonitorRsyncBash(@"z:\\bin\\bash", bashArguments, logFile, backupStatus, logEachFileCopied, out var exitCode))
+            {
+                TryStartAndMonitorRsyncBash(@"bash", bashArguments, logFile, backupStatus, logEachFileCopied, out exitCode);
+            }
+
+            try
+            {
+                if (File.Exists(logFile))
+                {
+                    File.Delete(logFile);
+                }
+            }
+            catch (Exception e)
+            {
+                MLog.Warning($@"Unable to delete rsync temp log file: {e.Message}");
+            }
+
+            return exitCode;
+        }
+
+        private bool TryStartAndMonitorRsyncBash(string bashExecutable, string bashArguments, string logFile, GameBackupStatus backupStatus, bool logEachFileCopied, out int exitCode)
+        {
+            exitCode = -1;
+            try
+            {
+                using var process = new Process();
+                process.StartInfo = new ProcessStartInfo
+                {
+                    FileName = bashExecutable,
+                    Arguments = bashArguments,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                if (!process.Start())
+                {
+                    return false;
+                }
+
+                long filePosition = 0;
+                while (!process.HasExited)
+                {
+                    DrainRsyncLogFile(logFile, ref filePosition, backupStatus, logEachFileCopied);
+                    System.Threading.Thread.Sleep(250);
+                }
+
+                process.WaitForExit();
+                DrainRsyncLogFile(logFile, ref filePosition, backupStatus, logEachFileCopied);
+                exitCode = process.ExitCode;
+                return true;
+            }
+            catch (Exception e)
+            {
+                MLog.Warning($@"Unable to start bash wrapper '{bashExecutable}': {e.Message}");
+                return false;
+            }
+        }
+
+        private void DrainRsyncLogFile(string logFile, ref long filePosition, GameBackupStatus backupStatus, bool logEachFileCopied)
+        {
+            if (!File.Exists(logFile))
+            {
+                return;
+            }
+
+            using var stream = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            stream.Seek(filePosition, SeekOrigin.Begin);
+            using var reader = new StreamReader(stream);
+            while (!reader.EndOfStream)
+            {
+                var line = reader.ReadLine();
+                HandleRsyncOutputLine(line, backupStatus, logEachFileCopied);
+            }
+
+            filePosition = stream.Position;
+        }
+
+        private void HandleRsyncOutputLine(string outputLine, GameBackupStatus backupStatus, bool logEachFileCopied)
+        {
+            if (string.IsNullOrWhiteSpace(outputLine))
+            {
+                return;
+            }
+
+            var progressMatch = Regex.Match(outputLine, @"(\d{1,3})%");
+            if (progressMatch.Success && int.TryParse(progressMatch.Groups[1].Value, out var percentProgress))
+            {
+                SetProgressIndeterminateCallback?.Invoke(false);
+                ProgressValue = percentProgress;
+                ProgressMax = 100;
+                UpdateProgressCallback?.Invoke(ProgressValue, ProgressMax);
+                return;
+            }
+
+            if (outputLine.StartsWith(@"sent ") || outputLine.StartsWith(@"total size is "))
+            {
+                return;
+            }
+
+            if (outputLine.StartsWith(@"rsync:"))
+            {
+                MLog.Warning($@"rsync: {outputLine}");
+                return;
+            }
+
+            if (logEachFileCopied)
+            {
+                MLog.Debug($@"Rsync copying {outputLine}");
+            }
+
+            backupStatus.BackupLocationStatus = LC.GetString(LC.string_interp_copyingX, outputLine);
+            UpdateStatusCallback?.Invoke(backupStatus.BackupLocationStatus);
+        }
+
+        private static string BuildRsyncArgs(string rsyncSource, string rsyncDestination)
+        {
+            return $"-a --delete --info=progress2 --out-format=\"%n\" -- {QuoteCommandArgument(rsyncSource)} {QuoteCommandArgument(rsyncDestination)}";
         }
 
         private static string GetRsyncCompatiblePath(string path)
@@ -514,6 +628,16 @@ namespace ME3TweaksCore.Services.Restore
             }
 
             return $"\"{argument.Replace("\"", "\\\"")}\"";
+        }
+
+        private static string EscapeBashArgument(string argument)
+        {
+            if (argument == null)
+            {
+                return "''";
+            }
+
+            return $"'{argument.Replace("'", "'\\''")}'";
         }
 
 
