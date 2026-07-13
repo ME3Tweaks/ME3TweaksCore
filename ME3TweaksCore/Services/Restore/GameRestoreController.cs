@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Timers;
 using LegendaryExplorerCore.GameFilesystem;
@@ -383,7 +384,7 @@ namespace ME3TweaksCore.Services.Restore
             if (!started)
             {
                 MLog.Warning(@"Direct rsync invocation failed to start. Falling back to bash wrapper for Wine.");
-                exitCode = ExecuteRestoreUsingRsyncViaBash(rsyncArgs, backupStatus, logEachFileCopied);
+                exitCode = ExecuteRestoreUsingRsyncViaBash(rsyncSource, rsyncDestination, backupStatus, logEachFileCopied);
             }
 
             if (exitCode != 0)
@@ -435,27 +436,61 @@ namespace ME3TweaksCore.Services.Restore
             }
         }
 
-        private int ExecuteRestoreUsingRsyncViaBash(string rsyncArgs, GameBackupStatus backupStatus, bool logEachFileCopied)
+        /// <summary>
+        /// Creates a bash script that restores the game's backup.
+        /// Script takes a single argument, a path where to output the stdout.
+        /// </summary>
+        /// <param name="outputPath">Script will be written to this path</param>
+        /// <param name="backupPath">Path to the game backup</param>
+        /// <param name="destinationPath">Path to the game installtion to be restored</param>
+        /// <returns></returns>
+        private static void CreateRsyncScript(string outputPath, string backupPath, string destinationPath)
         {
-            var logFile = Path.Combine(Path.GetTempPath(), $"m3-rsync-{Guid.NewGuid():N}.log");
-            var shellCommand = $"rsync {rsyncArgs} > {EscapeBashArgument(logFile)} 2>&1";
-            var bashArguments = $"-lc {QuoteCommandArgument(shellCommand)}";
+            var shebang = @"#/usr/bin/env bash";
+            var shortFlags = @"-av"; // a Archive v Verbose
+            var longFlags = @"--delete"; // delete extra files from destination
+            var excludesOption = "cmm_vanilla";
 
-            if (!TryStartAndMonitorRsyncBash(@"z:\\bin\\bash", bashArguments, logFile, backupStatus, logEachFileCopied, out var exitCode))
+            var script = $"""
+                {shebang}
+                
+                rsync {shortFlags} {longFlags} {excludesOption} \
+                "{backupPath}/" \
+                "{destinationPath}/" \
+                | tee $1
+                """;
+            File.WriteAllText(outputPath, script.Replace("\r", "").ToCharArray());
+        }
+
+        private int ExecuteRestoreUsingRsyncViaBash(string backupPath, string destinationPath, GameBackupStatus backupStatus, bool logEachFileCopied)
+        {
+            var logFile = $"/dev/shm/binm3-rsync-{Guid.NewGuid():N}.log";
+            var scriptFile = $"/dev/shm/restore-rsync-{Guid.NewGuid():N}.sh";
+            CreateRsyncScript(scriptFile, backupPath, destinationPath);
+            var shellArguments = $"{scriptFile} {QuoteCommandArgument(logFile)}";
+            var shellPath = @"/bin/sh";
+
+
+                if (!TryStartAndMonitorRsyncBash(shellPath, shellArguments, logFile, backupStatus, logEachFileCopied, out var exitCode))
             {
-                TryStartAndMonitorRsyncBash(@"bash", bashArguments, logFile, backupStatus, logEachFileCopied, out exitCode);
+                MLog.Information($"Running {shellPath} {shellArguments}");
+                TryStartAndMonitorRsyncBash(shellPath, shellArguments, logFile, backupStatus, logEachFileCopied, out exitCode);
             }
 
             try
             {
                 if (File.Exists(logFile))
                 {
-                    File.Delete(logFile);
+                    MLog.Information($@"Skipping deletion of {logFile}");
+                    MLog.Information($@"Skipping deletion of {scriptFile}");
+                    //File.Delete(logFile);
+                    //File.Delete(scriptFile);
                 }
             }
             catch (Exception e)
             {
-                MLog.Warning($@"Unable to delete rsync temp log file: {e.Message}");
+                MLog.Warning($@"Unable to cleanup after restore: {e.Message}");
+                //MLog.Warning($@"Unable to delete rsync temp log file: {e.Message}");
             }
 
             return exitCode;
