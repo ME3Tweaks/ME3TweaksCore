@@ -457,14 +457,15 @@ namespace ME3TweaksCore.Services.Restore
                 # Nixos
                 if [ -d "/run/current-system/sw/bin/" ]; then
                   RSYNC_PATH="/run/current-system/sw/bin/rsync"
-                else 
-                  RSYNC_PATH="rsync"
+                else
+                  LD_LIBRARY_PATH="/run/host/usr/lib/x86_64-linux-gnu/"
+                  RSYNC_PATH="/run/host/usr/bin/rsync"
                 fi
                 
                 $RSYNC_PATH {shortFlags} {longFlags} {excludesOption} \
-                --log-file $1 \
                 "{backupPath}/" \
-                "{destinationPath}/"
+                "{destinationPath}/" 2>&1 \
+                | tee $1
                 """;
             File.WriteAllText(outputPath, script.Replace("\r", "").ToCharArray());
         }
