@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Timers;
 using LegendaryExplorerCore.GameFilesystem;
@@ -389,7 +388,8 @@ namespace ME3TweaksCore.Services.Restore
 
             if (exitCode != 0)
             {
-                MLog.Warning($@"rsync restore completed with exit code {exitCode}");
+                MLog.Warning($@"rsync restore finished with exit code {exitCode}");
+                throw new Exception($@"rsync restore failed with exit code {exitCode}");
             }
             else
             {
@@ -454,6 +454,8 @@ namespace ME3TweaksCore.Services.Restore
             var script = $"""
                 {shebang}
 
+                set -o pipefail
+
                 # Nixos
                 if [ -d "/run/current-system/sw/bin/" ]; then
                   RSYNC_PATH="/run/current-system/sw/bin/rsync"
@@ -465,7 +467,9 @@ namespace ME3TweaksCore.Services.Restore
                 $RSYNC_PATH {shortFlags} {longFlags} {excludesOption} \
                 "{backupPath}/" \
                 "{destinationPath}/" 2>&1 \
-                | tee $1
+                | tee "$1"
+
+                echo "--- RESTORE COMPLETE (exit code $?) ---" >> "$1"
                 """;
             File.WriteAllText(outputPath, script.Replace("\r", "").ToCharArray());
         }
@@ -488,11 +492,8 @@ namespace ME3TweaksCore.Services.Restore
             //};
             //process.Start();
 
-            if (!TryStartAndMonitorRsyncBash(shellPath, shellArguments, logFile, backupStatus, logEachFileCopied, out var exitCode))
-            {
-                MLog.Information($"Running {shellPath} {shellArguments}");
-                TryStartAndMonitorRsyncBash(shellPath, shellArguments, logFile, backupStatus, logEachFileCopied, out exitCode);
-            }
+            MLog.Information($"Running {shellPath} {shellArguments}");
+            TryStartAndMonitorRsyncBash(shellPath, shellArguments, logFile, backupStatus, logEachFileCopied, out var exitCode);
 
             try
             {
@@ -533,15 +534,15 @@ namespace ME3TweaksCore.Services.Restore
                 }
 
                 long filePosition = 0;
-                while (!process.HasExited)
+                bool done = false;
+                while (!done)
                 {
-                    DrainRsyncLogFile(logFile, ref filePosition, backupStatus, logEachFileCopied);
-                    System.Threading.Thread.Sleep(250);
+                    done = DrainRsyncLogFile(logFile, ref filePosition, backupStatus, logEachFileCopied, out exitCode);
+                    System.Threading.Thread.Sleep(50);
                 }
 
                 process.WaitForExit();
-                DrainRsyncLogFile(logFile, ref filePosition, backupStatus, logEachFileCopied);
-                exitCode = process.ExitCode;
+                DrainRsyncLogFile(logFile, ref filePosition, backupStatus, logEachFileCopied, out exitCode);
                 return true;
             }
             catch (Exception e)
@@ -551,11 +552,24 @@ namespace ME3TweaksCore.Services.Restore
             }
         }
 
-        private void DrainRsyncLogFile(string logFile, ref long filePosition, GameBackupStatus backupStatus, bool logEachFileCopied)
+        // Returns true if reached the exit phrase
+        private bool DrainRsyncLogFile(string logFile, ref long filePosition, GameBackupStatus backupStatus, bool logEachFileCopied, out int exitCode)
         {
-            if (!File.Exists(logFile))
+            // Check multiple times if logs exists
+            int counter = 0;
+            while (!File.Exists(logFile))
             {
-                return;
+                if (counter >= 5)
+                {
+                    MLog.Error($"Restore failed: Restore log {logFile} not created after {100*counter}.");
+                    exitCode = -2;
+                    return true;
+                } else
+                {
+                    MLog.Information($"Restore log at {logFile} doesn't exist yet.");
+                    System.Threading.Thread.Sleep(100);
+                    counter++;
+                }
             }
 
             using var stream = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -565,9 +579,17 @@ namespace ME3TweaksCore.Services.Restore
             {
                 var line = reader.ReadLine();
                 HandleRsyncOutputLine(line, backupStatus, logEachFileCopied);
+                if (line.Contains("--- RESTORE COMPLETE"))
+                {
+                    exitCode = Regex.Match(line, @"\(exit code (-?\d*)\)").Groups[1].Value.ToInt32();
+                    MLog.Information($"Restore complete, exit code {exitCode}");
+                    return true;
+                }
             }
 
             filePosition = stream.Position;
+            exitCode = 0;
+            return false;
         }
 
         private void HandleRsyncOutputLine(string outputLine, GameBackupStatus backupStatus, bool logEachFileCopied)
