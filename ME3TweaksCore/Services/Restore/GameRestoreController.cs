@@ -449,15 +449,22 @@ namespace ME3TweaksCore.Services.Restore
             var shebang = @"#/usr/bin/env bash";
             var shortFlags = @"-av"; // a Archive v Verbose
             var longFlags = @"--delete"; // delete extra files from destination
-            var excludesOption = "cmm_vanilla";
+            var excludesOption = "--exclude cmm_vanilla";
 
             var script = $"""
                 {shebang}
+
+                # Nixos
+                if [ -d "/run/current-system/sw/bin/" ]; then
+                  RSYNC_PATH="/run/current-system/sw/bin/rsync"
+                else 
+                  RSYNC_PATH="rsync"
+                fi
                 
-                rsync {shortFlags} {longFlags} {excludesOption} \
+                $RSYNC_PATH {shortFlags} {longFlags} {excludesOption} \
+                --log-file $1 \
                 "{backupPath}/" \
-                "{destinationPath}/" \
-                | tee $1
+                "{destinationPath}/"
                 """;
             File.WriteAllText(outputPath, script.Replace("\r", "").ToCharArray());
         }
@@ -470,8 +477,17 @@ namespace ME3TweaksCore.Services.Restore
             var shellArguments = $"{scriptFile} {QuoteCommandArgument(logFile)}";
             var shellPath = @"/bin/sh";
 
+            // Start cmd for mildly easier testing
+            //using var process = new Process();
+            //process.StartInfo = new ProcessStartInfo
+            //{
+            //    FileName = "cmd.exe",
+            //    UseShellExecute = false,
+            //    CreateNoWindow = false
+            //};
+            //process.Start();
 
-                if (!TryStartAndMonitorRsyncBash(shellPath, shellArguments, logFile, backupStatus, logEachFileCopied, out var exitCode))
+            if (!TryStartAndMonitorRsyncBash(shellPath, shellArguments, logFile, backupStatus, logEachFileCopied, out var exitCode))
             {
                 MLog.Information($"Running {shellPath} {shellArguments}");
                 TryStartAndMonitorRsyncBash(shellPath, shellArguments, logFile, backupStatus, logEachFileCopied, out exitCode);
