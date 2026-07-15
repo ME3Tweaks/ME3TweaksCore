@@ -101,7 +101,7 @@ namespace ME3TweaksCore.Services.Restore
         /// <returns></returns>
         private static bool ShouldLogEveryCopiedFileDefault()
         {
-            return false;
+            return true;
         }
 
 
@@ -376,15 +376,9 @@ namespace ME3TweaksCore.Services.Restore
         {
             var rsyncSource = GetRsyncCompatiblePath(backupPath);
             var rsyncDestination = GetRsyncCompatiblePath(destinationPath);
-            string rsyncArgs = BuildRsyncArgs(rsyncSource, rsyncDestination);
 
             MLog.Information($@"Beginning rsync restore: {rsyncSource} -> {rsyncDestination}");
-            var started = TryExecuteRsyncProcess(@"rsync", rsyncArgs, backupStatus, logEachFileCopied, out var exitCode);
-            if (!started)
-            {
-                MLog.Warning(@"Direct rsync invocation failed to start. Falling back to bash wrapper for Wine.");
-                exitCode = ExecuteRestoreUsingRsyncViaBash(rsyncSource, rsyncDestination, backupStatus, logEachFileCopied);
-            }
+            var exitCode = ExecuteRestoreUsingRsyncViaShell(rsyncSource, rsyncDestination, backupStatus, logEachFileCopied);
 
             if (exitCode != 0)
             {
@@ -397,47 +391,8 @@ namespace ME3TweaksCore.Services.Restore
             }
         }
 
-        private bool TryExecuteRsyncProcess(string executableName, string arguments, GameBackupStatus backupStatus, bool logEachFileCopied, out int exitCode)
-        {
-            exitCode = -1;
-            try
-            {
-                using var process = new Process();
-                process.StartInfo = new ProcessStartInfo
-                {
-                    FileName = executableName,
-                    Arguments = arguments,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                };
-
-                process.OutputDataReceived += (sender, args) => HandleRsyncOutputLine(args.Data, backupStatus, logEachFileCopied);
-                process.ErrorDataReceived += (sender, args) =>
-                {
-                    if (!string.IsNullOrWhiteSpace(args.Data))
-                    {
-                        HandleRsyncOutputLine(args.Data, backupStatus, logEachFileCopied);
-                    }
-                };
-
-                process.Start();
-                process.BeginOutputReadLine();
-                process.BeginErrorReadLine();
-                process.WaitForExit();
-                exitCode = process.ExitCode;
-                return true;
-            }
-            catch (Exception e)
-            {
-                MLog.Warning($@"Unable to start rsync process '{executableName}': {e.Message}");
-                return false;
-            }
-        }
-
         /// <summary>
-        /// Creates a bash script that restores the game's backup.
+        /// Creates a shell script that restores the game's backup.
         /// Script takes a single argument, a path where to output the stdout.
         /// </summary>
         /// <param name="outputPath">Script will be written to this path</param>
@@ -446,9 +401,10 @@ namespace ME3TweaksCore.Services.Restore
         /// <returns></returns>
         private static void CreateRsyncScript(string outputPath, string backupPath, string destinationPath)
         {
-            var shebang = @"#/usr/bin/env bash";
+            var shebang = @"#/usr/bin/env sh";
             var shortFlags = @"-av"; // a Archive v Verbose
             var longFlags = @"--delete"; // delete extra files from destination
+            var format = $"--out-format={QuoteCommandArgument("%t %i %o %n")}";
             var excludesOption = "--exclude cmm_vanilla";
 
             var script = $"""
@@ -464,7 +420,7 @@ namespace ME3TweaksCore.Services.Restore
                   RSYNC_PATH="/run/host/usr/bin/rsync"
                 fi
                 
-                $RSYNC_PATH {shortFlags} {longFlags} {excludesOption} \
+                $RSYNC_PATH {shortFlags} {longFlags} {format} {excludesOption} \
                 "{backupPath}/" \
                 "{destinationPath}/" 2>&1 \
                 | tee "$1"
@@ -474,8 +430,9 @@ namespace ME3TweaksCore.Services.Restore
             File.WriteAllText(outputPath, script.Replace("\r", "").ToCharArray());
         }
 
-        private int ExecuteRestoreUsingRsyncViaBash(string backupPath, string destinationPath, GameBackupStatus backupStatus, bool logEachFileCopied)
+        private int ExecuteRestoreUsingRsyncViaShell(string backupPath, string destinationPath, GameBackupStatus backupStatus, bool logEachFileCopied)
         {
+            MLog.Information("ExecuteRestoreUsingRsyncViaShell");
             var logFile = $"/dev/shm/binm3-rsync-{Guid.NewGuid():N}.log";
             var scriptFile = $"/dev/shm/restore-rsync-{Guid.NewGuid():N}.sh";
             CreateRsyncScript(scriptFile, backupPath, destinationPath);
@@ -493,7 +450,7 @@ namespace ME3TweaksCore.Services.Restore
             //process.Start();
 
             MLog.Information($"Running {shellPath} {shellArguments}");
-            TryStartAndMonitorRsyncBash(shellPath, shellArguments, logFile, backupStatus, logEachFileCopied, out var exitCode);
+            TryStartAndMonitorRsyncShell(shellPath, shellArguments, logFile, backupStatus, logEachFileCopied, out var exitCode);
 
             try
             {
@@ -508,30 +465,27 @@ namespace ME3TweaksCore.Services.Restore
             catch (Exception e)
             {
                 MLog.Warning($@"Unable to cleanup after restore: {e.Message}");
-                //MLog.Warning($@"Unable to delete rsync temp log file: {e.Message}");
             }
 
             return exitCode;
         }
 
-        private bool TryStartAndMonitorRsyncBash(string bashExecutable, string bashArguments, string logFile, GameBackupStatus backupStatus, bool logEachFileCopied, out int exitCode)
+        private bool TryStartAndMonitorRsyncShell(string shellExecutable, string shellArguments, string logFile, GameBackupStatus backupStatus, bool logEachFileCopied, out int exitCode)
         {
             exitCode = -1;
+            MLog.Information("TryStartAndMonitorRsyncShell");
             try
             {
                 using var process = new Process();
                 process.StartInfo = new ProcessStartInfo
                 {
-                    FileName = bashExecutable,
-                    Arguments = bashArguments,
+                    FileName = shellExecutable,
+                    Arguments = shellArguments,
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
 
-                if (!process.Start())
-                {
-                    return false;
-                }
+                process.Start();
 
                 long filePosition = 0;
                 bool done = false;
@@ -541,13 +495,12 @@ namespace ME3TweaksCore.Services.Restore
                     System.Threading.Thread.Sleep(50);
                 }
 
-                process.WaitForExit();
-                DrainRsyncLogFile(logFile, ref filePosition, backupStatus, logEachFileCopied, out exitCode);
                 return true;
             }
             catch (Exception e)
             {
-                MLog.Warning($@"Unable to start bash wrapper '{bashExecutable}': {e.Message}");
+                exitCode = -3;
+                MLog.Warning($@"Unable to start shell wrapper '{shellExecutable}': {e.Message}");
                 return false;
             }
         }
@@ -579,7 +532,7 @@ namespace ME3TweaksCore.Services.Restore
             {
                 var line = reader.ReadLine();
                 HandleRsyncOutputLine(line, backupStatus, logEachFileCopied);
-                if (line.Contains("--- RESTORE COMPLETE"))
+                if (line.StartsWith("--- RESTORE COMPLETE"))
                 {
                     exitCode = Regex.Match(line, @"\(exit code (-?\d*)\)").Groups[1].Value.ToInt32();
                     MLog.Information($"Restore complete, exit code {exitCode}");
@@ -609,7 +562,7 @@ namespace ME3TweaksCore.Services.Restore
                 return;
             }
 
-            if (outputLine.StartsWith(@"sent ") || outputLine.StartsWith(@"total size is "))
+            if (outputLine.StartsWith(@"sent ") || outputLine.StartsWith(@"total size is ") || outputLine.StartsWith(@"sending incremental file list"))
             {
                 return;
             }
@@ -620,18 +573,31 @@ namespace ME3TweaksCore.Services.Restore
                 return;
             }
 
+
             if (logEachFileCopied)
             {
-                MLog.Debug($@"Rsync copying {outputLine}");
+                MLog.Debug($@"Rsync {outputLine}");
             }
 
-            backupStatus.BackupLocationStatus = LC.GetString(LC.string_interp_copyingX, outputLine);
-            UpdateStatusCallback?.Invoke(backupStatus.BackupLocationStatus);
-        }
+            // 1 date
+            // 2 attribute updates
+            // 3 action del./send/recv
+            // 4 path to file
+            var lineMatch = Regex.Match(outputLine, @"(\d*\/\S*\s\S*)\s*(\S*)\s*(\S*)\s(.*$)");
+            DateTime date = DateTime.MinValue;
+            string affectedFileAttrs = "";
+            string rsyncAction = "unknown";
+            string affectedFilePath = outputLine;
+            if (lineMatch.Success)
+            {
+                date = lineMatch.Groups[1].Value.ToDateTime();
+                affectedFileAttrs = lineMatch.Groups[2].Value;
+                rsyncAction = lineMatch.Groups[3].Value;
+                affectedFilePath = lineMatch.Groups[4].Value;
+            }
 
-        private static string BuildRsyncArgs(string rsyncSource, string rsyncDestination)
-        {
-            return $"-a --delete --info=progress2 --out-format=\"%n\" -- {QuoteCommandArgument(rsyncSource)} {QuoteCommandArgument(rsyncDestination)}";
+            backupStatus.BackupLocationStatus = LC.GetString(LC.string_interp_copyingX, affectedFilePath);
+            UpdateStatusCallback?.Invoke(backupStatus.BackupLocationStatus);
         }
 
         private static string GetRsyncCompatiblePath(string path)
@@ -704,7 +670,7 @@ namespace ME3TweaksCore.Services.Restore
             return $"\"{argument.Replace("\"", "\\\"")}\"";
         }
 
-        private static string EscapeBashArgument(string argument)
+        private static string EscapeShellArgument(string argument)
         {
             if (argument == null)
             {
