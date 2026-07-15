@@ -25,7 +25,7 @@ namespace ME3TweaksCore.Services.Restore
     /// Object that contains the logic for performing the restoration of a game.
     /// </summary>
     [AddINotifyPropertyChangedInterface]
-    public class GameRestore
+    public partial class GameRestore
     {
         public MEGame Game { get; }
 
@@ -379,12 +379,7 @@ namespace ME3TweaksCore.Services.Restore
             string rsyncArgs = BuildRsyncArgs(rsyncSource, rsyncDestination);
 
             MLog.Information($@"Beginning rsync restore: {rsyncSource} -> {rsyncDestination}");
-            var started = TryExecuteRsyncProcess(@"rsync", rsyncArgs, backupStatus, logEachFileCopied, out var exitCode);
-            if (!started)
-            {
-                MLog.Warning(@"Direct rsync invocation failed to start. Falling back to bash wrapper for Wine.");
-                exitCode = ExecuteRestoreUsingRsyncViaBash(rsyncSource, rsyncDestination, backupStatus, logEachFileCopied);
-            }
+            var exitCode = ExecuteRestoreUsingRsyncViaBash(rsyncSource, rsyncDestination, backupStatus, logEachFileCopied);
 
             if (exitCode != 0)
             {
@@ -394,45 +389,6 @@ namespace ME3TweaksCore.Services.Restore
             else
             {
                 MLog.Information(@"Rsync restore has completed");
-            }
-        }
-
-        private bool TryExecuteRsyncProcess(string executableName, string arguments, GameBackupStatus backupStatus, bool logEachFileCopied, out int exitCode)
-        {
-            exitCode = -1;
-            try
-            {
-                using var process = new Process();
-                process.StartInfo = new ProcessStartInfo
-                {
-                    FileName = executableName,
-                    Arguments = arguments,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                };
-
-                process.OutputDataReceived += (sender, args) => HandleRsyncOutputLine(args.Data, backupStatus, logEachFileCopied);
-                process.ErrorDataReceived += (sender, args) =>
-                {
-                    if (!string.IsNullOrWhiteSpace(args.Data))
-                    {
-                        HandleRsyncOutputLine(args.Data, backupStatus, logEachFileCopied);
-                    }
-                };
-
-                process.Start();
-                process.BeginOutputReadLine();
-                process.BeginErrorReadLine();
-                process.WaitForExit();
-                exitCode = process.ExitCode;
-                return true;
-            }
-            catch (Exception e)
-            {
-                MLog.Warning($@"Unable to start rsync process '{executableName}': {e.Message}");
-                return false;
             }
         }
 
@@ -464,20 +420,27 @@ namespace ME3TweaksCore.Services.Restore
                   RSYNC_PATH="/run/host/usr/bin/rsync"
                 fi
                 
+                echo $RSYNC_PATH {shortFlags} {longFlags} {excludesOption} \
+                "{backupPath}/" \
+                "{destinationPath}/"
+                
                 $RSYNC_PATH {shortFlags} {longFlags} {excludesOption} \
                 "{backupPath}/" \
                 "{destinationPath}/" 2>&1 \
-                | tee "$1"
-
+                >> "$1"
+                echo "$RSYNC_PATH" >> "$1"
                 echo "--- RESTORE COMPLETE (exit code $?) ---" >> "$1"
                 """;
-            File.WriteAllText(outputPath, script.Replace("\r", "").ToCharArray());
+            if (!File.Exists(outputPath))
+            {
+                File.WriteAllText(outputPath, script.Replace("\r", "").ToCharArray());
+            }
         }
 
         private int ExecuteRestoreUsingRsyncViaBash(string backupPath, string destinationPath, GameBackupStatus backupStatus, bool logEachFileCopied)
         {
             var logFile = $"/dev/shm/binm3-rsync-{Guid.NewGuid():N}.log";
-            var scriptFile = $"/dev/shm/restore-rsync-{Guid.NewGuid():N}.sh";
+            var scriptFile = $"/dev/shm/restore-rsync-test.sh";
             CreateRsyncScript(scriptFile, backupPath, destinationPath);
             var shellArguments = $"{scriptFile} {QuoteCommandArgument(logFile)}";
             var shellPath = @"/bin/sh";
