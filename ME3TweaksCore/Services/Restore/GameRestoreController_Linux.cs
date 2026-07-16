@@ -231,7 +231,7 @@ namespace ME3TweaksCore.Services.Restore
                 return;
             }
 
-            if (outputLine.StartsWith(@"sent ") || outputLine.StartsWith(@"total size is ") || outputLine.StartsWith(@"sending incremental file list"))
+            if (outputLine.StartsWith(@"sent ") || outputLine.StartsWith(@"total size is ") || outputLine.StartsWith(@"sending incremental file list") || outputLine.StartsWith(@"--- RESTORE COMPLETE") )
             {
                 return;
             }
