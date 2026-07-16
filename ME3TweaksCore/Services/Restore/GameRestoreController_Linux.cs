@@ -83,7 +83,7 @@ namespace ME3TweaksCore.Services.Restore
                 if [ -d "/run/current-system/sw/bin/" ]; then
                   RSYNC_PATH="/run/current-system/sw/bin/rsync"
                 else
-                  export LD_PRELOAD="/run/host/usr/lib/x86_64-linux-gnu/libpopt.so.0"
+                  export LD_PRELOAD="$(find /run/host/usr/ -name libpopt.so.0 -print -quit 2>/dev/null)" # gets first libpopt.so.0 and exits
                   RSYNC_PATH="/run/host/usr/bin/rsync"
                 fi
                 
