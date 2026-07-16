@@ -68,7 +68,7 @@ namespace ME3TweaksCore.Services.Restore
         /// <returns></returns>
         private static void CreateRsyncScript(string outputPath, string backupPath, string destinationPath)
         {
-            var shebang = @"#!/usr/bin/env sh";
+            var shebang = @"#!/usr/bin/env bash";
             var shortFlags = @"-av"; // a Archive v Verbose
             var longFlags = @"--delete"; // delete extra files from destination
             var format = $@"--out-format={QuoteCommandArgument("%t %i %o %n")}";
