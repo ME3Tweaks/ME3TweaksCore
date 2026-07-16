@@ -104,7 +104,9 @@
     <system:String x:Key="string_interp_directoryNotEmptyWillDeleteEverything">The selected directory is not empty: {0}. ALL NON-GAME FILES AND FOLDERS IN THIS DIRECTORY WILL BE DELETED. Are you sure you want to continue?</system:String>
     <!-- 0={Directory user chose} -->
     <system:String x:Key="string_cannotRestore">Cannot restore</system:String>
-
+    <system:String x:Key="string_cannotLocateRsync">Cannot locate rsync on your host Linux system. Install rsync and try again.</system:String>
+    <!-- rsync is the name of a linux tool. It is always undercased. -->
+    
     <!-- Messageboxes -->
     <system:String x:Key="string_no">No</system:String>
     <system:String x:Key="string_ok">OK</system:String>

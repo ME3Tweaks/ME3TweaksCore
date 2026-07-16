@@ -371,28 +371,6 @@ namespace ME3TweaksCore.Services.Restore
             MLog.Information(@"Robocopy restore has completed");
         }
 
-        
-        private static string QuoteCommandArgument(string argument)
-        {
-            if (argument == null)
-            {
-                return "\"\"";
-            }
-
-            return $"\"{argument.Replace("\"", "\\\"")}\"";
-        }
-
-        private static string EscapeShellArgument(string argument)
-        {
-            if (argument == null)
-            {
-                return "''";
-            }
-
-            return $"'{argument.Replace("'", "'\\''")}'";
-        }
-
-
         /// <summary>
         /// Prevents the system from going to sleep during the restore operation
         /// </summary>

@@ -79,6 +79,7 @@ namespace ME3TweaksCore.Localization
 		public const string string_interp_copyingX = "string_interp_copyingX";
 		public const string string_interp_directoryNotEmptyWillDeleteEverything = "string_interp_directoryNotEmptyWillDeleteEverything";
 		public const string string_cannotRestore = "string_cannotRestore";
+		public const string string_cannotLocateRsync = "string_cannotLocateRsync";
 		public const string string_no = "string_no";
 		public const string string_ok = "string_ok";
 		public const string string_yes = "string_yes";

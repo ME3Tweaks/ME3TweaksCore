@@ -22,7 +22,7 @@ namespace ME3TweaksCore.Services.Restore
             if (rsyncPath == null)
             {
                 MLog.Error($@"Could not locate rsync on host system - cannot run backup.");
-                throw new Exception("Cannot locate rsync on your host Linux system. Install rsync and try again.");
+                throw new Exception(LC.GetString(LC.string_cannotLocateRsync));
             }
 
             var rsyncSource = GetRsyncCompatiblePath(backupPath);
@@ -44,14 +44,14 @@ namespace ME3TweaksCore.Services.Restore
 
         private string GetRSyncPath()
         {
-            if (File.Exists(@"Z:/run/host/usr/bin/rsync"))
+            if (File.Exists($@"Z:/run/host/usr/bin/rsync"))
             {
-                return @"/run/host/usr/bin/rsync";
+                return $@"/run/host/usr/bin/rsync";
             }
 
-            if (File.Exists(@"Z:/run/current-system/sw/bin/rsync"))
+            if (File.Exists($@"Z:/run/current-system/sw/bin/rsync"))
             {
-                return @"/run/current-system/sw/bin/rsync";
+                return $@"/run/current-system/sw/bin/rsync";
             }
 
             // Not found
@@ -71,8 +71,8 @@ namespace ME3TweaksCore.Services.Restore
             var shebang = @"#!/usr/bin/env sh";
             var shortFlags = @"-av"; // a Archive v Verbose
             var longFlags = @"--delete"; // delete extra files from destination
-            var format = $"--out-format={QuoteCommandArgument("%t %i %o %n")}";
-            var excludesOption = "--exclude cmm_vanilla";
+            var format = $@"--out-format={QuoteCommandArgument("%t %i %o %n")}";
+            var excludesOption = @"--exclude cmm_vanilla";
 
             var script = $"""
                 {shebang}
@@ -94,16 +94,16 @@ namespace ME3TweaksCore.Services.Restore
                 echo "$RSYNC_PATH" >> "$1"
                 echo "--- RESTORE COMPLETE (exit code $?) ---" >> "$1"
                 """;
-            File.WriteAllText(outputPath, script.Replace("\r", "").ToCharArray());
+            File.WriteAllText(outputPath, script.Replace("\r", "").ToCharArray()); // do not localize
         }
 
         private int ExecuteRestoreUsingRsyncViaShell(string backupPath, string destinationPath, GameBackupStatus backupStatus, bool logEachFileCopied)
         {
             var guid = Guid.NewGuid();
-            var logFile = $"/dev/shm/binm3-rsync-{guid}.log";
-            var scriptFile = $"/dev/shm/restore-rsync-{guid}.sh";
+            var logFile = $@"/dev/shm/binm3-rsync-{guid}.log";
+            var scriptFile = $@"/dev/shm/restore-rsync-{guid}.sh";
             CreateRsyncScript(scriptFile, backupPath, destinationPath);
-            var shellArguments = $"{scriptFile} {QuoteCommandArgument(logFile)}";
+            var shellArguments = $@"{scriptFile} {QuoteCommandArgument(logFile)}";
             var shellPath = @"/bin/sh";
 
             // Start cmd for mildly easier testing
@@ -116,7 +116,7 @@ namespace ME3TweaksCore.Services.Restore
             //};
             //process.Start();
 
-            MLog.Information($"Running {shellPath} {shellArguments}");
+            MLog.Information($@"Running {shellPath} {shellArguments}");
             TryStartAndMonitorRsyncShell(shellPath, shellArguments, logFile, backupStatus, logEachFileCopied, out var exitCode);
 
             try
@@ -305,7 +305,7 @@ namespace ME3TweaksCore.Services.Restore
                 winePathProcess.StartInfo = new ProcessStartInfo
                 {
                     FileName = @"winepath",
-                    Arguments = $"-u {QuoteCommandArgument(path)}",
+                    Arguments = $@"-u {QuoteCommandArgument(path)}",
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     RedirectStandardOutput = true,
@@ -329,5 +329,14 @@ namespace ME3TweaksCore.Services.Restore
             return null;
         }
 
+        private static string QuoteCommandArgument(string argument)
+        {
+            if (argument == null)
+            {
+                return "\"\"";
+            }
+
+            return $"\"{argument.Replace("\"", "\\\"")}\""; // do not localize
+        }
     }
 }
