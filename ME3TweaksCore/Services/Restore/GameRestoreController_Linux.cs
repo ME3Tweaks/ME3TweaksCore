@@ -79,6 +79,7 @@ namespace ME3TweaksCore.Services.Restore
 
                 set -o pipefail
 
+                echo "Starting restore" >> "$1"
                 # Nixos
                 if [ -d "/run/current-system/sw/bin/" ]; then
                   RSYNC_PATH="/run/current-system/sw/bin/rsync"
@@ -182,14 +183,14 @@ namespace ME3TweaksCore.Services.Restore
             {
                 if (counter >= 5)
                 {
-                    MLog.Error($"Restore failed: Restore log {logFile} not created after {100 * counter}.");
+                    MLog.Error($"Restore failed: Restore log {logFile} not created after {200 * counter}.");
                     exitCode = -2;
                     return true;
                 }
                 else
                 {
                     MLog.Information($"Restore log at {logFile} doesn't exist yet.");
-                    System.Threading.Thread.Sleep(100);
+                    System.Threading.Thread.Sleep(200);
                     counter++;
                 }
             }
@@ -231,7 +232,7 @@ namespace ME3TweaksCore.Services.Restore
                 return;
             }
 
-            if (outputLine.StartsWith(@"sent ") || outputLine.StartsWith(@"total size is ") || outputLine.StartsWith(@"sending incremental file list") || outputLine.StartsWith(@"--- RESTORE COMPLETE") )
+            if (outputLine.StartsWith(@"Starting restore") || outputLine.StartsWith(@"sent ") || outputLine.StartsWith(@"total size is ") || outputLine.StartsWith(@"sending incremental file list") || outputLine.StartsWith(@"--- RESTORE COMPLETE") )
             {
                 return;
             }
