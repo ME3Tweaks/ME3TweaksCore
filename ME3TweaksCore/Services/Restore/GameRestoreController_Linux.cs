@@ -68,7 +68,7 @@ namespace ME3TweaksCore.Services.Restore
         /// <returns></returns>
         private static void CreateRsyncScript(string outputPath, string backupPath, string destinationPath)
         {
-            var shebang = @"#!/usr/bin/env sh";
+            var shebang = @"#!/usr/bin/env bash";
             var shortFlags = @"-av"; // a Archive v Verbose
             var longFlags = @"--delete"; // delete extra files from destination
             var format = $@"--out-format={QuoteCommandArgument("%t %i %o %n")}";
@@ -79,11 +79,12 @@ namespace ME3TweaksCore.Services.Restore
 
                 set -o pipefail
 
+                echo "Starting restore" >> "$1"
                 # Nixos
                 if [ -d "/run/current-system/sw/bin/" ]; then
                   RSYNC_PATH="/run/current-system/sw/bin/rsync"
                 else
-                  export LD_PRELOAD="/run/host/usr/lib/x86_64-linux-gnu/libpopt.so.0"
+                  export LD_PRELOAD="$(find /run/host/usr/ -name libpopt.so.0 -print -quit 2>/dev/null)" # gets first libpopt.so.0 and exits
                   RSYNC_PATH="/run/host/usr/bin/rsync"
                 fi
                 
@@ -182,14 +183,14 @@ namespace ME3TweaksCore.Services.Restore
             {
                 if (counter >= 5)
                 {
-                    MLog.Error($"Restore failed: Restore log {logFile} not created after {100 * counter}.");
+                    MLog.Error($"Restore failed: Restore log {logFile} not created after {200 * counter}.");
                     exitCode = -2;
                     return true;
                 }
                 else
                 {
                     MLog.Information($"Restore log at {logFile} doesn't exist yet.");
-                    System.Threading.Thread.Sleep(100);
+                    System.Threading.Thread.Sleep(200);
                     counter++;
                 }
             }
@@ -231,7 +232,7 @@ namespace ME3TweaksCore.Services.Restore
                 return;
             }
 
-            if (outputLine.StartsWith(@"sent ") || outputLine.StartsWith(@"total size is ") || outputLine.StartsWith(@"sending incremental file list"))
+            if (outputLine.StartsWith(@"Starting restore") || outputLine.StartsWith(@"sent ") || outputLine.StartsWith(@"total size is ") || outputLine.StartsWith(@"sending incremental file list") || outputLine.StartsWith(@"--- RESTORE COMPLETE") )
             {
                 return;
             }
