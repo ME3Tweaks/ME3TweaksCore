@@ -75,13 +75,13 @@ namespace ME3TweaksCore.Helpers
             {
                 BuildDateString = @"WARNING: This build is not signed by ME3Tweaks";
                 var assembly = Assembly.GetEntryAssembly();
-                var metadataAttribute = assembly.GetCustomAttributes<AssemblyMetadataAttribute>().FirstOrDefault(a => a.Key == "BuildDateTime");
+                var metadataAttribute = assembly.GetCustomAttributes<AssemblyMetadataAttribute>().FirstOrDefault(a => a.Key == @"BuildDateTime");
 
                 if (metadataAttribute != null && DateTime.TryParse(metadataAttribute.Value, out DateTime buildDate))
                 {
                     var buildDateStr = buildDate.ToLocalTime().ToString(@"MMMM dd, yyyy @ hh:mmtt");
-                    MLog.Information($"Build date: {buildDateStr}");
-                    BuildDateString += $" | {buildDateStr}";
+                    MLog.Information($@"Build date: {buildDateStr}");
+                    BuildDateString += $@" | {buildDateStr}";
                 }
 #if !DEBUG
                 MLog.Warning(@"This build is not signed by ME3Tweaks. This may not be an official build.");

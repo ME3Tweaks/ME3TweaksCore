@@ -36,8 +36,8 @@ namespace ME3TweaksCoreWPF.LogViewer
         /// </summary>
         private static readonly string[] LIVE_SITE_URL_PREFIXES =
         {
-            "/modmanager/services/thirdpartyidentificationservice",
-            "/modmanager/mods/updatecheck"
+            @"/modmanager/services/thirdpartyidentificationservice",
+            @"/modmanager/mods/updatecheck"
         };
 
         /// <summary>
@@ -93,8 +93,8 @@ namespace ME3TweaksCoreWPF.LogViewer
 
             // NOTE: no SetVirtualHostNameToFolderMapping anymore — we serve local files
             // ourselves in WebResourceRequested so we retain full control per-request.
-            webView.CoreWebView2.AddWebResourceRequestedFilter("https://me3tweaks.com/*", CoreWebView2WebResourceContext.All);
-            webView.CoreWebView2.AddWebResourceRequestedFilter("https://www.me3tweaks.com/*", CoreWebView2WebResourceContext.All);
+            webView.CoreWebView2.AddWebResourceRequestedFilter(@"https://me3tweaks.com/*", CoreWebView2WebResourceContext.All);
+            webView.CoreWebView2.AddWebResourceRequestedFilter(@"https://www.me3tweaks.com/*", CoreWebView2WebResourceContext.All);
             webView.CoreWebView2.WebResourceRequested += CoreWebView2_WebResourceRequested;
 
             webView.CoreWebView2.Navigate(LOG_VIEW_LOCAL_URI);
@@ -145,11 +145,11 @@ namespace ME3TweaksCoreWPF.LogViewer
                     var headerLines = string.Join("\n",
                         response.Headers.Concat(response.Content.Headers)
                             .Where(h => !DisallowedResponseHeaders.Contains(h.Key))
-                            .Select(h => $"{h.Key}: {string.Join(",", h.Value)}"));
+                            .Select(h => $@"{h.Key}: {string.Join(",", h.Value)}"));
                     headerLines += "\nCache-Control: no-store"; // do not localize
 
                     e.Response = webView.CoreWebView2.Environment.CreateWebResourceResponse(
-                        new MemoryStream(bytes), (int)response.StatusCode, response.ReasonPhrase ?? "OK", headerLines);
+                        new MemoryStream(bytes), (int)response.StatusCode, response.ReasonPhrase ?? @"OK", headerLines);
                 }
                 catch (Exception ex)
                 {
@@ -168,7 +168,7 @@ namespace ME3TweaksCoreWPF.LogViewer
             var assetDir = GetLogViewerAssetPath();
             if (assetDir == null)
             {
-                e.Response = webView.CoreWebView2.Environment.CreateWebResourceResponse(null, 404, "Not Found", "");
+                e.Response = webView.CoreWebView2.Environment.CreateWebResourceResponse(null, 404, @"Not Found", "");
                 return;
             }
 

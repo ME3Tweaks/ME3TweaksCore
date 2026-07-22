@@ -6,6 +6,7 @@ using LegendaryExplorerCore.Unreal;
 using LegendaryExplorerCore.Unreal.Classes;
 using ME3TweaksCore.Diagnostics.Support;
 using ME3TweaksCore.GameFilesystem;
+using ME3TweaksCore.Localization;
 using ME3TweaksCore.Objects;
 using ME3TweaksCore.TextureOverride;
 using System;
@@ -98,7 +99,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
 
                 void onUpdate(ProgressInfo lpi)
                 {
-                    package.UpdateStatusCallback?.Invoke($"Checking {name} BTP" + $@" {lpi.Value:F0}%");
+                    package.UpdateStatusCallback?.Invoke(LC.GetString(LC.string_interp_checkingXBTP, name) + $@" {lpi.Value:F0}%");
                 }
 
                 ProgressInfo pi = new ProgressInfo();
@@ -121,7 +122,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
 
                 void onUpdateMips(ProgressInfo lpi)
                 {
-                    package.UpdateStatusCallback?.Invoke($"Checking {name} TFC mips" + $@" {lpi.Value:F0}%");
+                    package.UpdateStatusCallback?.Invoke(LC.GetString(LC.string_interp_checkingXTFCMips, name) + $@" {lpi.Value:F0}%");
                 }
 
                 pi.Value = 0;
@@ -133,7 +134,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
                 foreach (var texture in texturesToCheck)
                 {
                     done++;
-                    pi.Value = (int) (done * 100.0f / texturesToCheck.Count);
+                    pi.Value = (int)(done * 100.0f / texturesToCheck.Count);
                     pi.OnUpdate(pi);
 
                     var tfcMips = texture.Mips.Where(x => (x.Flags & BTPMipFlags.External) != 0).ToList();

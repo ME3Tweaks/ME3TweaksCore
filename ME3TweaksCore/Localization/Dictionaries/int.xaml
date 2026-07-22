@@ -173,7 +173,11 @@
     <system:String x:Key="string_checkingForBlacklistedModsMEM">Checking for blacklisted mods (MEM)</system:String>
     <system:String x:Key="string_collectingLODSettings">Collecting LOD settings</system:String>
     <system:String x:Key="string_collectingTOCFileInformation">Collecting TOC file information</system:String>
-
+    <system:String x:Key="string_interp_checkingXBTP">Checking {0} BTP</system:String>
+    <!-- 0={DLC Folder Name}. BTP is a noun, leave it as is, it is a mod manager feature name. -->
+    <system:String x:Key="string_interp_checkingXTFCMips">Checking {0} TFC mips</system:String>
+    <!-- 0={DLC Folder Name} TFC is a noun, leave it as is. Mips are the individual LODs of a texture (bigger as you get closer) -->
+    
     <!-- StringStructParser-->
     <system:String x:Key="string_interp_ssp_unopenedParenthsisFound">Error parsing parenthesis split list: Found closing parenthesis that does not match open parenthesis at position {0} in string {1}</system:String>
     <!-- 0={Position} 1={Original string} -->

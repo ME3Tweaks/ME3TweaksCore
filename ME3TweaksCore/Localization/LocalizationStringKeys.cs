@@ -127,6 +127,8 @@ namespace ME3TweaksCore.Localization
 		public const string string_checkingForBlacklistedModsMEM = "string_checkingForBlacklistedModsMEM";
 		public const string string_collectingLODSettings = "string_collectingLODSettings";
 		public const string string_collectingTOCFileInformation = "string_collectingTOCFileInformation";
+		public const string string_interp_checkingXBTP = "string_interp_checkingXBTP";
+		public const string string_interp_checkingXTFCMips = "string_interp_checkingXTFCMips";
 		public const string string_interp_ssp_unopenedParenthsisFound = "string_interp_ssp_unopenedParenthsisFound";
 		public const string string_interp_ssp_unclosedParenthesisFound = "string_interp_ssp_unclosedParenthesisFound";
 		public const string string_outdatedVersionInstalled = "string_outdatedVersionInstalled";
