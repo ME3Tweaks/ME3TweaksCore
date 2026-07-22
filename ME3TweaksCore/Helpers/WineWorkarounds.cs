@@ -150,6 +150,7 @@ namespace ME3TweaksCore.Helpers
 
                 // Needs changed to Mac if that can be determined (darwin?)
                 ComputerInfo.ForcePlatform(EOSPlatform.Wine);
+                LogWineInfo();
             }
         }
 
