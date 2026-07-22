@@ -98,7 +98,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
 
                 void onUpdate(ProgressInfo lpi)
                 {
-                    package.UpdateStatusCallback?.Invoke($@"Checking {name} BTP" + $@" {lpi.Value:F0}%");
+                    package.UpdateStatusCallback?.Invoke($"Checking {name} BTP" + $@" {lpi.Value:F0}%");
                 }
 
                 ProgressInfo pi = new ProgressInfo();
@@ -118,9 +118,24 @@ namespace ME3TweaksCore.Diagnostics.Modules
                 }
 
                 // Now read the external mips
-                var tfcs = package.DiagnosticTarget.GetFilesLoadedInGame(includeTFCs: true);
-                foreach (var texture in btp.TextureOverrides.Where(x => x.TFC.TFCName != @"None"))
+
+                void onUpdateMips(ProgressInfo lpi)
                 {
+                    package.UpdateStatusCallback?.Invoke($"Checking {name} TFC mips" + $@" {lpi.Value:F0}%");
+                }
+
+                pi.Value = 0;
+                pi.OnUpdate = onUpdateMips;
+                var done = 0;
+
+                var tfcs = package.DiagnosticTarget.GetFilesLoadedInGame(includeTFCs: true);
+                var texturesToCheck = btp.TextureOverrides.Where(x => x.TFC.TFCName != @"None").ToList();
+                foreach (var texture in texturesToCheck)
+                {
+                    done++;
+                    pi.Value = (int) (done * 100.0f / texturesToCheck.Count);
+                    pi.OnUpdate(pi);
+
                     var tfcMips = texture.Mips.Where(x => (x.Flags & BTPMipFlags.External) != 0).ToList();
                     if (!tfcMips.Any())
                     {
