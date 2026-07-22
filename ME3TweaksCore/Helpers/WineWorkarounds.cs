@@ -168,5 +168,11 @@ namespace ME3TweaksCore.Helpers
                 }
             }
         }
+
+        public static void DisableWineWorkarounds()
+        {
+            WineWorkarounds.WineDetected = false;
+            MLog.Warning(@"Wine Workarounds Disabled");
+        }
     }
 }
