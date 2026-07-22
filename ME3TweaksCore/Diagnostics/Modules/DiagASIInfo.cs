@@ -283,7 +283,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
 
                             int lastIndexRead = 0;
 
-                            if (Path.GetFileName(f) != "bink2w64_proxy.log")
+                            if (Path.GetFileName(f) != @"bink2w64_proxy.log")
                             {
                                 // Read first 30 lines.
                                 for (int i = 0; i < 30 && i < fileContentsLines.Length - 1; i++)
