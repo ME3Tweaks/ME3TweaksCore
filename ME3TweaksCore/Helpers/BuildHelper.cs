@@ -1,11 +1,12 @@
-﻿using System;
+﻿using AuthenticodeExaminer;
+using ME3TweaksCore.Diagnostics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
-using AuthenticodeExaminer;
-using ME3TweaksCore.Diagnostics;
 
 namespace ME3TweaksCore.Helpers
 {
@@ -51,7 +52,7 @@ namespace ME3TweaksCore.Helpers
             {
                 // This executable is signed
                 BuildDate = signTime.Value;
-                BuildDateString = signTime.Value.ToLocalTime().ToString(@"MMMM dd, yyyy @ hh:mm");
+                BuildDateString = signTime.Value.ToLocalTime().ToString(@"MMMM dd, yyyy @ hh:mmtt");
                 var signer = info.GetSignatures().FirstOrDefault()?.SigningCertificate?.GetNameInfo(X509NameType.SimpleName, false);
                 if (allowedSigners != null && allowedSigners.Any())
                 {
@@ -73,6 +74,15 @@ namespace ME3TweaksCore.Helpers
             else
             {
                 BuildDateString = @"WARNING: This build is not signed by ME3Tweaks";
+                var assembly = Assembly.GetEntryAssembly();
+                var metadataAttribute = assembly.GetCustomAttributes<AssemblyMetadataAttribute>().FirstOrDefault(a => a.Key == "BuildDateTime");
+
+                if (metadataAttribute != null && DateTime.TryParse(metadataAttribute.Value, out DateTime buildDate))
+                {
+                    var buildDateStr = buildDate.ToLocalTime().ToString(@"MMMM dd, yyyy @ hh:mmtt");
+                    MLog.Information($"Build date: {buildDateStr}");
+                    BuildDateString += $" | {buildDateStr}";
+                }
 #if !DEBUG
                 MLog.Warning(@"This build is not signed by ME3Tweaks. This may not be an official build.");
 #endif
