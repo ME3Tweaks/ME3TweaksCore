@@ -176,7 +176,6 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
         /// Generates squadmate outfit information for Game 3 and LE2. The merge DLC must be already generated.
         /// </summary>
         /// <param name="mergeDLC"></param>
-        /// <exception cref="Exception"></exception>
         public static string RunSquadmateOutfitMerge(M3MergeDLC mergeDLC, Action<string> updateUIText)
         {
             if (!mergeDLC.Generated)

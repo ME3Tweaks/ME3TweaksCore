@@ -20,6 +20,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Threading;
+using System.Threading.Tasks;
 using ThreadState = System.Diagnostics.ThreadState;
 
 namespace ME3TweaksCore.Helpers
@@ -262,7 +263,7 @@ namespace ME3TweaksCore.Helpers
             return algo.Hash;
         }
 
-        internal static List<string> GetListOfInstalledAV()
+        public static List<string> GetListOfInstalledAV()
         {
             if (WineWorkarounds.WineDetected)
             {
@@ -301,10 +302,17 @@ namespace ME3TweaksCore.Helpers
             return assembly.GetManifestResourceStream(assemblyResource);
         }
 
+        /// <summary>
+        /// Extracts an embedded resource file to a memory stream.
+        /// </summary>
+        /// <param name="internalResourceName">The fully qualified name of the embedded resource.</param>
+        /// <param name="assembly">The assembly to extract from - to allow extracting resources from a different assembly. If null, the ME3TweaksCore assembly is used.</param>
+        /// <returns>A MemoryStream containing the extracted resource data, positioned at the beginning.</returns>
         public static MemoryStream ExtractInternalFileToStream(string internalResourceName, Assembly assembly = null)
         {
-            MLog.Information($@"Extracting embedded file: {internalResourceName} to memory");
             assembly ??= Assembly.GetExecutingAssembly();
+
+            MLog.Information($@"Extracting embedded file {internalResourceName} from {assembly.GetName()} to memory");
 #if DEBUG
             // This is for inspecting the list of files in debugger
             var resources = assembly.GetManifestResourceNames();
@@ -466,10 +474,11 @@ namespace ME3TweaksCore.Helpers
         }
 
         /// <summary>
-        /// Reads all lines from a file, attempting to do so even if the file is in use by another process
+        /// Reads all lines from a file, attempting to do so even if the file is in use by another process.
+        /// Uses FileShare.ReadWrite to allow reading while other processes have the file open.
         /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
+        /// <param name="path">The path to the file to read.</param>
+        /// <returns>An array of strings containing all lines from the file.</returns>
         public static string[] WriteSafeReadAllLines(String path)
         {
             using var csv = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -516,39 +525,37 @@ namespace ME3TweaksCore.Helpers
             return (int)Math.Round(downloaded * 100.0 / total);
         }
 
-        public static long GetSizeOfDirectory(string d, string[] extensionsToCalculate = null)
+        /// <summary>
+        /// Calculates the total size of all files in a directory and its subdirectories.
+        /// </summary>
+        /// <param name="dir">The directory path to calculate the size for.</param>
+        /// <param name="extensionsToCalculate">If specified, only files with these extensions (e.g. ".pcc") are counted. If null, all files are counted.</param>
+        /// <returns>The total size in bytes of all matching files in the directory tree.</returns>
+        public static long GetSizeOfDirectory(string dir, string[] extensionsToCalculate = null)
         {
-            return GetSizeOfDirectory(new DirectoryInfo(d), extensionsToCalculate);
+            return GetSizeOfDirectory(new DirectoryInfo(dir), extensionsToCalculate);
         }
 
+        /// <summary>
+        /// Calculates the total size of all files in a directory and its subdirectories.
+        /// </summary>
+        /// <param name="d">The directory to calculate the size for.</param>
+        /// <param name="extensionsToCalculate">If specified, only files with these extensions (e.g. ".pcc") are counted. If null, all files are counted.</param>
+        /// <returns>The total size in bytes of all matching files in the directory tree.</returns>
         public static long GetSizeOfDirectory(DirectoryInfo d, string[] extensionsToCalculate = null)
         {
-            long size = 0;
-            // Add file sizes.
-            FileInfo[] fis = d.GetFiles();
-            foreach (FileInfo fi in fis)
-            {
-                if (extensionsToCalculate != null)
+            FileInfo[] files = d.GetFiles("*", SearchOption.AllDirectories);
+            long totalSize = 0;
+            Parallel.For(0, files.Length,
+                index =>
                 {
-                    if (extensionsToCalculate.Contains(Path.GetExtension(fi.Name)))
+                    FileInfo fi = files[index];
+                    if (extensionsToCalculate == null || extensionsToCalculate.Contains(fi.Extension))
                     {
-                        size += fi.Length;
+                        Interlocked.Add(ref totalSize, fi.Length);
                     }
-                }
-                else
-                {
-                    size += fi.Length;
-                }
-            }
-
-            // Add subdirectory sizes.
-            DirectoryInfo[] dis = d.GetDirectories();
-            foreach (DirectoryInfo di in dis)
-            {
-                size += GetSizeOfDirectory(di, extensionsToCalculate);
-            }
-
-            return size;
+                });
+            return totalSize;
         }
 
         public static bool IsSubfolder(string parentPath, string childPath)
@@ -568,6 +575,13 @@ namespace ME3TweaksCore.Helpers
             return false;
         }
 
+        /// <summary>
+        /// Creates a directory and ensures it has write permissions for the current user. 
+        /// If necessary, uses PermissionsGranter.exe with elevated privileges to set permissions.
+        /// </summary>
+        /// <param name="directoryPath">The full path of the directory to create.</param>
+        /// <param name="forcePermissions">If true, forces use of PermissionsGranter even if the parent directory is writable.</param>
+        /// <returns>True if the directory was created successfully with write permissions, false otherwise.</returns>
         public static bool CreateDirectoryWithWritePermission(string directoryPath, bool forcePermissions = false)
         {
             if (!forcePermissions && Directory.Exists(Directory.GetParent(directoryPath).FullName) && MUtilities.IsDirectoryWritable(Directory.GetParent(directoryPath).FullName))
@@ -576,8 +590,11 @@ namespace ME3TweaksCore.Helpers
                 return true;
             }
 
+            string permissionsGranterExe = null;
             try
             {
+                permissionsGranterExe = MCoreFilesystem.GetCachedExecutable(@"PermissionsGranter.exe");
+
                 //try first without admin.
                 if (forcePermissions) throw new UnauthorizedAccessException(); //just go to the alternate case.
                 Directory.CreateDirectory(directoryPath);
@@ -589,20 +606,37 @@ namespace ME3TweaksCore.Helpers
                 MLog.Information(@"We need admin rights to create this directory");
 
                 // This works because the executable is extracted as part of the published single file package
-                // This method would NOT work on Linux single file as it doesn't extract!
-                var permissionsGranterExe = MCoreFilesystem.GetCachedExecutable(@"PermissionsGranter.exe");
                 if (!File.Exists(permissionsGranterExe))
                 {
-                    MUtilities.ExtractInternalFile(@"ME3TweaksCore.Assets.PermissionsGranter.exe", permissionsGranterExe, true);
+                    var permissionsGranterAsset = @"ME3TweaksCore.Assets.PermissionsGranter.exe";
+                    try
+                    {
+                        MUtilities.ExtractInternalFile(permissionsGranterAsset, permissionsGranterExe, true);
+                    }
+                    catch (Exception e)
+                    {
+                        MLog.Error(@"Error extracting PermissionsGranter.exe: " + e.Message);
+                        MLog.Information(@"Retrying with appdata temp directory instead.");
+                        try
+                        {
+                            permissionsGranterExe = Path.Combine(Path.GetTempPath(), @"PermissionsGranter");
+                            MUtilities.ExtractInternalFile(permissionsGranterAsset, permissionsGranterExe, true);
+                        }
+                        catch (Exception ex)
+                        {
+                            MLog.Error(@"Retry failed! Unable to make this directory writable due to inability to extract PermissionsGranter.exe. Reason: " + ex.Message);
+                            return false;
+                        }
+                    }
                 }
 
                 string args = "\"" + System.Security.Principal.WindowsIdentity.GetCurrent().Name + "\" -create-directory \"" + directoryPath.TrimEnd('\\') + "\""; //do not localize
                 try
                 {
-                    int result = MUtilities.RunProcess(permissionsGranterExe, args, waitForProcess: true, requireAdmin: true, noWindow: true);
+                    int result = MUtilities.RunProcess(permissionsGranterExe, argsS: args, waitForProcess: true, requireAdmin: true, noWindow: true);
                     if (result == 0)
                     {
-                        MLog.Information(@"Elevated process returned code 0, restore directory is hopefully writable now.");
+                        MLog.Information(@"Elevated process returned code 0, directory is hopefully writable now.");
                         return true;
                     }
                     else
@@ -629,17 +663,66 @@ namespace ME3TweaksCore.Helpers
             }
         }
 
-        public static int RunProcess(string exe, string args, bool waitForProcess = false, bool allowReattemptAsAdmin = false, bool requireAdmin = false, bool noWindow = true, bool useShellExecute = true)
+        // <summary>
+        /// Grants write permissions to the specified folders using PermissionsGranter.exe with elevated privileges.
+        /// </summary>
+        /// <param name="folders">List of folder paths that need write permissions enabled.</param>
+        /// <returns>True if permissions were successfully granted, false otherwise.</returns>
+        public static bool EnableWritePermissionsToFolders(List<string> folders)
         {
-            return RunProcess(exe, null, args, waitForProcess: waitForProcess, allowReattemptAsAdmin: allowReattemptAsAdmin, requireAdmin: requireAdmin, noWindow: noWindow, useShellExecute: useShellExecute);
+            string args = "";
+            if (folders.Any())
+            {
+                foreach (var target in folders)
+                {
+                    if (args != "")
+                    {
+                        args += " ";
+                    }
+
+                    args += $"\"{target}\"";
+                }
+
+                // This works because the executable is extracted as part of the published single file package
+                var permissionsGranterExe = MCoreFilesystem.GetCachedExecutable(@"PermissionsGranter.exe");
+                if (!File.Exists(permissionsGranterExe))
+                {
+                    MUtilities.ExtractInternalFile(@"ME3TweaksCore.Assets.PermissionsGranter.exe", permissionsGranterExe, true);
+                }
+
+                args = $"\"{System.Security.Principal.WindowsIdentity.GetCurrent().Name}\" " + args;
+                //need to run write permissions program
+                int result = MUtilities.RunProcess(permissionsGranterExe, argsS: args, waitForProcess: true, allowReattemptAsAdmin: !IsAdministrator());
+                if (result == 0)
+                {
+                    MLog.Information(@"Elevated process returned code 0, directories are hopefully writable now.");
+                    return true;
+                }
+                else
+                {
+                    MLog.Error($@"Elevated process returned code {result}, directories probably aren't writable.");
+                    return false;
+                }
+            }
+
+            return false;
         }
 
-        public static int RunProcess(string exe, List<string> args, bool waitForProcess = false, bool allowReattemptAsAdmin = false, bool requireAdmin = false, bool noWindow = true, bool useShellExecute = true)
-        {
-            return RunProcess(exe, args, null, waitForProcess: waitForProcess, allowReattemptAsAdmin: allowReattemptAsAdmin, requireAdmin: requireAdmin, noWindow: noWindow, useShellExecute: useShellExecute);
-        }
-
-        private static int RunProcess(string exe, List<string> argsL, string argsS, bool waitForProcess, bool allowReattemptAsAdmin, bool requireAdmin, bool noWindow, bool useShellExecute)
+        /// <summary>
+        /// Runs a process with the specified parameters, optionally waiting for it to finish and handling elevation if required.
+        /// </summary>
+        /// <param name="exe">The path to the executable to run.</param>
+        /// <param name="argsL">The command-line arguments as a list of strings. Has priority over argsS.</param>
+        /// <param name="argsS">The command-line arguments as a single string.</param>
+        /// <param name="waitForProcess">If true, waits for the process to exit and returns its exit code.</param>
+        /// <param name="allowReattemptAsAdmin">If true and access is denied (error 740), automatically retries with admin privileges.</param>
+        /// <param name="requireAdmin">If true, runs the process with elevated (administrator) privileges.</param>
+        /// <param name="noWindow">If true, runs the process without creating a visible window.</param>
+        /// <param name="environmentVariables">Dictionary of environment variables to set for the process. Ignored if useShellExecute is set.</param>
+        /// <param name="workingDir">Working directory for the process. Defaults to the executable's directory.</param>
+        /// <param name="useShellExecute">If true, uses the operating system shell to start the process. Used if there are no environment variables to set.</param>
+        /// <returns>The exit code of the process if waitForProcess is true, otherwise -1.</returns>
+        public static int RunProcess(string exe, List<string> argsL = null, string argsS = null, bool waitForProcess = true, bool allowReattemptAsAdmin = false, bool requireAdmin = false, bool noWindow = false, Dictionary<string, string> environmentVariables = null, string workingDir = null, bool useShellExecute = false)
         {
             var argsStr = argsS;
             if (argsStr == null && argsL != null)
@@ -659,23 +742,39 @@ namespace ME3TweaksCore.Helpers
                 }
             }
 
+            // Shared method to set up process
+            void setupProcess(Process p, bool asAdmin)
+            {
+                p.StartInfo.FileName = exe;
+                p.StartInfo.UseShellExecute = useShellExecute || environmentVariables == null || !environmentVariables.Any(); // shell execute causes environment variables to not be set.
+                p.StartInfo.WorkingDirectory = workingDir ?? Directory.GetParent(exe).FullName;
+                p.StartInfo.CreateNoWindow = noWindow;
+                if (noWindow)
+                {
+                    p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                }
+
+                p.StartInfo.Arguments = argsStr;
+                if (asAdmin)
+                {
+                    p.StartInfo.Verb = @"runas";
+                }
+                if (environmentVariables != null && !useShellExecute)
+                {
+                    foreach (var ev in environmentVariables)
+                    {
+                        p.StartInfo.EnvironmentVariables.Add(ev.Key, ev.Value);
+                    }
+                }
+            }
+
             if (requireAdmin)
             {
                 MLog.Information($@"Running process as admin: {exe} {argsStr}");
                 //requires elevation
                 using (Process p = new Process())
                 {
-                    p.StartInfo.FileName = exe;
-                    p.StartInfo.UseShellExecute = useShellExecute;
-                    p.StartInfo.WorkingDirectory = Path.GetDirectoryName(exe);
-                    p.StartInfo.CreateNoWindow = true;
-                    if (noWindow)
-                    {
-                        p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                    }
-
-                    p.StartInfo.Arguments = argsStr;
-                    p.StartInfo.Verb = @"runas";
+                    setupProcess(p, true);
                     p.Start();
                     if (waitForProcess)
                     {
@@ -693,16 +792,7 @@ namespace ME3TweaksCore.Helpers
                 {
                     using (Process p = new Process())
                     {
-                        p.StartInfo.FileName = exe;
-                        p.StartInfo.UseShellExecute = useShellExecute;
-                        p.StartInfo.WorkingDirectory = Path.GetDirectoryName(exe);
-                        p.StartInfo.CreateNoWindow = noWindow;
-                        if (noWindow)
-                        {
-                            p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                        }
-
-                        p.StartInfo.Arguments = argsStr;
+                        setupProcess(p, false);
                         p.Start();
                         if (waitForProcess)
                         {
@@ -722,17 +812,7 @@ namespace ME3TweaksCore.Helpers
                         //requires elevation
                         using (Process p = new Process())
                         {
-                            p.StartInfo.FileName = exe;
-                            p.StartInfo.UseShellExecute = useShellExecute;
-                            p.StartInfo.WorkingDirectory = Path.GetDirectoryName(exe);
-                            p.StartInfo.CreateNoWindow = noWindow;
-                            if (noWindow)
-                            {
-                                p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                            }
-
-                            p.StartInfo.Arguments = argsStr;
-                            p.StartInfo.Verb = @"runas";
+                            setupProcess(p, true);
                             p.Start();
                             if (waitForProcess)
                             {
