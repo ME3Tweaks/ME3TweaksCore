@@ -1,6 +1,8 @@
 # UpdateCachedContent.ps1
 # Downloads and updates the ASI manifest from ME3Tweaks server
 # Also downloads ASI files marked for M3 deployment
+# Performs a full reconciliation pass so any leftover/undeployed ASIs are removed,
+# not just ones from groups that are still currently deployable.
 
 $ErrorActionPreference = "Stop"
 
@@ -91,6 +93,13 @@ try {
         $deployableGroups = 0
         $downloadedCount = 0
         $failedCount = 0
+
+        # Tracks, per game folder, the set of filenames that SHOULD exist after this run.
+        # Key: game folder name (e.g. "ME3"), Value: HashSet[string] of expected filenames.
+        $expectedFilesByFolder = @{}
+        foreach ($folder in $gameFolders.Values) {
+            $expectedFilesByFolder[$folder] = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+        }
         
         foreach ($group in $updateGroups) {
             $groupId = $group.GetAttribute("groupid")
@@ -152,6 +161,10 @@ try {
             # Determine target file name using pattern: [InstalledName]-v[VERSION].asi
             $fileName = "$installedName-v$asiVersion.asi"
             $targetFilePath = Join-Path $targetFolder $fileName
+
+            # Record that this file is expected to exist after reconciliation,
+            # regardless of whether we need to (re)download it below.
+            [void]$expectedFilesByFolder[$gameFolder].Add($fileName)
             
             # Check if file already exists and matches hash
             $shouldDownload = $true
@@ -165,15 +178,6 @@ try {
                 else {
                     Write-Host "  Removing outdated file: $fileName" -ForegroundColor Gray
                     Remove-Item $targetFilePath -Force
-                }
-            }
-            
-            # Clean any other ASI files in target folder with the same installed name but different filename
-            $existingFiles = Get-ChildItem -Path $targetFolder -Filter "*.asi" -ErrorAction SilentlyContinue
-            foreach ($file in $existingFiles) {
-                if ($file.Name -ne $fileName -and $file.BaseName -eq $installedName) {
-                    Write-Host "  Removing old variant: $($file.Name)" -ForegroundColor Gray
-                    Remove-Item $file.FullName -Force
                 }
             }
             
@@ -198,11 +202,16 @@ try {
                         Write-Host "      Actual:   $actualHash" -ForegroundColor Red
                         Remove-Item $targetFilePath -Force
                         $failedCount++
+                        # Don't leave a bogus "expected" entry for a file that failed
+                        # verification and was deleted - otherwise reconciliation
+                        # would treat its absence as fine when it's actually a failure.
+                        [void]$expectedFilesByFolder[$gameFolder].Remove($fileName)
                     }
                 }
                 catch {
                     Write-Host "    [ERROR] Download failed: $_" -ForegroundColor Red
                     $failedCount++
+                    [void]$expectedFilesByFolder[$gameFolder].Remove($fileName)
                 }
             }
         }
@@ -214,6 +223,41 @@ try {
         if ($failedCount -gt 0) {
             Write-Host "  - Failed: $failedCount" -ForegroundColor Red
         }
+
+        # -----------------------------------------------------------------
+        # Reconciliation pass: remove anything on disk that isn't in the
+        # expected set for its game folder. This catches leftovers from
+        # old versions AND from groups that are no longer deployable at
+        # all (which the per-group loop above never even visits).
+        # -----------------------------------------------------------------
+        Write-Host ""
+        Write-Host "Reconciling CachedASI folders..." -ForegroundColor Cyan
+        Write-Host "================================" -ForegroundColor Cyan
+
+        $removedCount = 0
+
+        foreach ($gameFolder in $gameFolders.Values) {
+            $targetFolder = Join-Path $nativeModsDir $gameFolder
+
+            if (-not (Test-Path $targetFolder)) {
+                continue
+            }
+
+            $expectedSet = $expectedFilesByFolder[$gameFolder]
+            $existingFiles = Get-ChildItem -Path $targetFolder -Filter "*.asi" -ErrorAction SilentlyContinue
+
+            foreach ($file in $existingFiles) {
+                if (-not $expectedSet.Contains($file.Name)) {
+                    Write-Host "  Removing unexpected/stale file: $gameFolder\$($file.Name)" -ForegroundColor Gray
+                    Remove-Item $file.FullName -Force
+                    $removedCount++
+                }
+            }
+        }
+
+        Write-Host ""
+        Write-Host "Reconciliation Summary:" -ForegroundColor Cyan
+        Write-Host "  - Stale files removed: $removedCount" -ForegroundColor White
         
     }
     catch {
