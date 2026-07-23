@@ -621,6 +621,16 @@
       <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/Autoload-v11/LE1AutoloadEnabler-v11.0.asi</downloadlink>
       <m3cdeploy>1</m3cdeploy>
     </asimod>
+    <asimod>
+      <name>Autoload Enabler</name>
+      <installedname>LE1AutoloadEnabler</installedname>
+      <author>ME3Tweaks</author>
+      <description>This ASI enables the autoload.ini feature, which is a critical component for LE1 DLC mods. Without this, DLC cannot fully mount. This version registers TFC and ISB files for use by the game, so you can include these files in your DLC mod folder. It also will register startup files when declared as a GlobalPackage in Autoload.ini. Use the console command 'profile autoload' to show what autoload data was loaded.</description>
+      <version>12</version>
+      <hash>55b4ee9b9e41702b6203f325d2d0295a</hash>
+      <sourcecode>https://github.com/ME3Tweaks/LExASIs/tree/main/Autoload</sourcecode>
+      <downloadlink>https://github.com/ME3Tweaks/LExASIs/releases/download/Autoload-v12/LE1AutoloadEnabler-v12.0.asi</downloadlink>
+    </asimod>
   </updategroup>
   <updategroup groupid="33" game="3">
     <asimod>
