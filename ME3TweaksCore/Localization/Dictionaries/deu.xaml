@@ -104,6 +104,8 @@
     <system:String x:Key="string_interp_directoryNotEmptyWillDeleteEverything">Das gewählte Verzeichnis ist nicht leer: {0}. ALLE NICHT-SPIELDATEIEN UND -ORDNER IN DIESEM VERZEICHNIS WERDEN GELÖSCHT. Bist du sicher, dass du fortfahren willst?</system:String>
     <!-- 0={Directory user chose} -->
     <system:String x:Key="string_cannotRestore">Nicht wiederherstellbar</system:String>
+    <system:String x:Key="string_cannotLocateRsync">rsync konnte auf deinem Linux-Hostsystem nicht gefunden werden. Installiere rsync und versuche es erneut.</system:String>
+    <!-- rsync is the name of a linux tool. It is always undercased. -->
 
     <!-- Messageboxes -->
     <system:String x:Key="string_no">Nein</system:String>
@@ -171,7 +173,11 @@
     <system:String x:Key="string_checkingForBlacklistedModsMEM">Prüfe auf geblacklistete Mods (MEM)</system:String>
     <system:String x:Key="string_collectingLODSettings">Erfasse LOD-Einstellungen</system:String>
     <system:String x:Key="string_collectingTOCFileInformation">Sammle TOC-Dateiinformationen</system:String>
-
+    <system:String x:Key="string_interp_checkingXBTP">Überprüfe {0} BTP</system:String>
+    <!-- 0={DLC Folder Name}. BTP is a noun, leave it as is, it is a mod manager feature name. -->
+    <system:String x:Key="string_interp_checkingXTFCMips">Überprüfe {0} TFC-Mips</system:String>
+    <!-- 0={DLC Folder Name} TFC is a noun, leave it as is. Mips are the individual LODs of a texture (bigger as you get closer) -->
+    
     <!-- StringStructParser-->
     <system:String x:Key="string_interp_ssp_unopenedParenthsisFound">Fehler beim Parsen von klammergetrennter Liste: schließende Klammer gefunden, die nicht zu öffnender Klammer an Position {0} in String {1} passt</system:String>
     <!-- 0={Position} 1={Original string} -->
