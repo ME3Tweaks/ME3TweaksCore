@@ -210,8 +210,10 @@
 	<system:String x:Key="string_collectingASILogFiles">Raccolta dei file di log ASI in corso</system:String>
 	<system:String x:Key="string_collectingBasegameFileModifications">Raccolta delle modifiche ai file del gioco base in corso</system:String>
 	<system:String x:Key="string_checkingForBlacklistedModsMEM">Controllo delle mod in blacklist (MEM) in corso</system:String>
-	<system:String x:Key="string_collectingLODSettings">Raccolta di impostazioni dei LOD in corso</system:String>
-	<system:String x:Key="string_collectingTOCFileInformation">Raccolta di informazioni dei file TOC in corso</system:String>
+	<system:String x:Key="string_collectingLODSettings">Raccolta delle impostazioni dei LOD in corso</system:String>
+	<system:String x:Key="string_collectingTOCFileInformation">Raccolta delle informazioni dei file TOC in corso</system:String>
+	<system:String x:Key="string_interp_checkingXBTP">Controllo del BTP di {0} in corso</system:String>
+	<system:String x:Key="string_interp_checkingXTFCMips">Controllo dei mips del TFC di {0} in corso</system:String>
 	<system:String x:Key="string_interp_serverRejectedTheUpload">Il server ha rifiutato il caricamento. La risposta è stata: {0}</system:String>
 	<system:String x:Key="string_interp_logWasUnableToUpload" xml:space="preserve">Impossibile caricare il log:\n{0}.\nPer favore, unisciti al server Discord di ME3Tweaks per ottenere assistenza.</system:String>
 	<system:String x:Key="string_interp_requestTimedOutUploading">Richiesta scaduta durante il caricamento del log.</system:String>
@@ -270,9 +272,10 @@
 	<system:String x:Key="string_noBackup">Nessun backup</system:String>
 	<system:String x:Key="string_error">Errore!</system:String>
 	<system:String x:Key="string_fullGameRestore">Ripristino completo del gioco</system:String>
-	<system:String x:Key="string_interp_copyingX">Copia di {0}</system:String>
+	<system:String x:Key="string_interp_copyingX">Copia di {0} in corso</system:String>
 	<system:String x:Key="string_interp_directoryNotEmptyWillDeleteEverything">La cartella selezionata non è vuota: {0}. TUTTI I FILE NON DI GIOCO E LE CARTELLE PRESENTI IN QUESTA CARTELLA VERRANNO ELIMINATI. Sei sicuro di voler continuare?</system:String>
 	<system:String x:Key="string_cannotRestore">Impossibile ripristinare</system:String>
+	<system:String x:Key="string_cannotLocateRsync">Non è stato possibile trovare rsync sul tuo sistema Linux. Installa rsync e riprova.</system:String>
 	<system:String x:Key="string_interp_invalidHenchNameSquadmateNameValueIsCaseSensitive">Nome hench non valido: {0}. Il valore è sensibile a maiuscole e minuscole.</system:String>
 	<system:String x:Key="string_errorReadingSquadmateOutfitManifestFileSeeLogs">Errore nella lettura del file manifest degli outfit dei compagni di squadra per la/e mod, vedi i log</system:String>
 	<system:String x:Key="string_someSquadmateOutfitsWereNotMergedSeeLogs">Impossibile effettuare il merge degli outfit di alcuni compagni di squadra, vedi i log</system:String>
@@ -294,4 +297,3 @@
 	<system:String x:Key="string_interp_toInvalidTexture">{0} non è un oggetto texture in {1} ({2})</system:String>
 	<system:String x:Key="string_checkingBackup">Controllo del backup in corso</system:String>
 </ResourceDictionary>
-
