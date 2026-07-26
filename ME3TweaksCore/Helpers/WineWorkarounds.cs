@@ -3,6 +3,8 @@ using Microsoft.Win32;
 using NickStrupat;
 using System;
 using System.ComponentModel;
+using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace ME3TweaksCore.Helpers
@@ -110,7 +112,7 @@ namespace ME3TweaksCore.Helpers
         /// <summary>
         /// Gets both host kernel name and version
         /// <para>
-        ///     Parameters will be set to null if function is not available.<br />
+        ///     Parameters will be set to null if function is not available and /proc/version is missing.<br />
         ///     This generally means the host is Windows, or Wine is hiding its version.
         /// </para>
         /// </summary>
@@ -126,8 +128,26 @@ namespace ME3TweaksCore.Helpers
             }
             catch
             {
-                sysname = null;
-                release = null;
+                // Try reading /proc/version if it's available before giving up
+                var kernelVersionPath = @"z:/proc/version";
+                if (File.Exists(kernelVersionPath))
+                {
+                    try {
+                    var versionFile = File.ReadLines(kernelVersionPath).First().Split(" ");
+                    sysname = versionFile[0];
+                    release = new Version(versionFile[2].Split("-")[0]);
+                    } catch (Exception ex)
+                    {
+                        MLog.Error(@"Failed to retreive host version information, message:" + ex);
+                        sysname = null;
+                        release = null;
+                    }
+                }
+                else
+                {
+                    sysname = null;
+                    release = null;
+                }
             }
         }
 
