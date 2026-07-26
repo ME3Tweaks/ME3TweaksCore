@@ -12,6 +12,7 @@ using LegendaryExplorerCore.Unreal;
 using LegendaryExplorerCore.Unreal.Classes;
 using LegendaryExplorerCore.Unreal.ObjectInfo;
 using ME3TweaksCore.Diagnostics;
+using ME3TweaksCore.Exceptions;
 using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Helpers;
 using ME3TweaksCore.Localization;
@@ -132,7 +133,13 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                         var incompatDLC = filepath.DetermineDLCNameFromPath();
                         var tpmi = TPMIService.GetThirdPartyModInfo(incompatDLC, target.Game);
                         MLog.Error($@"Incompatible mod detected for Bio2DA Merge: {incompatDLC} overrides 2DA merge file {file} at path {filepath}. Bio2DA Merge only can modify basegame files and will not modify DLC files. This mod is breaking the Bio2DA merge system.");
-                        throw new Exception(LC.GetString(LC.string_interp_bio2daMerge_incompatibleModDetected, tpmi?.modname ?? incompatDLC));
+                        TelemetryInterposer.TrackEvent(@"Bio2DAMergeIncompatibleModDetected", new Dictionary<string, string>
+                        {
+                            { @"Game", target.Game.ToString() },
+                            { @"IncompatibleDLC", incompatDLC },
+                            { @"OverriddenFile", file },
+                        });
+                        throw new IncompatibleBio2DAMergeException(LC.GetString(LC.string_interp_bio2daMerge_incompatibleModDetected, tpmi?.modname ?? incompatDLC));
                     }
 
                     // Hash the files before we open them so we can pull the information from Basegame File Identification Service.
@@ -191,8 +198,6 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                         // Merge failed. // Todo: Hook up to the UI in M3 via the params
                     }
                 }
-
-
             }
 
             var records = new List<BasegameFileRecord>();

@@ -57,7 +57,13 @@
     <!-- 0={Error message} 1={The last processed filepath} -->
     <system:String x:Key="string_dialog_backupUnableToDetermineFreeSpace">Unable to determine free space for backup location: {0}</system:String>
     <!-- 0={Backup path} -->
-    
+    <system:String x:Key="string_cannotBackupPathIsExistingBackup">Backup directory cannot be another backup's directory. The selected path is already in use by the backup for {0}.</system:String>
+    <!-- This is shown when you pick a folder that is already another backup's folder. 0={Game name} -->
+    <system:String x:Key="string_cannotBackupNestedInOtherBackup">Backup directory cannot be nested within another backup. {0} is located within {1}.</system:String>
+    <!-- This is shown when you pick a folder that is a subfolder of an existing backup. 0={Path}, 1={Path} -->
+    <system:String x:Key="string_cannotBackupContainsOtherBackup">Backup directory chosen cannot contain another backup's directory. {0} contains {1}.</system:String>
+    <!-- This is shown when you pick a folder that contains another backup within it already. Unlikely, but may still happen 0={Path}, 1={Path} -->
+
     <!-- Installation Information -->
     <system:String x:Key="string_installedByModManager">Installed by Mod Manager</system:String>
     <system:String x:Key="string_interp_installedByX">Installed by {0}</system:String>
