@@ -134,8 +134,8 @@ namespace ME3TweaksCore.Services.Backup
             }
             else
             {
-                // Point to existing game installation
-                MLog.Information(@"PerformBackup() with IsCustomOption.");
+                // Point to existing game installation (Link) ------------------------------------------------------------------------------------
+                MLog.Information(@"PerformBackup() with IsCustomOption (Linking backup).");
                 var linkOK = WarningActionYesNoCallback?.Invoke(LC.GetString(LC.string_ensureCorrectGameChosen), LC.GetString(LC.string_warningLinkedTargetWillNotLoad),
                     false, LC.GetString(LC.string_iUnderstand), LC.GetString(LC.string_abortLinking));
                 if (!linkOK.HasValue || !linkOK.Value)
@@ -156,7 +156,8 @@ namespace ME3TweaksCore.Services.Backup
                     return false;
                 }
 
-                // TODO: Check version number of executable for LE/OT
+                MLog.Information($@"User selected executable: {gameExecutable}");
+
                 if (Game.IsGame2() || Game.IsGame3())
                 {
                     var version = FileVersionInfo.GetVersionInfo(gameExecutable);
@@ -176,15 +177,12 @@ namespace ME3TweaksCore.Services.Backup
                     }
                 }
 
-                // Initialize the executable target
-                targetToBackup = new GameTarget(Game, M3Directories.GetGamePathFromExe(Game, gameExecutable), false, true);
 
-                if (applicationTargets != null && applicationTargets.Any(x => x.TargetPath.Equals(targetToBackup.TargetPath, StringComparison.InvariantCultureIgnoreCase)))
+                // Initialize the executable target
+                targetToBackup = new GameTarget(Game, M3Directories.GetGamePathFromExe(Game, gameExecutable), false, true);              
+                if (!validateBackupPath(targetToBackup.TargetPath, targetToBackup, applicationTargets))
                 {
-                    // Can't point to an existing modding target
-                    MLog.Error(@"This target is not valid to point to as a backup: It is listed a modding target already, it must be removed as a target first");
                     EndBackup();
-                    BlockingActionCallback?.Invoke(LC.GetString(LC.string_cannotBackupGame), LC.GetString(LC.string_interp_cannotBackupThisIsTheCurrentGamePath));
                     return false;
                 }
 
@@ -315,7 +313,7 @@ namespace ME3TweaksCore.Services.Backup
             string backupPath = null;
             if (!targetToBackup.IsCustomOption)
             {
-                // Creating a new backup
+                // Creating a new backup ===================
                 MLog.Information(@"Prompting user to select backup destination");
                 backupPath = SelectGameBackupFolderDestination?.Invoke(LC.GetString(LC.string_selectEmptyBackupDestinationDirectory));
                 if (backupPath != null && Directory.Exists(backupPath))
@@ -337,7 +335,7 @@ namespace ME3TweaksCore.Services.Backup
             }
             else
             {
-                // Linking existing backup
+                // Linking existing backup ==================
                 MLog.Information(@"Linking existing backup at " + targetToBackup.TargetPath);
                 backupPath = targetToBackup.TargetPath;
                 bool okToBackup = validateBackupPath(targetToBackup.TargetPath, targetToBackup, applicationTargets);
@@ -350,6 +348,7 @@ namespace ME3TweaksCore.Services.Backup
 
             if (!targetToBackup.IsCustomOption)
             {
+                // Copy files
                 MLog.Information(@"Preparing to backup");
 
                 // Making new backup
@@ -546,7 +545,7 @@ namespace ME3TweaksCore.Services.Backup
             SetBackupPath(Game, backupPath);
 
             // Write vanilla marker
-            if (isVanilla && dlcModsInstalled == null || !dlcModsInstalled.Any())
+            if (isVanilla && (dlcModsInstalled == null || !dlcModsInstalled.Any()))
             {
                 var cmmvanilla = Path.Combine(backupPath, @"cmm_vanilla");
                 if (!File.Exists(cmmvanilla))
@@ -562,15 +561,22 @@ namespace ME3TweaksCore.Services.Backup
 
             MLog.Information(@"Backup completed");
             TelemetryInterposer.TrackEvent(@"Created a backup", new Dictionary<string, string>()
-                        {
-                                {@"game", Game.ToString()},
-                                {@"Result", @"Success"},
-                                {@"Type", targetToBackup.IsCustomOption ? @"Linked" : @"Copy"}
-                        });
+                {
+                        {@"game", Game.ToString()},
+                        {@"Result", @"Success"},
+                        {@"Type", targetToBackup.IsCustomOption ? @"Linked" : @"Copy"}
+                }
+            );
             EndBackup();
             return true;
         }
 
+        /// <summary>
+        /// </summary>
+        /// <param name="backupPath"></param>
+        /// <param name="targetToBackup">Selected target option. This uses the .IsCustomOption parameter on it to determine if it is a link (true) or a normal backup (false)</param>
+        /// <param name="applicableTargets"></param>
+        /// <returns></returns>
         private bool validateBackupPath(string backupPath, GameTarget targetToBackup, List<GameTarget> applicableTargets)
         {
             //Check empty
@@ -597,6 +603,17 @@ namespace ME3TweaksCore.Services.Backup
                     return false;
                 }
             }
+
+            // Check if the backup path is the same as any of the application targets (we don't want to backup into a game directory)
+            if (applicableTargets != null && applicableTargets.Any(x => x.TargetPath.Equals(targetToBackup.TargetPath, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                MLog.Error(@"This target is not valid to point to as a backup: It is listed as a modding target already, it must be removed as a target first");
+                EndBackup();
+                BlockingActionCallback?.Invoke(LC.GetString(LC.string_cannotBackupGame), LC.GetString(LC.string_interp_cannotBackupThisIsTheCurrentGamePath));
+                return false;
+            }
+
+            // Actual backup being taken
             if (!targetToBackup.IsCustomOption)
             {
 
@@ -631,6 +648,7 @@ namespace ME3TweaksCore.Services.Backup
                     return false;
                 }
             }
+
             //Check is Documents folder
             var docsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"BioWare", targetToBackup.Game.ToGameName());
             if (backupPath.Equals(docsPath, StringComparison.InvariantCultureIgnoreCase) || backupPath.IsSubPathOf(docsPath))
@@ -640,8 +658,7 @@ namespace ME3TweaksCore.Services.Backup
                 return false;
             }
 
-
-            //Check it is not subdirectory of a game (we might want to check its not subdir of a target)
+            // Check it is not subdirectory of a game (we might want to check its not subdir of a target)
             if (applicableTargets != null)
             {
                 foreach (var target in applicableTargets)
@@ -649,8 +666,49 @@ namespace ME3TweaksCore.Services.Backup
                     if (backupPath.IsSubPathOf(target.TargetPath))
                     {
                         //Not enough space.
-                        MLog.Error($@"A backup cannot be created in a subdirectory of a game. {backupPath} is a subdir of {targetToBackup.TargetPath}");
+                        MLog.Error($@"A backup cannot be created in a subdirectory of a game. {backupPath} is a subdir of {target.TargetPath}");
                         BlockingActionCallback?.Invoke(LC.GetString(LC.string_cannotCreateBackup), LC.GetString(LC.string_dialogBackupCannotBeSubdirectoryOfGame, backupPath, targetToBackup.TargetPath));
+                        return false;
+                    }
+                }
+            }
+
+            // Check that the target path is not the same or nested within any other backup locations we know about
+            foreach (MEGame backupGame in Enum.GetValues(typeof(MEGame)))
+            {
+                if (backupGame == MEGame.Unknown)
+                    continue; // Not an actual game
+
+                var testBackupPath = BackupService.GetGameBackupPath(backupGame, forceReturnPath: true);
+                if (testBackupPath != null)
+                {
+                    // Check if target equals another backup
+                    if (targetToBackup.TargetPath.Equals(testBackupPath, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        // If users somehow merge backups (manual copying) they may be able to select an exe in a folder that is already the same
+                        // this won't fix it but will help tell them something is wrong
+                        MLog.Error($@"This location is already configured as a backup for {backupGame} - this should not be possible, did the user manually tamper with backup folders?");
+                        EndBackup();
+                        BlockingActionCallback?.Invoke(LC.GetString(LC.string_cannotBackupGame), LC.GetString(LC.string_cannotBackupPathIsExistingBackup, backupGame));
+                        return false;
+                    }
+
+                    // Check if target is nested within an existing backup
+                    if (targetToBackup.TargetPath.IsSubPathOf(testBackupPath))
+                    {
+                        MLog.Error($@"A backup cannot be nested within another backup. {targetToBackup.TargetPath} is a subdirectory of backup {testBackupPath}");
+                        EndBackup();
+                        BlockingActionCallback?.Invoke(LC.GetString(LC.string_cannotBackupGame), LC.GetString(LC.string_cannotBackupNestedInOtherBackup, targetToBackup.TargetPath, testBackupPath));
+                        return false;
+                    }
+
+                    // This shouldn't be possible but we'll check it anyways.
+                    // Check if an existing backup would be nested within the target (prevent nesting)
+                    if (testBackupPath.IsSubPathOf(targetToBackup.TargetPath))
+                    {
+                        MLog.Error($@"A backup cannot contain another backup within it. {testBackupPath} is a subdirectory of {targetToBackup.TargetPath}");
+                        EndBackup();
+                        BlockingActionCallback?.Invoke(LC.GetString(LC.string_cannotBackupGame), LC.GetString(LC.string_cannotBackupContainsOtherBackup, testBackupPath, targetToBackup.TargetPath));
                         return false;
                     }
                 }
