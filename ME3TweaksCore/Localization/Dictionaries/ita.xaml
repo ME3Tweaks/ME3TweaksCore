@@ -136,6 +136,9 @@
 	<system:String x:Key="string_errorCreatingBackup">Errore durante la creazione del backup</system:String>
 	<system:String x:Key="string_interp_errorCreatingBackupX">C'è stato un errore durante il backup del gioco: {0}. L'ultimo file che si è cercato di processare è stato: {1}.</system:String>
 	<system:String x:Key="string_dialog_backupUnableToDetermineFreeSpace">Impossibile determinare lo spazio libero per la destinazione del backup: {0}</system:String>
+	<system:String x:Key="string_cannotBackupPathIsExistingBackup">La cartella di backup non può essere già cartella di backup di qualcos'altro. Il percorso selezionato è già utilizzato dal backup di {0}.</system:String>
+	<system:String x:Key="string_cannotBackupNestedInOtherBackup">La cartella di backup non può essere sottocartella di un altro backup. {0} si trova dentro {1}.</system:String>
+	<system:String x:Key="string_cannotBackupContainsOtherBackup">La cartella di backup selezionata non può contenere un'altra cartella di backup. {0} contiene {1}</system:String>
 	<system:String x:Key="string_cannotRestoreGame">Impossibile ripristinare il gioco</system:String>
 	<system:String x:Key="string_interp_cannotRestoreGameToGameWhileRunning">Impossibile ripristinare {0} quando una sua istanza è in esecuzione.</system:String>
 	<system:String x:Key="string_interp_restoringWillDeleteEverythingTitle">Ripristinare {0} eliminerà l'installazione esistente</system:String>
