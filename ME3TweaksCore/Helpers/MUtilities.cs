@@ -763,7 +763,10 @@ namespace ME3TweaksCore.Helpers
                 {
                     foreach (var ev in environmentVariables)
                     {
-                        p.StartInfo.EnvironmentVariables.Add(ev.Key, ev.Value);
+                        if (p.StartInfo.EnvironmentVariables.ContainsKey(ev.Key))
+                        {
+                            p.StartInfo.EnvironmentVariables.Add(ev.Key, ev.Value);
+                        }
                     }
                 }
             }
