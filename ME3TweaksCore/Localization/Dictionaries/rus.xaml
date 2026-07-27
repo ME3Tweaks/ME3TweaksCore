@@ -136,6 +136,9 @@
 	<system:String x:Key="string_errorCreatingBackup">Ошибка создания архива</system:String>
 	<system:String x:Key="string_interp_errorCreatingBackupX">Возникла ошибка архивации игры: {0}. Последним файлом в обработке был: {1}.</system:String>
 	<system:String x:Key="string_dialog_backupUnableToDetermineFreeSpace">Невозможно определить свободное место для сохранения архива: {0}</system:String>
+	<system:String x:Key="string_cannotBackupPathIsExistingBackup">Папкой архива не может служить папка другого архива. Выбранный путь уже используется архивом для {0}.</system:String>
+	<system:String x:Key="string_cannotBackupNestedInOtherBackup">Папка архива не может располагаться внутри папки другого архива. {0} находится внутри {1}.</system:String>
+	<system:String x:Key="string_cannotBackupContainsOtherBackup">Выбранная папка архива не может содержать папку другого архива. {0} содержит {1}.</system:String>
 	<system:String x:Key="string_cannotRestoreGame">Невозможно восстановить игру</system:String>
 	<system:String x:Key="string_interp_cannotRestoreGameToGameWhileRunning">Невозможно восстановить {0} пока игра запущена</system:String>
 	<system:String x:Key="string_interp_restoringWillDeleteEverythingTitle">Восстановление {0} удалит существующую установку игры</system:String>
@@ -212,6 +215,8 @@
 	<system:String x:Key="string_checkingForBlacklistedModsMEM">Проверка неразрешенных модов (MEM)</system:String>
 	<system:String x:Key="string_collectingLODSettings">Сбор настроек LOD</system:String>
 	<system:String x:Key="string_collectingTOCFileInformation">Сбор информации файла TOC</system:String>
+	<system:String x:Key="string_interp_checkingXBTP">Проверка BTP {0}</system:String>
+	<system:String x:Key="string_interp_checkingXTFCMips">Проверка мипов TFC {0}</system:String>
 	<system:String x:Key="string_interp_serverRejectedTheUpload">Сервер отказал в загрузке. Полученный ответ: {0}</system:String>
 	<system:String x:Key="string_interp_logWasUnableToUpload" xml:space="preserve">Не удалось отправить лог:\n{0}.\nПожалуйста, обратитесь на ME3Tweaks Discord для помощи.</system:String>
 	<system:String x:Key="string_interp_requestTimedOutUploading">Превышение времени запроса при отправке лога.</system:String>
@@ -256,6 +261,8 @@
 	<system:String x:Key="string_insanity">Безумие</system:String>
 	<system:String x:Key="string_debugDifficulty">Отладка сложности</system:String>
 	<system:String x:Key="string_interp_unknownDifficultyLevelX">Неизвестный уровень сложности: {1}</system:String>
+	<system:String x:Key="string_installingMicrosoftVisualCPPRedistributable">Установка Microsoft Visual C++ Redistributable</system:String>
+	<system:String x:Key="string_downloadingMicrosoftVisualCPPRedistributable">Скачивание Miscosoft Visual C++ Redistributable</system:String>
 	<system:String x:Key="string_interp_onlineContentHashWrong">Хэш загруженного элемента ({0}) не соответствует ожидаемому. Ожидалось: {1}, получено {2}.</system:String>
 	<system:String x:Key="string_interp_plotManagerSyncForX">Синхронизация PlotManager для {0}</system:String>
 	<system:String x:Key="string_interp_errorCompilingFunctionReason" xml:space="preserve">Ошибка компиляции функции {0}: {1}</system:String>
@@ -271,6 +278,7 @@
 	<system:String x:Key="string_interp_copyingX">Копирование {0}</system:String>
 	<system:String x:Key="string_interp_directoryNotEmptyWillDeleteEverything">Выбранная директория не пуста: {0}. ВСЕ НЕИГРОВЫЕ ФАЙЛЫ И ПАПКИ В ЭТОЙ ДИРЕКТОРИИ БУДУТ УДАЛЕНЫ. Вы уверены, что хотите продолжить?</system:String>
 	<system:String x:Key="string_cannotRestore">Восстановление невозможно</system:String>
+	<system:String x:Key="string_cannotLocateRsync">Невозможно обнаружить rsync на вашем хосте Linux. Установите rsync и попробуйте снова.</system:String>
 	<system:String x:Key="string_interp_invalidHenchNameSquadmateNameValueIsCaseSensitive">Недопустимое имя напарника: {0}. Значение чувствительно к регистру.</system:String>
 	<system:String x:Key="string_errorReadingSquadmateOutfitManifestFileSeeLogs">Ошибка чтения файла манифеста squadmate outfit для мода(ов), подробнее в логах</system:String>
 	<system:String x:Key="string_someSquadmateOutfitsWereNotMergedSeeLogs">Некоторые костюмы напарников не были синхронизированы, подробнее в логах</system:String>
