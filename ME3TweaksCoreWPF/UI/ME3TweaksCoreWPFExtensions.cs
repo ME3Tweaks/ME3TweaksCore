@@ -1,6 +1,5 @@
 ﻿using System;
 using ME3TweaksCore.Misc;
-using Microsoft.WindowsAPICodePack.Taskbar;
 
 namespace ME3TweaksCoreWPF.UI
 {
