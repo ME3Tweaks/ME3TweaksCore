@@ -605,7 +605,7 @@ namespace ME3TweaksCore.Services.Backup
             }
 
             // Check if the backup path is the same as any of the application targets (we don't want to backup into a game directory)
-            if (applicableTargets != null && applicableTargets.Any(x => x.TargetPath.Equals(targetToBackup.TargetPath, StringComparison.InvariantCultureIgnoreCase)))
+            if (applicableTargets != null && applicableTargets.Any(x => x != targetToBackup && x.TargetPath.Equals(targetToBackup.TargetPath, StringComparison.InvariantCultureIgnoreCase)))
             {
                 MLog.Error(@"This target is not valid to point to as a backup: It is listed as a modding target already, it must be removed as a target first");
                 EndBackup();
