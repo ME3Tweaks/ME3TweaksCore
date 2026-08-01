@@ -128,22 +128,15 @@ namespace ME3TweaksCore.Helpers
             }
             catch
             {
-                // Try reading /proc/version if it's available before giving up
-                var kernelVersionPath = @"z:/proc/version";
-                if (File.Exists(kernelVersionPath))
+                // Try reading /proc/version before giving up
+                const string kernelVersionPath = @"z:/proc/version";
+                try
                 {
-                    try {
                     var versionFile = File.ReadLines(kernelVersionPath).First().Split(" ");
                     sysname = versionFile[0];
                     release = new Version(versionFile[2].Split("-")[0]);
-                    } catch (Exception ex)
-                    {
-                        MLog.Error(@"Failed to retreive host version information, message:" + ex);
-                        sysname = null;
-                        release = null;
-                    }
                 }
-                else
+                catch (Exception ex)
                 {
                     sysname = null;
                     release = null;
@@ -185,7 +178,19 @@ namespace ME3TweaksCore.Helpers
                 if (WineDetectedVersion != null)
                 {
                     MLog.Information($@"Wine version: {WineDetectedVersion}");
+                }
+                else
+                {
+                    MLog.Warning($@"Could not retrieve Wine version");
+                }
+
+                if (WineHostKernelName != null || WineHostKernelVersion != null)
+                {
                     MLog.Information($@"Host Kernel: {WineHostKernelName} {WineHostKernelVersion}");
+                }
+                else
+                {
+                    MLog.Warning($@"Could not retrieve host kernel information");
                 }
             }
         }
