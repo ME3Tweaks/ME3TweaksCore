@@ -71,42 +71,12 @@ namespace ME3TweaksCore.NativeMods
 
         private static void internalLoadManifest(bool forceLocal = false, bool overrideThrottling = false, string preloadedManifestData = null)
         {
-            if (File.Exists(ManifestLocation) && (forceLocal || (!MOnlineContent.CanFetchContentThrottleCheck() && !overrideThrottling))) //Force local, or we can't online check and cannot override throttle
+            if (!forceLocal && preloadedManifestData != null)
             {
-                LoadManifestFromDisk(ManifestLocation);
-                MLog.Information(@"Loaded cached ASI manifest");
-                logManifestInfo();
-                return;
-            }
-
-            var shouldNotFetch = forceLocal || (!overrideThrottling && !MOnlineContent.CanFetchContentThrottleCheck()) && File.Exists(ManifestLocation);
-            if (!shouldNotFetch) //this cannot be triggered if forceLocal is true (and local file exists)
-            {
-                string onlineManifest = null;
-                if (preloadedManifestData == null)
-                {
-                    MLog.Error(@"Fetching ASI manifest failed: As of 11/16/2023, data must come from combined services. This is probably a bug.");
-                    MLog.Error($@"Debug Info:");
-                    MLog.Error($@"  Local file exists: {File.Exists(ManifestLocation)}");
-                    MLog.Error($@"  MOnlineContent.CanFetchContentThrottleCheck(): {MOnlineContent.CanFetchContentThrottleCheck()}");
-                    MLog.Error($@"  overrideThrottling: {overrideThrottling}");
-                    Debugger.Break();
-                }
-                else
-                {
-                    MLog.Information(@"Using ASI manifest from online source");
-                    onlineManifest = preloadedManifestData;
-                }
-
-                if (onlineManifest == null)
-                {
-                    MLog.Warning(@"Cannot load ASI manifest: Could not fetch online manifest and no local manifest exists");
-                    LoadEmbeddedManifest();
-                    logManifestInfo();
-                    return;
-                }
-
-                onlineManifest = onlineManifest.Trim();
+                var onlineManifest = preloadedManifestData.Trim();
+                // Online in this case means that it was preloaded by combined
+                // services which is only sourced from online.
+                MLog.Information(@"Using online ASI manifest");
                 try
                 {
                     File.WriteAllText(StagedManifestLocation, onlineManifest);
@@ -119,39 +89,45 @@ namespace ME3TweaksCore.NativeMods
                 try
                 {
                     ParseManifest(onlineManifest, true);
+                    MLog.Information(@"Loaded online ASI manifest");
                     logManifestInfo();
+                    return;
                 }
                 catch (Exception e)
                 {
                     MLog.Error(@"Error parsing online ASI manifest: " + e.Message);
-                    internalLoadManifest(true); //force local load instead
+                    MLog.Warning(@"Falling back to cached ASI manifest");
                 }
-
-                return;
+            }
+            else if (forceLocal)
+            {
+                MLog.Information(@"Force local ASI manifest requested; skipping preloaded data");
+            }
+            else
+            {
+                MLog.Warning(@"Online ASI manifest not available; falling back to cached manifest");
             }
 
             if (File.Exists(ManifestLocation))
             {
-                MLog.Information(@"Loading local ASI manifest");
+                MLog.Information(@"Loading cached ASI manifest");
                 try
                 {
                     LoadManifestFromDisk(ManifestLocation, false);
-                    MLog.Information(@"Loaded local ASI manifest");
+                    MLog.Information(@"Loaded cached ASI manifest");
                     logManifestInfo();
+                    return;
                 }
                 catch (Exception e)
                 {
                     MLog.Exception(e, @"Error loading cached manifest: ");
-                    //can't use local manifest - use the embedded one
-                    LoadEmbeddedManifest();
-                    logManifestInfo();
                 }
-
-                return;
+            }
+            else
+            {
+                MLog.Warning(@"Cached ASI manifest is not available");
             }
 
-
-            //can't get manifest or local manifest.
             LoadEmbeddedManifest();
             logManifestInfo();
         }
