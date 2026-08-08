@@ -63,8 +63,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
                     if (!filename.Contains(@"RefShaderCache"))
                     {
                         // Use lazy load and enumerate the exports. This way we don't allocate as much memory at once.
-                        using var fs = File.OpenRead(packPath);
-                        var testPackage = MEPackageHandler.UnsafeLazyLoadFromStream(fs, packPath);
+                        using var testPackage = MEPackageHandler.UnsafeLazyLoad(packPath);
                         foreach (var ex in testPackage.Exports)
                         {
                             // Load and unload exports

@@ -1,11 +1,13 @@
-﻿using System;
+﻿using AuthenticodeExaminer;
+using ME3TweaksCore.Diagnostics;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
-using AuthenticodeExaminer;
-using ME3TweaksCore.Diagnostics;
 
 namespace ME3TweaksCore.Helpers
 {
@@ -39,6 +41,28 @@ namespace ME3TweaksCore.Helpers
 
         private static bool HasReadBuildInfo { get; set; }
 
+        /// <summary>
+        /// Returns developer-timezone formatted date
+        /// </summary>
+        /// <returns></returns>
+        private static string GetDateString(DateTime time)
+        {
+            var MountainTz = TimeZoneInfo.FindSystemTimeZoneById(@"America/Denver");
+
+            // Normalize to UTC for ConvertTimeFromUtc
+            var utcTime = time.Kind switch
+            {
+                DateTimeKind.Utc => time,
+                DateTimeKind.Local => time.ToUniversalTime(),
+                _ => DateTime.SpecifyKind(time, DateTimeKind.Utc) // metadata without kind
+            };
+
+            var constantTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, MountainTz);
+            var abbr = MountainTz.IsDaylightSavingTime(constantTime) ? @"MDT" : @"MST";
+            return $"{constantTime:MMMM dd, yyyy @ hh:mmtt} {abbr}";
+        }
+
+
         public static void ReadRuildInfo(BuildSigner[] allowedSigners = null)
         {
             if (HasReadBuildInfo)
@@ -47,18 +71,18 @@ namespace ME3TweaksCore.Helpers
             var info = new FileInspector(MLibraryConsumer.GetExecutablePath());
             var signTime = info.GetSignatures().FirstOrDefault()?.TimestampSignatures.FirstOrDefault()?.TimestampDateTime?.UtcDateTime;
 
-            if (signTime != null)
+            if (signTime != null && signTime.HasValue)
             {
                 // This executable is signed
                 BuildDate = signTime.Value;
-                BuildDateString = signTime.Value.ToLocalTime().ToString(@"MMMM dd, yyyy @ hh:mm");
+                BuildDateString = GetDateString(signTime.Value);
                 var signer = info.GetSignatures().FirstOrDefault()?.SigningCertificate?.GetNameInfo(X509NameType.SimpleName, false);
                 if (allowedSigners != null && allowedSigners.Any())
                 {
-                    if (signer != null && allowedSigners.FirstOrDefault(x=>x.SigningName == signer) != null)
+                    if (signer != null && allowedSigners.FirstOrDefault(x => x.SigningName == signer) != null)
                     {
                         IsSigned = true;
-                        MLog.Information($@"Build signed by {allowedSigners.FirstOrDefault(x=>x.SigningName == signer).DisplayName}. Build date: " + BuildDate);
+                        MLog.Information($@"Build signed by {allowedSigners.FirstOrDefault(x => x.SigningName == signer).DisplayName}. Build date: " + BuildDate);
                     }
                     else
                     {
@@ -73,6 +97,15 @@ namespace ME3TweaksCore.Helpers
             else
             {
                 BuildDateString = @"WARNING: This build is not signed by ME3Tweaks";
+                var assembly = Assembly.GetEntryAssembly();
+                var metadataAttribute = assembly.GetCustomAttributes<AssemblyMetadataAttribute>().FirstOrDefault(a => a.Key == @"BuildDateTime");
+
+                if (metadataAttribute != null && DateTimeOffset.TryParse(metadataAttribute.Value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var buildDateOffset))
+                {
+                    var buildDateStr = GetDateString(buildDateOffset.UtcDateTime);
+                    MLog.Information($@"Build date: {buildDateStr}");
+                    BuildDateString += $@" | {buildDateStr}";
+                }
 #if !DEBUG
                 MLog.Warning(@"This build is not signed by ME3Tweaks. This may not be an official build.");
 #endif

@@ -171,6 +171,7 @@ namespace ME3TweaksCore.TextureOverride
             currentSourcePackage?.Dispose();
             currentSourcePackage = null;
 
+
             MLog.Information(@"BTP build: Saving metadata package");
             metadataPackage.Save();
 

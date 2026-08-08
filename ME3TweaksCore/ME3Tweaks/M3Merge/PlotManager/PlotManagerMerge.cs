@@ -79,7 +79,10 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.PlotManager
             List<string> combinedNames = new List<string>();
 
             var dlcs = target.GetInstalledDLCByMountPriority();
-            dlcs.Reverse();
+
+            // 03/22/2026 - Do not reverse so highest ones override. We don't check if they already are defined
+            // so this will let higher mounted functions simply replace lower
+            //dlcs.Reverse();
 
             foreach (var dlc in dlcs)
             {
@@ -259,9 +262,16 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.PlotManager
                 {
                     if (sb != null)
                     {
+                        if (funcMap.ContainsKey(currentFuncNum))
+                        {
+                            MLog.Information($@"PlotSync: Overriding previous PMU function {currentFuncNum} with version from {dlc}");
+                        }
+                        else
+                        {
+                            MLog.Information($@"PlotSync: Adding function {currentFuncNum} from {dlc}");
+                        }
                         funcMap[currentFuncNum] = sb.ToString();
                         sourceMap[currentFuncNum] = dlc;
-                        MLog.Information($@"PlotSync: Adding function {currentFuncNum} from {dlc}");
                         currentFuncNum = null;
                     }
 

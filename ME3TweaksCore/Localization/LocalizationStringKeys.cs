@@ -49,6 +49,9 @@ namespace ME3TweaksCore.Localization
 		public const string string_errorCreatingBackup = "string_errorCreatingBackup";
 		public const string string_interp_errorCreatingBackupX = "string_interp_errorCreatingBackupX";
 		public const string string_dialog_backupUnableToDetermineFreeSpace = "string_dialog_backupUnableToDetermineFreeSpace";
+		public const string string_cannotBackupPathIsExistingBackup = "string_cannotBackupPathIsExistingBackup";
+		public const string string_cannotBackupNestedInOtherBackup = "string_cannotBackupNestedInOtherBackup";
+		public const string string_cannotBackupContainsOtherBackup = "string_cannotBackupContainsOtherBackup";
 		public const string string_installedByModManager = "string_installedByModManager";
 		public const string string_interp_installedByX = "string_interp_installedByX";
 		public const string string_notInstalledByModManager = "string_notInstalledByModManager";
@@ -79,6 +82,7 @@ namespace ME3TweaksCore.Localization
 		public const string string_interp_copyingX = "string_interp_copyingX";
 		public const string string_interp_directoryNotEmptyWillDeleteEverything = "string_interp_directoryNotEmptyWillDeleteEverything";
 		public const string string_cannotRestore = "string_cannotRestore";
+		public const string string_cannotLocateRsync = "string_cannotLocateRsync";
 		public const string string_no = "string_no";
 		public const string string_ok = "string_ok";
 		public const string string_yes = "string_yes";
@@ -126,6 +130,8 @@ namespace ME3TweaksCore.Localization
 		public const string string_checkingForBlacklistedModsMEM = "string_checkingForBlacklistedModsMEM";
 		public const string string_collectingLODSettings = "string_collectingLODSettings";
 		public const string string_collectingTOCFileInformation = "string_collectingTOCFileInformation";
+		public const string string_interp_checkingXBTP = "string_interp_checkingXBTP";
+		public const string string_interp_checkingXTFCMips = "string_interp_checkingXTFCMips";
 		public const string string_interp_ssp_unopenedParenthsisFound = "string_interp_ssp_unopenedParenthsisFound";
 		public const string string_interp_ssp_unclosedParenthesisFound = "string_interp_ssp_unclosedParenthesisFound";
 		public const string string_outdatedVersionInstalled = "string_outdatedVersionInstalled";

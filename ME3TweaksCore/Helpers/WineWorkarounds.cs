@@ -150,6 +150,7 @@ namespace ME3TweaksCore.Helpers
 
                 // Needs changed to Mac if that can be determined (darwin?)
                 ComputerInfo.ForcePlatform(EOSPlatform.Wine);
+                LogWineInfo();
             }
         }
 
@@ -167,6 +168,12 @@ namespace ME3TweaksCore.Helpers
                     MLog.Information($@"Host Kernel: {WineHostKernelName} {WineHostKernelVersion}");
                 }
             }
+        }
+
+        public static void DisableWineWorkarounds()
+        {
+            WineWorkarounds.WineDetected = false;
+            MLog.Warning(@"Wine Workarounds Disabled");
         }
     }
 }

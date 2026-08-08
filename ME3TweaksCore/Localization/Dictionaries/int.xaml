@@ -57,7 +57,13 @@
     <!-- 0={Error message} 1={The last processed filepath} -->
     <system:String x:Key="string_dialog_backupUnableToDetermineFreeSpace">Unable to determine free space for backup location: {0}</system:String>
     <!-- 0={Backup path} -->
-    
+    <system:String x:Key="string_cannotBackupPathIsExistingBackup">Backup directory cannot be another backup's directory. The selected path is already in use by the backup for {0}.</system:String>
+    <!-- This is shown when you pick a folder that is already another backup's folder. 0={Game name} -->
+    <system:String x:Key="string_cannotBackupNestedInOtherBackup">Backup directory cannot be nested within another backup. {0} is located within {1}.</system:String>
+    <!-- This is shown when you pick a folder that is a subfolder of an existing backup. 0={Path}, 1={Path} -->
+    <system:String x:Key="string_cannotBackupContainsOtherBackup">Backup directory chosen cannot contain another backup's directory. {0} contains {1}.</system:String>
+    <!-- This is shown when you pick a folder that contains another backup within it already. Unlikely, but may still happen 0={Path}, 1={Path} -->
+
     <!-- Installation Information -->
     <system:String x:Key="string_installedByModManager">Installed by Mod Manager</system:String>
     <system:String x:Key="string_interp_installedByX">Installed by {0}</system:String>
@@ -104,7 +110,9 @@
     <system:String x:Key="string_interp_directoryNotEmptyWillDeleteEverything">The selected directory is not empty: {0}. ALL NON-GAME FILES AND FOLDERS IN THIS DIRECTORY WILL BE DELETED. Are you sure you want to continue?</system:String>
     <!-- 0={Directory user chose} -->
     <system:String x:Key="string_cannotRestore">Cannot restore</system:String>
-
+    <system:String x:Key="string_cannotLocateRsync">Cannot locate rsync on your host Linux system. Install rsync and try again.</system:String>
+    <!-- rsync is the name of a linux tool. It is always undercased. -->
+    
     <!-- Messageboxes -->
     <system:String x:Key="string_no">No</system:String>
     <system:String x:Key="string_ok">OK</system:String>
@@ -171,7 +179,11 @@
     <system:String x:Key="string_checkingForBlacklistedModsMEM">Checking for blacklisted mods (MEM)</system:String>
     <system:String x:Key="string_collectingLODSettings">Collecting LOD settings</system:String>
     <system:String x:Key="string_collectingTOCFileInformation">Collecting TOC file information</system:String>
-
+    <system:String x:Key="string_interp_checkingXBTP">Checking {0} BTP</system:String>
+    <!-- 0={DLC Folder Name}. BTP is a noun, leave it as is, it is a mod manager feature name. -->
+    <system:String x:Key="string_interp_checkingXTFCMips">Checking {0} TFC mips</system:String>
+    <!-- 0={DLC Folder Name} TFC is a noun, leave it as is. Mips are the individual LODs of a texture (bigger as you get closer) -->
+    
     <!-- StringStructParser-->
     <system:String x:Key="string_interp_ssp_unopenedParenthsisFound">Error parsing parenthesis split list: Found closing parenthesis that does not match open parenthesis at position {0} in string {1}</system:String>
     <!-- 0={Position} 1={Original string} -->

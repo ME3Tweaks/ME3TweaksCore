@@ -1,5 +1,4 @@
-﻿#if DEBUG
-using System.IO;
+﻿using System.IO;
 using LegendaryExplorerCore.Compression;
 using LegendaryExplorerCore.Gammtek.Extensions.Collections.Generic;
 using LegendaryExplorerCore.Helpers;
@@ -9,8 +8,9 @@ using ME3TweaksCore.Services;
 
 namespace ME3TweaksCore.Assets.VanillaDatabase
 {
-    class MD5Gen
+    public class MD5Gen
     {
+#if DEBUG
         public static void UpdateMD5Map(MEGame game, string directory, string outName)
         {
             var outF = $@"C:\Users\mgame\source\repos\ME3Tweaks\MassEffectModManager\MassEffectModManagerCore\modmanager\gamemd5\{outName}";
@@ -116,6 +116,6 @@ namespace ME3TweaksCore.Assets.VanillaDatabase
                 ((byte)hexChar - (byte)'0') :
                 10 + ((byte)hexChar - (byte)'a'));
         }
+#endif
     }
 }
-#endif

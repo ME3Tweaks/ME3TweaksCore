@@ -24,7 +24,7 @@ namespace ME3TweaksCore.Services.Restore
     /// Object that contains the logic for performing the restoration of a game.
     /// </summary>
     [AddINotifyPropertyChangedInterface]
-    public class GameRestore
+    public partial class GameRestore
     {
         public MEGame Game { get; }
 
@@ -100,7 +100,7 @@ namespace ME3TweaksCore.Services.Restore
         /// <returns></returns>
         private static bool ShouldLogEveryCopiedFileDefault()
         {
-            return false;
+            return true;
         }
 
 
@@ -298,9 +298,6 @@ namespace ME3TweaksCore.Services.Restore
             backupStatus.BackupStatus = LC.GetString(LC.string_restoringFromBackup);
             UpdateStatusCallback?.Invoke(backupStatus.BackupStatus);
 
-            string currentRoboCopyFile = null;
-
-            // Backup gamersettings.ini
             string gamerSettings = null;
             if (destTarget != null && destTarget.Game.IsLEGame())
             {
@@ -312,9 +309,39 @@ namespace ME3TweaksCore.Services.Restore
                 }
             }
 
-            // This doesn't work on Linux
+            var destinationPath = destinationPathOverride ?? destTarget?.TargetPath;
+            if (string.IsNullOrWhiteSpace(destinationPath))
+            {
+                MLog.Error(@"Restore destination path was not specified.");
+                SetSleepPrevention(false);
+                return;
+            }
+
+            if (WineWorkarounds.WineDetected)
+            {
+                ExecuteRestoreUsingRsync(backupPath, destinationPath, backupStatus, logEachFileCopied);
+            }
+            else
+            {
+                ExecuteRestoreUsingRobocopy(backupPath, destinationPath, backupStatus, logEachFileCopied);
+            }
+
+            SetSleepPrevention(false);
+
+            if (gamerSettings != null)
+            {
+                var gamerSettingsF = MEDirectories.GetLODConfigFile(destTarget.Game, destTarget.TargetPath);
+                Directory.GetParent(gamerSettingsF).Create();
+                File.WriteAllText(gamerSettingsF, gamerSettings);
+                MLog.Information(@"Restored gamersettings.ini");
+            }
+        }
+
+        private void ExecuteRestoreUsingRobocopy(string backupPath, string destinationPath, GameBackupStatus backupStatus, bool logEachFileCopied)
+        {
+            string currentRoboCopyFile = null;
             RoboCommand rc = new RoboCommand();
-            rc.CopyOptions.Destination = destinationPathOverride ?? destTarget.TargetPath;
+            rc.CopyOptions.Destination = destinationPath;
             rc.CopyOptions.Source = backupPath;
             rc.CopyOptions.Mirror = true;
             rc.CopyOptions.MultiThreadedCopiesCount = 2;
@@ -336,22 +363,12 @@ namespace ME3TweaksCore.Services.Restore
                     }
                     backupStatus.BackupLocationStatus = LC.GetString(LC.string_interp_copyingX, currentRoboCopyFile);
                     UpdateStatusCallback?.Invoke(backupStatus.BackupLocationStatus);
-
                 }
             };
-            MLog.Information($@"Beginning robocopy restore: {backupPath} -> {rc.CopyOptions.Destination}");
-            rc.Start().Wait();
-            SetSleepPrevention(false);
-            MLog.Information(@"Robocopy restore has completed");
 
-            // Restore gamersettings
-            if (gamerSettings != null)
-            {
-                var gamerSettingsF = MEDirectories.GetLODConfigFile(destTarget.Game, destTarget.TargetPath);
-                Directory.GetParent(gamerSettingsF).Create();
-                File.WriteAllText(gamerSettingsF, gamerSettings);
-                MLog.Information(@"Restored gamersettings.ini");
-            }
+            MLog.Information($@"Beginning robocopy restore: {backupPath} -> {destinationPath}");
+            rc.Start().Wait();
+            MLog.Information(@"Robocopy restore has completed");
         }
 
         /// <summary>
