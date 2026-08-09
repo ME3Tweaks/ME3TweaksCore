@@ -454,8 +454,7 @@ namespace ME3TweaksCore.NativeMods
                         DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/MilanHost.asi",
                         IsBeta = false,
                         Hidden = false,
-                        DevModeOnly = false
-                    }]
+                        DevModeOnly = false                    }]
                 });
 
                 // Add DebugLogger
