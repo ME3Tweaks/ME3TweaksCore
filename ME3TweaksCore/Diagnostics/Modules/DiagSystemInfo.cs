@@ -89,100 +89,100 @@ namespace ME3TweaksCore.Diagnostics.Modules
                 diag.AddDiagLine(@"Unable to get the read amount of physically installed ram.", LogSeverity.WARN);
             }
 
-            if (!WineWorkarounds.WineDetected)
+            MLog.Information(@"Collecting video card information");
+            // Enumerate the Display Adapters registry key
+            int vidCardIndex = 1;
+            using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}"))
             {
-                MLog.Information(@"Collecting video card information");
-                // Enumerate the Display Adapters registry key
-                int vidCardIndex = 1;
-                using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}"))
+                if (key != null)
                 {
-                    if (key != null)
+                    var subNames = key.GetSubKeyNames();
+                    foreach (string adapterRegistryIndex in subNames)
                     {
-                        var subNames = key.GetSubKeyNames();
-                        foreach (string adapterRegistryIndex in subNames)
+                        if (!int.TryParse(adapterRegistryIndex, out _)) continue; // Only go into numerical ones
+                        try
                         {
-                            if (!int.TryParse(adapterRegistryIndex, out _)) continue; // Only go into numerical ones
-                            try
+                            var videoKey = key.OpenSubKey(adapterRegistryIndex);
+
+                            // Get memory. If memory is not populated then this is not active right now (I think)
+                            long vidCardSizeInBytes = (long)videoKey.GetValue(@"HardwareInformation.qwMemorySize", -1L);
+                            ulong vidCardSizeInBytesIntegrated = 1uL;
+                            if (vidCardSizeInBytes == -1)
                             {
-                                var videoKey = key.OpenSubKey(adapterRegistryIndex);
-
-                                // Get memory. If memory is not populated then this is not active right now (I think)
-                                long vidCardSizeInBytes = (long)videoKey.GetValue(@"HardwareInformation.qwMemorySize", -1L);
-                                ulong vidCardSizeInBytesIntegrated = 1uL;
-                                if (vidCardSizeInBytes == -1)
+                                var memSize = videoKey.GetValue(@"HardwareInformation.MemorySize", 1uL); // We use 1 because 2-4GB range is realistic. But a 1 byte video card?
+                                if (memSize is byte[] whyWouldYouPutThisInBytes)
                                 {
-                                    var memSize = videoKey.GetValue(@"HardwareInformation.MemorySize", 1uL); // We use 1 because 2-4GB range is realistic. But a 1 byte video card?
-                                    if (memSize is byte[] whyWouldYouPutThisInBytes)
-                                    {
-                                        vidCardSizeInBytesIntegrated = BitConverter.ToUInt32(whyWouldYouPutThisInBytes);
-                                    }
-                                    else if (memSize is long l)
-                                    {
-                                        vidCardSizeInBytesIntegrated = (ulong)l;
-                                    }
+                                    vidCardSizeInBytesIntegrated = BitConverter.ToUInt32(whyWouldYouPutThisInBytes);
                                 }
-                                if (vidCardSizeInBytes == -1 && vidCardSizeInBytesIntegrated == 1) continue; // Not defined
-
-                                string vidCardName = @"Unknown name";
-
-                                // Try 1: Use DriverDesc
-                                var vidCardNameReg = videoKey.GetValue(@"DriverDesc");
-                                if (vidCardNameReg is string str)
+                                else if (memSize is long l)
                                 {
-                                    vidCardName = str;
+                                    vidCardSizeInBytesIntegrated = (ulong)l;
                                 }
-                                else
-                                {
-                                    vidCardNameReg = null; // ensure null for flow control below
-                                }
-
-                                if (vidCardNameReg == null)
-                                {
-                                    // Try 2: Read AdapterString
-                                    vidCardNameReg = videoKey.GetValue(@"HardwareInformation.AdapterString",
-                                        @"Unable to get adapter name");
-                                    if (vidCardNameReg is byte[] bytes)
-                                    {
-                                        // AMD Radeon 6700XT on eGPU writes REG_BINARY for some reason
-                                        vidCardName =
-                                            Encoding.Unicode.GetString(bytes)
-                                                .Trim(); // During upload step we have to strip \0 or it'll break the log viewer due to how lzma-js works
-                                    }
-                                    else if (vidCardNameReg is string str2)
-                                    {
-                                        vidCardName = str2;
-                                    }
-                                }
-
-                                string vidDriverVersion = (string)videoKey.GetValue(@"DriverVersion", @"Unable to get driver version");
-                                string vidDriverDate = (string)videoKey.GetValue(@"DriverDate", @"Unable to get driver date");
-
-                                diag.AddDiagLine();
-                                diag.AddDiagLine($@"Video Card {(vidCardIndex++)}", LogSeverity.BOLD);
-                                diag.AddDiagLine($@"Name: {vidCardName}");
-                                if (vidCardSizeInBytesIntegrated == 1 && vidCardSizeInBytes == -1)
-                                {
-                                    diag.AddDiagLine($@"Memory: (System Shared)");
-                                }
-                                else if (vidCardSizeInBytes > 0)
-                                {
-                                    diag.AddDiagLine($@"Memory: {FileSize.FormatSize(vidCardSizeInBytes)}");
-                                }
-                                else
-                                {
-                                    diag.AddDiagLine($@"Memory: {FileSize.FormatSize(vidCardSizeInBytesIntegrated)}");
-                                }
-                                diag.AddDiagLine($@"Driver Version: {vidDriverVersion}");
-                                diag.AddDiagLine($@"Driver Date: {vidDriverDate}");
                             }
-                            catch (Exception ex)
+                            if (vidCardSizeInBytes == -1 && vidCardSizeInBytesIntegrated == 1) continue; // Not defined
+
+                            string vidCardName = @"Unknown name";
+
+                            // Try 1: Use DriverDesc
+                            var vidCardNameReg = videoKey.GetValue(@"DriverDesc");
+                            if (vidCardNameReg is string str)
                             {
-                                diag.AddDiagLine($@"Error getting video card information: {ex.Message}", LogSeverity.WARN);
+                                vidCardName = str;
                             }
+                            else
+                            {
+                                vidCardNameReg = null; // ensure null for flow control below
+                            }
+
+                            if (vidCardNameReg == null)
+                            {
+                                // Try 2: Read AdapterString
+                                vidCardNameReg = videoKey.GetValue(@"HardwareInformation.AdapterString",
+                                    @"Unable to get adapter name");
+                                if (vidCardNameReg is byte[] bytes)
+                                {
+                                    // AMD Radeon 6700XT on eGPU writes REG_BINARY for some reason
+                                    vidCardName =
+                                        Encoding.Unicode.GetString(bytes)
+                                            .Trim(); // During upload step we have to strip \0 or it'll break the log viewer due to how lzma-js works
+                                }
+                                else if (vidCardNameReg is string str2)
+                                {
+                                    vidCardName = str2;
+                                }
+                            }
+
+                            string vidDriverVersion = (string)videoKey.GetValue(@"DriverVersion", @"Unable to get driver version");
+                            string vidDriverDate = (string)videoKey.GetValue(@"DriverDate", @"Unable to get driver date");
+
+                            diag.AddDiagLine();
+                            diag.AddDiagLine($@"Video Card {(vidCardIndex++)}", LogSeverity.BOLD);
+                            diag.AddDiagLine($@"Name: {vidCardName}");
+                            if (vidCardSizeInBytesIntegrated == 1 && vidCardSizeInBytes == -1)
+                            {
+                                diag.AddDiagLine($@"Memory: (System Shared)");
+                            }
+                            else if (vidCardSizeInBytes > 0)
+                            {
+                                diag.AddDiagLine($@"Memory: {FileSize.FormatSize(vidCardSizeInBytes)}");
+                            }
+                            else
+                            {
+                                diag.AddDiagLine($@"Memory: {FileSize.FormatSize(vidCardSizeInBytesIntegrated)}");
+                            }
+                            diag.AddDiagLine($@"Driver Version: {vidDriverVersion}");
+                            diag.AddDiagLine($@"Driver Date: {vidDriverDate}");
+                        }
+                        catch (Exception ex)
+                        {
+                            diag.AddDiagLine($@"Error getting video card information: {ex.Message}", LogSeverity.WARN);
                         }
                     }
                 }
+            }
 
+            if (!WineWorkarounds.WineDetected)
+            {
                 // Antivirus
                 var avs = MUtilities.GetListOfInstalledAV();
                 diag.AddDiagLine(@"Antivirus products", LogSeverity.BOLD);
