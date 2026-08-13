@@ -660,7 +660,9 @@ namespace ME3TweaksCore.Targets
                 case MEGame.LMP:
                     validationFiles = new[]
                     {
-                        Path.Combine(TargetPath, @"Binaries", @"Win64", @"MassEffect3.exe"),
+                        Path.Combine(TargetPath, @"Binaries", @"Win64", @"MassEffectMultiplayer.exe"),
+                        Path.Combine(TargetPath, @"BioGame",  @"DLC", @"DLC_MOD_ProjectMilan", @"CookedPCConsole", @"BIOP_MP_Common.pcc"),
+
                         // TODO: Add more once we figure this out further
                     };
                     break;

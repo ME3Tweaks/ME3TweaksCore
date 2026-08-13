@@ -36,6 +36,7 @@ namespace ME3TweaksCore.Services
         public static CaseInsensitiveConcurrentDictionary<List<(int size, string md5)>> LE1VanillaDatabase = new();
         public static CaseInsensitiveConcurrentDictionary<List<(int size, string md5)>> LE2VanillaDatabase = new();
         public static CaseInsensitiveConcurrentDictionary<List<(int size, string md5)>> LE3VanillaDatabase = new();
+        public static CaseInsensitiveConcurrentDictionary<List<(int size, string md5)>> LMPVanillaDatabase = new();
         public static CaseInsensitiveConcurrentDictionary<List<(int size, string md5)>> LELauncherVanillaDatabase = new();
 
         private static bool? ME1LoadedDatabaseIsPL = null;
@@ -94,12 +95,10 @@ namespace ME3TweaksCore.Services
                     ParseDatabase(lelstream, LELauncherVanillaDatabase);
                     return LELauncherVanillaDatabase;
                 case MEGame.LMP:
-                    // TODO: CHANGE TO LMP
-                    if (LE3VanillaDatabase.Count > 0) return LE3VanillaDatabase;
-                    assetPrefix = $@"ME3TweaksCore.Assets.VanillaDatabase.le3";
+                    if (LMPVanillaDatabase.Count > 0) return LMPVanillaDatabase;
                     var lmpstream = MUtilities.ExtractInternalFileToStream($@"{assetPrefix}.bin");
-                    ParseDatabase(lmpstream, LE3VanillaDatabase);
-                    return LE3VanillaDatabase;
+                    ParseDatabase(lmpstream, LMPVanillaDatabase);
+                    return LMPVanillaDatabase;
 
             }
 
@@ -461,12 +460,12 @@ namespace ME3TweaksCore.Services
                     break;
                 case MEGame.LMP:
                     // TODO: THIS NEEDS SET TO LMP
-                    if (LE3VanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.LE3);
-                    vanillaDB = LE3VanillaDatabase;
+                    if (LMPVanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.LMP);
+                    vanillaDB = LMPVanillaDatabase;
                     break;
 
                 default:
-                    throw new Exception(@"Cannot vanilla check against game that is not ME1/ME2/ME3/LE1/LE2/LE3/LELauncher");
+                    throw new Exception(@"Cannot vanilla check against game that is not ME1/ME2/ME3/LE1/LE2/LE3/LMP/LELauncher");
             }
 
             var di = new DirectoryInfo(target.TargetPath);
@@ -642,8 +641,12 @@ namespace ME3TweaksCore.Services
                     if (LE3VanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.LE3);
                     vanillaDB = LE3VanillaDatabase;
                     break;
+                case MEGame.LMP:
+                    if (LE3VanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.LMP);
+                    vanillaDB = LMPVanillaDatabase;
+                    break;
                 default:
-                    throw new Exception(@"Cannot vanilla check against game that is not ME1/ME2/ME3");
+                    throw new Exception(@"Cannot vanilla check against game that is not ME1/ME2/ME3 or LE");
             }
             if (vanillaDB.TryGetValue(relativeFilepath, out var info))
             {
@@ -696,7 +699,7 @@ namespace ME3TweaksCore.Services
                     return (md5, le2result);
                 case MEGame.LE3:
                 case MEGame.LMP:
-                    SUPPORTED_HASHES_LE3.TryGetValue(md5, out var le3result);
+                    SUPPORTED_HASHES_LE3.TryGetValue(md5, out var le3result); // LMP and LE3 use same hash
                     return (md5, le3result);
                 case MEGame.LELauncher:
                     SUPPORTED_HASHES_LEL.TryGetValue(md5, out var lelresult);
