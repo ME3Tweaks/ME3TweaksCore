@@ -367,3 +367,6 @@ ME3TweaksCore/Localization/Dictionaries/*.lzma
 
 # Do not commit the hash files, clients must build them 
 ME3TweaksCore/Build/*.hash
+
+# Deploy tool will automatically update these; no point caching them anymore
+ME3TweaksCore/NativeMods/CachedASI
