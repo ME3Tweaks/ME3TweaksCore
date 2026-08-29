@@ -1,7 +1,4 @@
-﻿//#define JPATCH_DEBUG
-// Uncomment the above to print debug output, same as -v on the jdiff.exe program (0.8.4)
-
-/*
+﻿/*
     A C# Implementation of JoJoDiff's JPatch functionality.
     Supports 0.8.4 and below diff files.
     Copyright (C) 2019-2023 Mgamerz
@@ -24,10 +21,13 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+// This implementation was written by ME3Tweaks.
+
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace ME3TweaksCore.Helpers
 {
@@ -37,46 +37,142 @@ namespace ME3TweaksCore.Helpers
     [Localizable(false)]
     public class JPatch
     {
-#if JPATCH_DEBUG
-        public static void DebugTest()
+        /// <summary>
+        /// Forward-only buffered reader over the patch stream. Batches <see cref="Stream.Read"/>
+        /// calls instead of paying a virtual-dispatch cost per byte via <see cref="Stream.ReadByte"/>,
+        /// and exposes a lookahead span so runs of ordinary (non-opcode) bytes can be bulk-copied
+        /// instead of processed one byte at a time.
+        /// </summary>
+        private sealed class PatchReader
         {
-            // For debugging    
+            private readonly Stream mStream;
+            private readonly byte[] mBuf;
+            private int mPos;
+            private int mLen;
+            private long mConsumed;
 
-            var rootpath = @"C:\Users\Mgamerz\source\repos\Mgamerz\BuildTools\ME3Tweaks\Generic\PatchBuilder";
-            var sourcefile = Path.Combine(rootpath, "BioP_MPBrdg-orig.pcc");
-            //string oldpatch = Path.Combine(rootpath, "oldpatch");
-            string newpatch = Path.Combine(rootpath, "patch");
-
-            var destFile = Path.Combine(rootpath, "BioP_MPBrdg.pcc");
-            var destMd5 = Utilities.CalculateHash(destFile);
-            var destSize = new FileInfo(destFile).Length;
-            using FileStream sourceStream = new FileStream(sourcefile, FileMode.Open);
-            //using FileStream oldPatchStream = new FileStream(oldpatch, FileMode.Open);
-            using FileStream newPatchStream = new FileStream(newpatch, FileMode.Open);
-            MemoryStream outStream = new MemoryStream();
-            //ApplyJPatch(sourceStream, oldPatchStream, outStream);
-            //var oldCalcedMd5 = Utilities.CalculateHash(outStream);
-            //if (destMd5 != oldCalcedMd5)
-            //{
-            //    Debug.WriteLine("Old jpatch failed! Wrong MD5");
-            //}
-
-            sourceStream.Position = 0;
-            outStream = new MemoryStream();
-            var result = ApplyJPatch(sourceStream, newPatchStream, outStream);
-
-            if (outStream.Length != destSize)
+            public PatchReader(Stream stream, int bufferSize = 64 * 1024)
             {
-                Debug.WriteLine($"Wrong new patch size! Should be {destSize} however we got {outStream.Length}");
+                mStream = stream;
+                mBuf = new byte[bufferSize];
             }
 
-            var newCalcedMd5 = Utilities.CalculateHash(outStream);
-            if (destMd5 != newCalcedMd5)
+            /// <summary>
+            /// Logical count of bytes returned so far via <see cref="ReadByte"/>/<see cref="Advance"/> --
+            /// NOT the same as the underlying stream's Position, which may be read ahead into the buffer.
+            /// </summary>
+            public long Position => mConsumed;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public int ReadByte()
             {
-                Debug.WriteLine("New jpatch failed! Wrong MD5");
+                if (mPos >= mLen && !Refill()) return EOF;
+                mConsumed++;
+                return mBuf[mPos++];
+            }
+
+            /// <summary>
+            /// Currently-buffered, not-yet-consumed bytes (refilling from the stream if the buffer
+            /// is empty). Does not advance the read cursor -- call <see cref="Advance"/> for that.
+            /// </summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public ReadOnlySpan<byte> PeekBuffered()
+            {
+                if (mPos >= mLen && !Refill()) return ReadOnlySpan<byte>.Empty;
+                return new ReadOnlySpan<byte>(mBuf, mPos, mLen - mPos);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Advance(int count)
+            {
+                mPos += count;
+                mConsumed += count;
+            }
+
+            private bool Refill()
+            {
+                mLen = mStream.Read(mBuf, 0, mBuf.Length);
+                mPos = 0;
+                return mLen > 0;
             }
         }
-#endif
+
+        /// <summary>
+        /// Buffered writer over the output stream. Batches <see cref="Stream.Write"/> calls instead
+        /// of paying a virtual-dispatch cost per byte via <see cref="Stream.WriteByte"/>. Must be
+        /// flushed (see <see cref="Flush"/>) once writing is complete.
+        /// </summary>
+        private sealed class OutputWriter
+        {
+            private readonly Stream mStream;
+            private readonly byte[] mBuf;
+            private int mPos;
+
+            // Separate scratch buffer for CopyFrom (EQL runs read directly from the source
+            // stream). Owned per-OutputWriter-instance (i.e. per ApplyJPatch call) rather than
+            // shared/static, so concurrent ApplyJPatch calls on different threads never race
+            // on it the way a shared static buffer would.
+            private byte[] mCopyBuf;
+
+            public OutputWriter(Stream stream, int bufferSize = 64 * 1024)
+            {
+                mStream = stream;
+                mBuf = new byte[bufferSize];
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void WriteByte(byte b)
+            {
+                if (mPos == mBuf.Length) FlushBuffer();
+                mBuf[mPos++] = b;
+            }
+
+            public void Write(ReadOnlySpan<byte> data)
+            {
+                // Writes at least as large as the whole buffer bypass it entirely (after
+                // flushing anything already pending) to avoid a redundant extra copy.
+                if (data.Length >= mBuf.Length)
+                {
+                    FlushBuffer();
+                    mStream.Write(data);
+                    return;
+                }
+
+                if (mPos + data.Length > mBuf.Length) FlushBuffer();
+                data.CopyTo(mBuf.AsSpan(mPos));
+                mPos += data.Length;
+            }
+
+            public void Flush() => FlushBuffer();
+
+            /// <summary>
+            /// Copies <paramref name="bytes"/> bytes directly from <paramref name="source"/>
+            /// into this writer, for EQL runs. Reuses a per-instance scratch buffer across
+            /// calls instead of allocating one per invocation (an EQL-heavy patch can contain
+            /// many separate equal runs).
+            /// </summary>
+            public void CopyFrom(Stream source, int bytes)
+            {
+                mCopyBuf ??= new byte[65536];
+
+                int read;
+                while (bytes > 0 &&
+                       (read = source.Read(mCopyBuf, 0, Math.Min(mCopyBuf.Length, bytes))) > 0)
+                {
+                    Write(new ReadOnlySpan<byte>(mCopyBuf, 0, read));
+                    bytes -= read;
+                }
+            }
+
+            private void FlushBuffer()
+            {
+                if (mPos > 0)
+                {
+                    mStream.Write(mBuf, 0, mPos);
+                    mPos = 0;
+                }
+            }
+        }
 
         /// <summary>
         /// Opcodes used by JoJoDiff
@@ -130,99 +226,133 @@ namespace ME3TweaksCore.Helpers
             outData.Position = 0;
 
             long patchLen = patchData.Length;
-            int readByte = 0;
-            int peekChar1;
-            int peekChar2;
+            var reader = new PatchReader(patchData);
+            var writer = new OutputWriter(outData);
 
-            //Read patch data.
-            while (readByte != EOF) // I don't think this condition will occur unless patch is malformed
+            // A patch built from a highly-fragmented diff (e.g. a full framework/build-number
+            // change, where the algorithm finds little to align on) can decompose into
+            // millions of tiny opcode operations -- one per byte moved -- and the loop below
+            // invokes percentDoneCallback once per operation. Calling into a UI-bound
+            // callback (property setters that trigger data-binding updates) millions of times
+            // dwarfs JPatch's own work, so throttle to roughly every 0.5% of the patch file
+            // (min 64KB) instead of every single operation. This does not change what the
+            // callback reports -- still (bytes of patchData consumed, total patch length) --
+            // only how often it's called.
+            long progressStep = Math.Max(patchLen / 200, 64 * 1024);
+            long nextProgressAt = 0;
+
+            try
             {
-                percentDoneCallback?.Invoke(patchData.Position, patchLen);
-                // Read operator from input, unless this has already been done
-                if (readByte == 0)
-                {
-                    peekChar1 = patchData.ReadByte();
-                    if (peekChar1 == EOF)
-                        break; // We have hit the end of the file
+                int readByte = 0;
+                int peekChar1;
+                int peekChar2;
 
-                    if (peekChar1 == (int)JojoOpcode.OPERATION_ESC)
+                //Read patch data.
+                while (readByte != EOF) // I don't think this condition will occur unless patch is malformed
+                {
+                    if (percentDoneCallback != null && reader.Position >= nextProgressAt)
                     {
-                        peekChar2 = patchData.ReadByte();
-                        switch (peekChar2)
+                        percentDoneCallback(reader.Position, patchLen);
+                        nextProgressAt = reader.Position + progressStep;
+                    }
+                    // Read operator from input, unless this has already been done
+                    if (readByte == 0)
+                    {
+                        peekChar1 = reader.ReadByte();
+                        if (peekChar1 == EOF)
+                            break; // We have hit the end of the file
+
+                        if (peekChar1 == (int)JojoOpcode.OPERATION_ESC)
                         {
-                            case (int)JojoOpcode.OPERATION_EQL:
-                            case (int)JojoOpcode.OPERATION_DEL:
-                            case (int)JojoOpcode.OPERATION_BKT:
-                            case (int)JojoOpcode.OPERATION_MOD:
-                            case (int)JojoOpcode.OPERATION_INS:
-                                readByte = peekChar2;
-                                peekChar2 = EOF;
-                                peekChar1 = EOF;
-                                break;
-                            case EOF:
-                                // FAILED, EOF
-                                Debug.WriteLine(@"Unexpected end of patch file!");
-                                return false;
-                            default:
-                                // ESC xxx or ESC ESC at the start of a sequence
-                                // Resolve by double pending bytes: peekChar1 and peekChar2
-                                readByte = (int)JojoOpcode.OPERATION_MOD;
-                                break;
+                            peekChar2 = reader.ReadByte();
+                            switch (peekChar2)
+                            {
+                                case (int)JojoOpcode.OPERATION_EQL:
+                                case (int)JojoOpcode.OPERATION_DEL:
+                                case (int)JojoOpcode.OPERATION_BKT:
+                                case (int)JojoOpcode.OPERATION_MOD:
+                                case (int)JojoOpcode.OPERATION_INS:
+                                    readByte = peekChar2;
+                                    peekChar2 = EOF;
+                                    peekChar1 = EOF;
+                                    break;
+                                case EOF:
+                                    // FAILED, EOF
+                                    Debug.WriteLine(@"Unexpected end of patch file!");
+                                    return false;
+                                default:
+                                    // ESC xxx or ESC ESC at the start of a sequence
+                                    // Resolve by double pending bytes: peekChar1 and peekChar2
+                                    readByte = (int)JojoOpcode.OPERATION_MOD;
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            // If an ESC <opr> is missing, set default operator (gaining two bytes)
+                            readByte = (int)JojoOpcode.OPERATION_MOD;
+                            peekChar2 = EOF;
                         }
                     }
                     else
                     {
-                        // If an ESC <opr> is missing, set default operator (gaining two bytes)
-                        readByte = (int)JojoOpcode.OPERATION_MOD;
+                        peekChar1 = EOF; // only needed when switching between MOD and INS
                         peekChar2 = EOF;
                     }
-                }
-                else
-                {
-                    peekChar1 = EOF; // only needed when switching between MOD and INS
-                    peekChar2 = EOF;
+
+                    //Perform operations
+                    switch (readByte)
+                    {
+                        case (int)JojoOpcode.OPERATION_MOD:
+                            //Overwrite data
+                            readByte = processModInsOpcode(sourceData, reader, writer, true, peekChar1, peekChar2);
+                            break;
+                        case (int)JojoOpcode.OPERATION_INS:
+                            //Insert new data
+                            readByte = processModInsOpcode(sourceData, reader, writer, false, peekChar1, peekChar2);
+                            break;
+                        case (int)JojoOpcode.OPERATION_EQL:
+                            //Equal, move pointers forward
+                            processEqlBktOpcode(sourceData, reader, writer, false);
+                            readByte = 0;
+                            break;
+                        case (int)JojoOpcode.OPERATION_BKT:
+                            //Backtrace, move backwards
+                            processEqlBktOpcode(sourceData, reader, writer, true);
+                            readByte = 0;
+                            break;
+                        case (int)JojoOpcode.OPERATION_DEL:
+                            //Delete, move the source data position forward without writing anything out
+                            processDel(sourceData, reader);
+                            readByte = 0; // Makes next op read fully (ESC 0xA7)
+                            break;
+                        default:
+                            Debug.WriteLine(@"Unsupported opcode: " + readByte.ToString(@"X2"));
+                            break;
+                    }
                 }
 
-                //Perform operations
-                switch (readByte)
+                if (reader.Position != patchLen)
                 {
-                    case (int)JojoOpcode.OPERATION_MOD:
-                        //Overwrite data
-                        readByte = processModInsOpcode(sourceData, patchData, outData, true, peekChar1, peekChar2);
-                        break;
-                    case (int)JojoOpcode.OPERATION_INS:
-                        //Insert new data
-                        readByte = processModInsOpcode(sourceData, patchData, outData, false, peekChar1, peekChar2);
-                        break;
-                    case (int)JojoOpcode.OPERATION_EQL:
-                        //Equal, move pointers forward
-                        processEqlBktOpcode(sourceData, patchData, outData, false);
-                        readByte = 0;
-                        break;
-                    case (int)JojoOpcode.OPERATION_BKT:
-                        //Backtrace, move backwards
-                        processEqlBktOpcode(sourceData, patchData, outData, true);
-                        readByte = 0;
-                        break;
-                    case (int)JojoOpcode.OPERATION_DEL:
-                        //Delete, move the source data position forward without writing anything out
-                        processDel(sourceData, patchData);
-                        readByte = 0; // Makes next op read fully (ESC 0xA7)
-                        break;
-                    default:
-                        Debug.WriteLine(@"Unsupported opcode: " + readByte.ToString(@"X2"));
-                        break;
+                    Debug.WriteLine(@"Didn't read until end of patch file!");
                 }
+
+                // Throttling above can leave the last reported position short of patchLen
+                // (the final operation(s) may not cross another progressStep boundary) --
+                // send one last call so a bound progress bar actually reaches completion.
+                percentDoneCallback?.Invoke(patchLen, patchLen);
+
+                return true; //OK
             }
-#if JPATCH_DEBUG
-            Debug.WriteLine($"\t{sourceData.Position}\t{outData.Position}\tEOF");
-#endif
-            if (patchData.Position != patchData.Length)
+            finally
             {
-                Debug.WriteLine(@"Didn't read until end of patch file!");
+                // Flush unconditionally (success, the "unexpected EOF" early-return, or any
+                // future early-return/exception path) so a caller that inspects outData after
+                // a false return -- as one real call site does -- still sees exactly the bytes
+                // that were "written" up to that point, matching the original unbuffered
+                // WriteByte()-per-call behavior byte for byte.
+                writer.Flush();
             }
-
-            return true; //OK
         }
 
         /// <summary>
@@ -230,13 +360,10 @@ namespace ME3TweaksCore.Helpers
         /// </summary>
         /// <param name="sourceData">The sourcedata stream</param>
         /// <param name="patchData">The patchdata stream</param>
-        private static void processDel(Stream sourceData, Stream patchData)
+        private static void processDel(Stream sourceData, PatchReader patchData)
         {
             //Delete data from source. Essentially, skip the data.
             var len = getJLength(patchData);
-#if JPATCH_DEBUG
-            Debug.WriteLine($"\t{sourceData.Position}\t{outData.Position}\tDEL\t{len}");
-#endif
             sourceData.Position += len;
         }
 
@@ -245,7 +372,7 @@ namespace ME3TweaksCore.Helpers
         /// </summary>
         /// <param name="patchData">The patch stream/param>
         /// <returns>A length value, up to 2GiB</returns>
-        private static int getJLength(Stream patchData)
+        private static int getJLength(PatchReader patchData)
         {
             /*From Jojo diff source documentation:
             * 
@@ -295,7 +422,7 @@ namespace ME3TweaksCore.Helpers
         /// <param name="peekChar1">The first peeked byte ahead of the opcode</param>
         /// <param name="peekChar2">The second peeked byte ahead of the opcode</param>
         /// <returns></returns>
-        private static int processModInsOpcode(Stream sourceData, Stream patchData, Stream outData, bool modifyMode, int peekChar1, int peekChar2)
+        private static int processModInsOpcode(Stream sourceData, PatchReader patchData, OutputWriter outData, bool modifyMode, int peekChar1, int peekChar2)
         {
             // First write pending bytes
             if (peekChar1 != EOF)
@@ -316,21 +443,42 @@ namespace ME3TweaksCore.Helpers
                 }
             }
 
-            int readChar;
-            while ((readChar = patchData.ReadByte()) != EOF)
+            // Runs of ordinary (non-ESC) bytes are bulk-copied straight from the patch
+            // reader's buffer to the output writer instead of going through ReadByte()/
+            // WriteByte() one byte at a time -- this loop is the hottest path in JPatch
+            // for edit-dense patches, since every MOD/INS byte passes through it.
+            while (true)
             {
-                if (readChar != (int)JojoOpcode.OPERATION_ESC)
+                ReadOnlySpan<byte> avail = patchData.PeekBuffered();
+                if (avail.IsEmpty)
                 {
-                    //not escape byte, just write it
-                    outData.WriteByte((byte)readChar);
-                    if (modifyMode)
-                    {
-                        sourceData.Position++;
-                    }
+                    return EOF;
+                }
+
+                int escIdx = avail.IndexOf((byte)JojoOpcode.OPERATION_ESC);
+                if (escIdx < 0)
+                {
+                    // No ESC anywhere in the currently-buffered chunk: bulk-copy all of it.
+                    outData.Write(avail);
+                    if (modifyMode) sourceData.Position += avail.Length;
+                    patchData.Advance(avail.Length);
                     continue;
                 }
 
+                if (escIdx > 0)
+                {
+                    ReadOnlySpan<byte> run = avail.Slice(0, escIdx);
+                    outData.Write(run);
+                    if (modifyMode) sourceData.Position += run.Length;
+                    patchData.Advance(run.Length);
+                }
+
+                // Consume the ESC byte itself and inspect what follows -- same logic as
+                // the original byte-by-byte version, just fed from the buffered reader.
+                patchData.Advance(1);
+                const int readChar = (int)JojoOpcode.OPERATION_ESC;
                 int nextChar = patchData.ReadByte();
+
                 if (nextChar == (int)JojoOpcode.OPERATION_ESC)
                 {
                     //its <esc><esc>.
@@ -343,14 +491,13 @@ namespace ME3TweaksCore.Helpers
                 else if (isOpcode(nextChar))
                 {
                     //its <esc> <opcode>
-#if JPATCH_DEBUG
-                    Debug.WriteLine($"\t{sourceStartPos}\t{outStartPos}\t{(modifyMode ? "MOD" : "INS")}\t{outData.Position - outStartPos}");
-#endif
                     return nextChar; // loop func will process this as the next opcode
                 }
                 else
                 {
                     //it's <esc>... nothing... this shouldn't be possible but maybe some sort of edge case.
+                    //(also covers nextChar == EOF, i.e. a lone ESC at the very end of a malformed
+                    //patch stream, matching the original byte-by-byte implementation's behavior.)
                     outData.WriteByte((byte)readChar);
                     outData.WriteByte((byte)nextChar);
 
@@ -360,10 +507,6 @@ namespace ME3TweaksCore.Helpers
                     }
                 }
             }
-#if JPATCH_DEBUG
-            Debug.WriteLine($"\t{sourceData.Position}\t{outData.Position}\t{(modifyMode ? "MOD" : "INS")}\t{outData.Position - outStartPos}");
-#endif
-            return readChar;
         }
 
         /// <summary>
@@ -374,12 +517,9 @@ namespace ME3TweaksCore.Helpers
         /// <param name="patchData">The patch data stream</param>
         /// <param name="outData">The output file stream</param>
         /// <param name="backwards">If this is a backtrace (BKT) opcode. If false, this is an EQL opcode and sourcedata will be copied to the outstream for the read length</param>
-        private static void processEqlBktOpcode(Stream sourceData, Stream patchData, Stream outData, bool backwards)
+        private static void processEqlBktOpcode(Stream sourceData, PatchReader patchData, OutputWriter outData, bool backwards)
         {
             var length = getJLength(patchData);
-#if JPATCH_DEBUG
-            Debug.WriteLine($"\t{sourceData.Position}\t{outData.Position}\t{(backwards ? "BKT" : "EQL")}\t{length}");
-#endif
             if (backwards)
             {
                 sourceData.Position -= length;
@@ -387,7 +527,7 @@ namespace ME3TweaksCore.Helpers
             else
             {
                 //copy
-                CopyToEx(sourceData, outData, length);
+                outData.CopyFrom(sourceData, length);
             }
         }
 
