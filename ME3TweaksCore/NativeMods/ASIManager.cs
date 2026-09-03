@@ -431,13 +431,12 @@ namespace ME3TweaksCore.NativeMods
                 // Add LE3 ASIs that we want
                 // This prevents duplication into the manifest
                 // Once public we can have new flag for LMP cloning.
-                updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_AUTOTOC), MEGame.LMP, 1200));
                 updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_TEXTURE_OVERRIDE), MEGame.LMP, 1201));
                 updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_LINKER_PRINTER), MEGame.LMP, 1202));
                 updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_STREAMING_LEVELS_HUD), MEGame.LMP, 1203));
                 updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_DEBUGLOGGER_DEV), MEGame.LMP, 1204));
                 updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_FUNCTION_LOGGER), MEGame.LMP, 1205));
-
+                
                 // Add MilanHost
                 updateGroups.Add(new ASIMod()
                 {
@@ -456,10 +455,10 @@ namespace ME3TweaksCore.NativeMods
                             DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/MilanHost.asi",
                             IsBeta = false,
                             Hidden = false,
-                            DevModeOnly = false,                    
+                            DevModeOnly = false,
                             Game = MEGame.LMP
                         },
-                        // V2
+                        // V2 -8/12/2026
                         new ASIModVersion {
                             Name = @"MilanHost",
                             InstalledPrefix="MilanHost",
@@ -469,6 +468,45 @@ namespace ME3TweaksCore.NativeMods
                             Hash = "9e8e5f91fcd28cc1f02b7e015c7c8ff2",
                             SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
                             DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPMilanHost-v2.0.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = false,
+                            Game = MEGame.LMP
+                        },
+                        // V3 -8/26/2026
+                        new ASIModVersion {
+                            Name = @"MilanHost",
+                            InstalledPrefix="MilanHost",
+                            Author = "ME3Tweaks",
+                            Version = 3,
+                            Description = "MilanHost adds required functionality to the game to allow Project Milan to work properly.",
+                            Hash = "10ce2c82cbd7f014b8927b38f9b6a3ef",
+                            SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPMilanHost-v3.0.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = false,
+                            Game = MEGame.LMP
+                        }
+                    ]
+                });
+
+                // Add AutoTOC v3
+                updateGroups.Add(new ASIMod()
+                {
+                    UpdateGroupId = 502,
+                    Game = MEGame.LMP,
+                    Versions = [
+                        // V3 - 8/26/2026
+                        new ASIModVersion {
+                            Name = @"AutoTOC",
+                            InstalledPrefix="AutoTOC",
+                            Author = "ME3Tweaks",
+                            Version = 3,
+                            Description = "Autotoc description here.",
+                            Hash = "3e06aa2c71fcf093c658cd321e9d606a",
+                            SourceCodeLink = "https://github.com/ME3Tweaks/blahblahblah",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LEAutoTOC-v3.asi",
                             IsBeta = false,
                             Hidden = false,
                             DevModeOnly = false,
