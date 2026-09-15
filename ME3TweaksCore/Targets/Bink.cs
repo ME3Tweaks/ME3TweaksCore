@@ -16,8 +16,13 @@ namespace ME3TweaksCore.Targets
         internal const string ME1ASILoaderHash = @"30660f25ab7f7435b9f3e1a08422411a";
         internal const string ME2ASILoaderHash = @"a5318e756893f6232284202c1196da13";
         internal const string ME3ASILoaderHash = @"1acccbdae34e29ca7a50951999ed80d5";
-        internal const string LEASILoaderHash = @"ec45df878b116d491ededc3473786f6d"; // bink 2.0.0.14 by ME3Tweaks 08/20/2026 // Needs rebuilt to .15
+        internal const string LEASILoaderHash = @"f748fbf1a07c311f357e863937cd41a9"; // bink 2.0.0.15 by ME3Tweaks 09/10/2026
 
+        // Original Trilogy won't be getting updated bink dlls so we don't care about their version info
+        /// <summary>
+        /// The current version dll that mod manager supports. In debug builds, this is checked against what's installed, that way development of the bink dll won't be interfered with by M3.
+        /// </summary>
+        internal static readonly Version CurrentBinkVersionLE = new Version(2, 0, 0, 15);
 
         /// <summary>
         /// Determines if the enhanced bink video library file is installed
@@ -61,6 +66,23 @@ namespace ME3TweaksCore.Targets
 
                 if (File.Exists(binkPath))
                 {
+#if DEBUG
+                    if (target.Game.IsLEGame())
+                    {
+                        try
+                        {
+                            var fvi = FileVersionInfo.GetVersionInfo(binkPath);
+                            if (new Version(fvi.FileVersion) > CurrentBinkVersionLE)
+                            {
+                                return true;
+                            }
+                        }
+                        catch
+                        {
+                            // Don't care
+                        }
+                    }
+#endif
                     return MUtilities.CalculateHash(binkPath) == expectedHash;
                 }
             }
