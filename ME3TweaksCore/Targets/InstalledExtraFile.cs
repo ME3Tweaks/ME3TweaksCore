@@ -35,10 +35,29 @@ namespace ME3TweaksCore.Targets
             {
                 case EFileType.DLL:
                     var info = FileVersionInfo.GetVersionInfo(FilePath);
+                    var desc = "";
                     if (!string.IsNullOrWhiteSpace(info.ProductName))
                     {
-                        DisplayName += $@" ({info.ProductName.Trim()})";
+                        if (info.ProductName.Trim().Length > desc.Length)
+                        {
+                            desc = info.ProductName.Trim();
+                        }
                     }
+
+                    if (!string.IsNullOrWhiteSpace(info.FileDescription))
+                    {
+                        if (info.FileDescription.Trim().Length > desc.Length)
+                        {
+                            desc = info.FileDescription.Trim();
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(desc))
+                    {
+                        DisplayName += $@" ({desc})";
+                    }
+
+
                     break;
             }
         }

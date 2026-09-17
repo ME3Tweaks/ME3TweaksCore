@@ -202,5 +202,27 @@ namespace ME3TweaksCore.Targets
             if (target.Game == MEGame.LELauncher) return Path.Combine(target.TargetPath, @"bink2w64.dll");
             return null;
         }
+
+        /// <summary>
+        /// Reads the version information off the bink dll. This should only be used against the proxy version, so gate it behind that.
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public static FileVersionInfo GetInstalledVersion(this GameTarget target)
+        {
+            try
+            {
+                string binkPath = target.GetVanillaBinkPath();
+                if (File.Exists(binkPath))
+                {
+                    return FileVersionInfo.GetVersionInfo(binkPath);
+                }
+            }
+            catch
+            {
+                MLog.Error($"Unable to read bink version for game {target.TargetPath}");
+            }
+            return null;
+        }
     }
 }
