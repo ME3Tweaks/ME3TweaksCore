@@ -487,6 +487,21 @@ namespace ME3TweaksCore.NativeMods
                             Hidden = false,
                             DevModeOnly = false,
                             Game = MEGame.LMP
+                        },
+                        // V4 - 09/19/2026
+                        new ASIModVersion {
+                            Name = @"MilanHost",
+                            InstalledPrefix="MilanHost",
+                            Author = "ME3Tweaks",
+                            Version = 4,
+                            Description = "MilanHost adds required functionality to the game to allow Project Milan to work properly.",
+                            Hash = "ae075215434a285e50d0a19c2235888e",
+                            SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPMilanHost-v4.0.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = false,
+                            Game = MEGame.LMP
                         }
                     ]
                 });
