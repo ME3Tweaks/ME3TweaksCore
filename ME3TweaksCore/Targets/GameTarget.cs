@@ -1012,7 +1012,20 @@ namespace ME3TweaksCore.Targets
             }
             else if (Game is MEGame.ME1 || Game.IsLEGame())
             {
-                Binkw32StatusText = this.IsBinkBypassInstalled() ? LC.GetString(LC.string_bypassInstalledASIModsWillBeAbleToLoad) : LC.GetString(LC.string_bypassNotInstalledASIModsWillBeUnableToLoad);
+                var isInstalled = this.IsBinkBypassInstalled();
+                if (isInstalled)
+                {
+                    Binkw32StatusText = LC.GetString(LC.string_bypassInstalledASIModsWillBeAbleToLoad);
+                    var version = Bink.GetInstalledVersion(this);
+                    if (version != null)
+                    {
+                        Binkw32StatusText += $"\nVersion {version.FileVersion}";
+                    }
+                }
+                else
+                {
+                    Binkw32StatusText = LC.GetString(LC.string_bypassNotInstalledASIModsWillBeUnableToLoad);
+                }
             }
         }
 
