@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using LegendaryExplorerCore.Gammtek.Extensions;
+﻿using LegendaryExplorerCore.Gammtek.Extensions;
 using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Misc.ME3Tweaks;
 using LegendaryExplorerCore.Packages;
@@ -19,6 +11,14 @@ using ME3TweaksCore.Services;
 using ME3TweaksCore.Targets;
 using Newtonsoft.Json.Linq;
 using PropertyChanged;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace ME3TweaksCore.NativeMods
 {
@@ -428,6 +428,30 @@ namespace ME3TweaksCore.NativeMods
                 // Todo: Put into server manifest
                 // once we have unveiled things.
 
+                // ME3 - Add Profile Dumper
+                updateGroups.Add(new ASIMod()
+                {
+                    UpdateGroupId = 499,
+                    Game = MEGame.ME3,
+                    Versions = [
+                        // V1
+                        new ASIModVersion {
+                            Name = @"ME3MPProfileDump",
+                            InstalledPrefix="ME3MPProfileDump",
+                            Author = "ME3Tweaks",
+                            Version = 1,
+                            Description = "ME3MPProfileDump is an ASI used by ME3Tweaks Mod Manager to convert your ME3 online profile to LMP's local multiplayer profile.",
+                            Hash = "fbd140acfdb0c52de338cce41d12bced",
+                            SourceCodeLink = "https://github.com/ME3Tweaks/ME3-ASI-Plugins/ME3ProfileDump",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/ME3ProfileDump-v1.0.asi",
+                            IsBeta = false,
+                            Hidden = true,
+                            DevModeOnly = false,
+                            Game = MEGame.ME3
+                        },
+                    ]
+                });
+
                 // Add LE3 ASIs that we want
                 // This prevents duplication into the manifest
                 // Once public we can have new flag for LMP cloning.
@@ -436,7 +460,7 @@ namespace ME3TweaksCore.NativeMods
                 updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_STREAMING_LEVELS_HUD), MEGame.LMP, 1203));
                 updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_DEBUGLOGGER_DEV), MEGame.LMP, 1204));
                 updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_FUNCTION_LOGGER), MEGame.LMP, 1205));
-                
+
                 // Add MilanHost
                 updateGroups.Add(new ASIMod()
                 {
@@ -502,7 +526,37 @@ namespace ME3TweaksCore.NativeMods
                             Hidden = false,
                             DevModeOnly = false,
                             Game = MEGame.LMP
-                        }
+                        },
+                        // V5 - 09/26/2026
+                        new ASIModVersion {
+                            Name = @"MilanHost",
+                            InstalledPrefix="MilanHost",
+                            Author = "ME3Tweaks",
+                            Version = 5,
+                            Description = "MilanHost adds required functionality to the game to allow Project Milan to work properly.",
+                            Hash = "f548550034bd111d17447ffaca95c67c",
+                            SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPMilanHost-v5.0.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = false,
+                            Game = MEGame.LMP
+                        },
+                        // V6 - 09/27/2026
+                        new ASIModVersion {
+                            Name = @"MilanHost",
+                            InstalledPrefix="MilanHost",
+                            Author = "ME3Tweaks",
+                            Version = 6,
+                            Description = "MilanHost adds required functionality to the game to allow Project Milan to work properly.",
+                            Hash = "95c26ebdcded227455ad733dc025e555",
+                            SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPMilanHost-v6.0.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = false,
+                            Game = MEGame.LMP
+                        },
                     ]
                 });
 
