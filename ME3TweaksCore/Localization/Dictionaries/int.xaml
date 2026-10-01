@@ -505,5 +505,11 @@
     <system:String x:Key="string_installingMicrosoftVisualCPPRedistributable">Installing Microsoft Visual C++ Redistributable</system:String>
     <system:String x:Key="string_downloadingMicrosoftVisualCPPRedistributable">Downloading Microsoft Visual C++ Redistributable</system:String>
 
+    <!-- File deletion -->
+    <system:String x:Key="string_interp_fileInUseByProcesses">Could not delete {0} because it is open in another program: {1}. Close it, then try again.</system:String>
+    <!-- 0={file path}, 1={list of programs, like 'Mass Effect Legendary Edition (MassEffect3.exe, PID 1234)'} -->
+    <system:String x:Key="string_interp_fileInUseByUnknownProcess">Could not delete {0} because it is open in another program. Close any programs that may be using it, such as the game or modding tools, then try again.</system:String>
+    <!-- 0={file path} -->
+
 
 </ResourceDictionary>

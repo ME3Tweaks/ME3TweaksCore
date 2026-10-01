@@ -4,6 +4,7 @@ using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Misc;
 using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
+using ME3TweaksCore.Localization;
 using ME3TweaksCore.Misc;
 using ME3TweaksCore.Objects;
 using Microsoft.Win32;
@@ -394,6 +395,21 @@ namespace ME3TweaksCore.Helpers
                 }
                 catch (Exception e)
                 {
+                    if (FileLockHelper.IsFileInUseException(e))
+                    {
+                        // Windows does not say what has the file open, so find out so the user knows what to close
+                        var lockingProcesses = FileLockHelper.DescribeLockingProcesses(file);
+                        MLog.Error($@"Unable to delete file: {file}. It is in use by: {lockingProcesses ?? @"(could not be determined)"}");
+                        if (throwOnFailed)
+                        {
+                            throw new IOException(lockingProcesses != null
+                                ? LC.GetString(LC.string_interp_fileInUseByProcesses, file, lockingProcesses)
+                                : LC.GetString(LC.string_interp_fileInUseByUnknownProcess, file), e);
+                        }
+
+                        return false;
+                    }
+
                     MLog.Error($@"Unable to delete file: {file}. It may be open still: {e.Message}");
                     if (throwOnFailed)
                     {

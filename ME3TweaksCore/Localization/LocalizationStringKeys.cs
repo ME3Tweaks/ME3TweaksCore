@@ -304,5 +304,7 @@ namespace ME3TweaksCore.Localization
 		public const string string_interp_gsNotValidShader = "string_interp_gsNotValidShader";
 		public const string string_installingMicrosoftVisualCPPRedistributable = "string_installingMicrosoftVisualCPPRedistributable";
 		public const string string_downloadingMicrosoftVisualCPPRedistributable = "string_downloadingMicrosoftVisualCPPRedistributable";
+		public const string string_interp_fileInUseByProcesses = "string_interp_fileInUseByProcesses";
+		public const string string_interp_fileInUseByUnknownProcess = "string_interp_fileInUseByUnknownProcess";
 	}
 }
