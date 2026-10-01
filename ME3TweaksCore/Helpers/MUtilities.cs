@@ -192,20 +192,7 @@ namespace ME3TweaksCore.Helpers
 
             try
             {
-                switch (algorithm)
-                {
-                    case @"sha":
-                    case @"sha1":
-                        algo = SHA1.Create();
-                        break;
-                    case @"sha256":
-                        algo = SHA256.Create();
-                        break;
-                    default:
-                        algo = MD5.Create();
-                        break;
-                }
-
+                algo = CreateHashAlgorithm(algorithm);
                 stream.Position = 0;
                 Stream streamToHash = byteLenToHash > 0 ? new StreamReadLimitLengthWrapper(stream, byteLenToHash) : stream;
                 var hash = progressDelegate != null ? computeHashChunked(streamToHash, algo, progressDelegate) : algo.ComputeHash(streamToHash);
@@ -222,6 +209,89 @@ namespace ME3TweaksCore.Helpers
             {
                 algo.Dispose();
             }
+        }
+
+        /// <summary>
+        /// Calculates the hash of a file asynchronously.
+        /// </summary>
+        /// <param name="filename">File to hash</param>
+        /// <param name="algorithm">Algorithm to use. Use null for MD5.</param>
+        /// <param name="cancellationToken">Token to cancel hashing</param>
+        /// <param name="progress">Invoked with the number of bytes hashed so far</param>
+        /// <returns>Lowercase hex hash</returns>
+        public static async Task<string> CalculateHashAsync(string filename, string algorithm = null, CancellationToken cancellationToken = default, Action<long> progress = null)
+        {
+            await using var stream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            return await CalculateHashAsync(stream, algorithm, cancellationToken, progress);
+        }
+
+        /// <summary>
+        /// Calculates the hash of a stream asynchronously, from its current position to the end.
+        /// </summary>
+        /// <param name="stream">Stream to hash</param>
+        /// <param name="algorithm">Algorithm to use. Use null for MD5.</param>
+        /// <param name="cancellationToken">Token to cancel hashing</param>
+        /// <param name="progress">Invoked with the number of bytes hashed so far</param>
+        /// <returns>Lowercase hex hash</returns>
+        public static async Task<string> CalculateHashAsync(Stream stream, string algorithm = null, CancellationToken cancellationToken = default, Action<long> progress = null)
+        {
+            using var algo = CreateHashAlgorithm(algorithm);
+            return await algo.ComputeHashAsync(stream, cancellationToken, progress);
+        }
+
+        /// <summary>
+        /// Computes a hash asynchronously.
+        /// </summary>
+        /// <param name="hashAlgorithm"></param>
+        /// <param name="stream"></param>
+        /// <param name="cancellationToken"></param>
+        /// <param name="progress"></param>
+        /// <param name="bufferSize"></param>
+        /// <returns></returns>
+        public static async Task<string> ComputeHashAsync(
+            this HashAlgorithm hashAlgorithm, Stream stream,
+            CancellationToken cancellationToken = default(CancellationToken),
+            Action<long> progress = null,
+            int bufferSize = 1024 * 1024 * 4) // 4MB buffer
+        {
+            byte[] readAheadBuffer, buffer;
+            int readAheadBytesRead, bytesRead;
+            long totalBytesRead = 0;
+            readAheadBuffer = new byte[bufferSize];
+            readAheadBytesRead = await stream.ReadAsync(readAheadBuffer, 0,
+                readAheadBuffer.Length, cancellationToken);
+            totalBytesRead += readAheadBytesRead;
+            do
+            {
+                bytesRead = readAheadBytesRead;
+                buffer = readAheadBuffer;
+                readAheadBuffer = new byte[bufferSize];
+                readAheadBytesRead = await stream.ReadAsync(readAheadBuffer, 0,
+                    readAheadBuffer.Length, cancellationToken);
+                totalBytesRead += readAheadBytesRead;
+
+                if (readAheadBytesRead == 0)
+                    hashAlgorithm.TransformFinalBlock(buffer, 0, bytesRead);
+                else
+                    hashAlgorithm.TransformBlock(buffer, 0, bytesRead, buffer, 0);
+                progress?.Invoke(totalBytesRead);
+                if (cancellationToken.IsCancellationRequested)
+                    cancellationToken.ThrowIfCancellationRequested();
+            } while (readAheadBytesRead != 0);
+            return BitConverter.ToString(hashAlgorithm.Hash).Replace(@"-", string.Empty).ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// Creates the hash algorithm for the given name: sha/sha1, sha256, or MD5 for anything else (including null).
+        /// </summary>
+        private static HashAlgorithm CreateHashAlgorithm(string algorithm)
+        {
+            return algorithm switch
+            {
+                @"sha" or @"sha1" => SHA1.Create(),
+                @"sha256" => SHA256.Create(),
+                _ => MD5.Create(),
+            };
         }
 
         /// <summary>
