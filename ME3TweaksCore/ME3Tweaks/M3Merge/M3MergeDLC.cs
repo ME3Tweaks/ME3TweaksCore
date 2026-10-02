@@ -33,7 +33,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
         public static bool SupportsPlotManagerSync(this MEGame game) => game.IsGame1() || game.IsGame2();
 
         /// <summary>
-        /// If this game supports plot manager sync (merge DLC pmu files)
+        /// If this game supports squadmate outfit merge. ME2 (requires SWF edit) and LMP are not supported.
         /// </summary>
         /// <param name="game"></param>
         /// <returns></returns>
@@ -232,13 +232,13 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
 
             // The following do use the merge DLC component
             var mergeDLC = new M3MergeDLC(target);
-            if (target.Game.IsGame2() && ME2EmailMerge.NeedsMergedGame2(target))
+            if (target.Game.SupportsEmailMerge() && ME2EmailMerge.NeedsMergedGame2(target))
             {
                 if (!mergeDLC.Generated) mergeDLC.GenerateMergeDLC();
                 ME2EmailMerge.RunGame2EmailMerge(mergeDLC, setStatus);
             }
 
-            if ((target.Game == MEGame.LE2 || target.Game.IsGame3()) && SQMOutfitMerge.NeedsMerged(target))
+            if (target.Game.SupportsSquadmateMerge() && SQMOutfitMerge.NeedsMerged(target))
             {
                 if (!mergeDLC.Generated) mergeDLC.GenerateMergeDLC();
                 SQMOutfitMerge.RunSquadmateOutfitMerge(mergeDLC, setStatus);

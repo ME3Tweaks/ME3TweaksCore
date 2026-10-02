@@ -159,7 +159,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
         /// <param name="target"></param>
         public static bool NeedsMerged(GameTarget target)
         {
-            if (!target.Game.IsGame3() && target.Game != MEGame.LE2) return false;
+            if (!target.Game.SupportsSquadmateMerge()) return false;
             var sqmSupercedances = M3Directories.GetFileSupercedances(target, new[] { SQMOutfitMerge.SQUADMATE_MERGE_MANIFEST_EXTENSION });
             // Check V1
             var needsMerged = sqmSupercedances.TryGetValue(SQUADMATE_MERGE_MANIFEST_FILE, out var infoList) && infoList.Count > 0;
@@ -178,6 +178,8 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
         /// <param name="mergeDLC"></param>
         public static string RunSquadmateOutfitMerge(M3MergeDLC mergeDLC, Action<string> updateUIText)
         {
+            if (!mergeDLC.Target.Game.SupportsSquadmateMerge())
+                return null; // Game does not support squadmate merge (ME2, LMP)
             if (!mergeDLC.Generated)
                 return null; // Do not run on non-generated. It may be that a prior check determined this merge was not necessary 
             Stopwatch sw = Stopwatch.StartNew();

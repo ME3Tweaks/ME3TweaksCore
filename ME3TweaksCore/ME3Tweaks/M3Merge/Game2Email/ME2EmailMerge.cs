@@ -99,7 +99,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Game2Email
         /// <param name="target"></param>
         public static bool NeedsMergedGame2(GameTarget target)
         {
-            if (!target.Game.IsGame2()) return false;
+            if (!target.Game.SupportsEmailMerge()) return false;
             try
             {
                 var emailSupercedances = target.GetFileSupercedances(new[] { EMAIL_MERGE_FILE_SUFFIX });
@@ -129,6 +129,8 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Game2Email
         /// <exception cref="Exception"></exception>
         public static string RunGame2EmailMerge(M3MergeDLC mergeDLC, Action<string> progressChanged)
         {
+            if (!mergeDLC.Target.Game.SupportsEmailMerge())
+                return null; // Game does not support email merge
             if (!mergeDLC.Generated)
                 return null; // Do not run on non-generated. It may be that a prior check determined this merge was not necessary 
 
