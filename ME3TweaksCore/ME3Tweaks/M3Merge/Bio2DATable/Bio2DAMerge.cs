@@ -182,6 +182,8 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
             foreach (var dlc in dlcMountsInOrder)
             {
                 var dlcCookedPath = Path.Combine(target.GetDLCPath(), dlc, target.Game.CookedDirName());
+                if (!Directory.Exists(dlcCookedPath))
+                    continue;
 
                 MLog.Information($@"Looking for {BIO2DA_MERGE_FILE_SUFFIX} files in {dlcCookedPath}");
                 var m3das = Directory

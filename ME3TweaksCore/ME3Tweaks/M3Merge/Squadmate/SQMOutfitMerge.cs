@@ -203,6 +203,9 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
                 }
 
                 var dlcCookedPath = Path.Combine(mergeDLC.Target.GetDLCPath(), dlc, mergeDLC.Target.Game.CookedDirName());
+                if (!Directory.Exists(dlcCookedPath))
+                    continue;
+
                 var dlcFiles = Directory.GetFiles(dlcCookedPath, @"*", SearchOption.TopDirectoryOnly);
                 var metacmm = mergeDLC.Target.GetMetaCMMForDLC(dlc);
                 var manifestFiles = new List<string>();

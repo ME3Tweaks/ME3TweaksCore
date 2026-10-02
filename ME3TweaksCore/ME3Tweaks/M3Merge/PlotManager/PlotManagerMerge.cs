@@ -244,7 +244,9 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.PlotManager
             Dictionary<string, string> funcMap, Dictionary<string, string> sourceMap, List<string> combinedNames)
         {
             var metaMaps = target.GetMetaMappedInstalledDLC(false);
-            var uiName = metaMaps[dlc]?.ModName ??
+            // metaMaps only contains non-official DLC_ folders; ME1/ME2 can mount folders outside of that set
+            metaMaps.TryGetValue(dlc, out var metaCmm);
+            var uiName = metaCmm?.ModName ??
                          TPMIService.GetThirdPartyModInfo(dlc, target.Game)?.modname ?? dlc;
 
             if (!combinedNames.Contains(uiName))

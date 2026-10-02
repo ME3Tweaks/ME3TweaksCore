@@ -70,6 +70,8 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
             foreach (var dlc in dlcMountsInOrder)
             {
                 var dlcCookedPath = Path.Combine(target.GetDLCPath(), dlc, target.Game.CookedDirName());
+                if (!Directory.Exists(dlcCookedPath))
+                    continue;
 
                 MLog.Debug($@"Looking for {SHADER_MERGE_PATTERN} files in {dlcCookedPath}", log);
                 var globalShaders = Directory.GetFiles(dlcCookedPath, GlobalShaderMerge.SHADER_MERGE_PATTERN, SearchOption.TopDirectoryOnly)
