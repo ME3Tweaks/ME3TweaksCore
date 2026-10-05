@@ -75,6 +75,8 @@
         LE3_SeqAct_LogEnabler = 74,
         LE3_ConsoleExtension = 77,
         LE3_LEXInterop = 80,
-        LE3_FunctionLogger = 85
+        LE3_FunctionLogger = 85,
+
+        LMP_DiscordIntegration = 1207
     }
 }

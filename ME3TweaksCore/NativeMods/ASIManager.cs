@@ -557,6 +557,21 @@ namespace ME3TweaksCore.NativeMods
                             DevModeOnly = false,
                             Game = MEGame.LMP
                         },
+                        // V7 - 10/04/2026
+                        new ASIModVersion {
+                            Name = @"MilanHost",
+                            InstalledPrefix="MilanHost",
+                            Author = "ME3Tweaks",
+                            Version = 7,
+                            Description = "MilanHost adds required functionality to the game to allow Project Milan to work properly.",
+                            Hash = "",
+                            SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPMilanHost-v7.0.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = false,
+                            Game = MEGame.LMP
+                        },
                     ]
                 });
 
@@ -581,6 +596,42 @@ namespace ME3TweaksCore.NativeMods
                             DevModeOnly = false,
                             Game = MEGame.LMP
                         }
+                    ]
+                });
+
+                // Add Discord Integration. Mod Manager installs it when Discord asks it to start
+                // LMP for a join (me3tweaksmodmanager://lmplaunch).
+                updateGroups.Add(new ASIMod()
+                {
+                    UpdateGroupId = (int)ASIModUpdateGroupID.LMP_DiscordIntegration,
+                    Game = MEGame.LMP,
+                    Versions = [
+                        new ASIModVersion {
+                            Name = @"Discord Integration",
+                            InstalledPrefix = "LMPDiscordIntegration",
+                            Author = "ME3Tweaks",
+                            Version = 2,
+                            Description = "Discord Integration shows your Legendary Multiplayer lobby on your Discord profile and lets friends join it through Discord.",
+                            Hash = "5e6e21fc2afc44cad7afd74878cb623b",
+                            SourceCodeLink = "https://github.com/ME3Tweaks/LExASIs/tree/main/DiscordIntegration",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPDiscordIntegration-v2.0.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = false,
+                            Game = MEGame.LMP,
+                            Dependencies = [
+                                new ASIDependency
+                                {
+                                    Filename = @"discord_partner_sdk.dll",
+                                    StorageFilename = @"discord_partner_sdk_v1.dll",
+                                    Filesize = 9602488,
+                                    Hash = @"cd4513eec1296329f96834c69a5930d0",
+                                    ServerAssetCompressed = true,
+                                    CompressedFilesize = 3144437,
+                                    CompressedHash = "b4916fc2aa84c5120577cf1fc897f766"
+                                }
+                            ]
+                        },
                     ]
                 });
 
@@ -735,7 +786,16 @@ namespace ME3TweaksCore.NativeMods
 
             if (hasExistingVersionOfModInstalled)
             {
-                return true; // The ASI was already installed. There is nothing left to do
+                // The ASI was already installed. Its dependencies may still be missing or replaced; this only copies ones that are.
+                await asi.InstallDependencies(target);
+                return true;
+            }
+
+            if (asi.DownloadLink == null)
+            {
+                // Listed before it is uploaded, so there is nothing to install yet.
+                MLog.Error($@"ASI {asi.Name} v{asi.Version} has no download link yet; it cannot be installed");
+                return false;
             }
 
             // Install the ASI
