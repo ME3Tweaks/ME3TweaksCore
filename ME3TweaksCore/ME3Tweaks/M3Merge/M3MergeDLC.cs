@@ -10,6 +10,7 @@ using ME3TweaksCore.Helpers;
 using ME3TweaksCore.ME3Tweaks.M3Merge.Game2Email;
 using ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader;
 using ME3TweaksCore.ME3Tweaks.M3Merge.LE1Config;
+using ME3TweaksCore.ME3Tweaks.M3Merge.LinkerPatches;
 using ME3TweaksCore.ME3Tweaks.M3Merge.PlotManager;
 using ME3TweaksCore.ME3Tweaks.StarterKit;
 using ME3TweaksCore.Targets;
@@ -45,6 +46,13 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
         /// <param name="game"></param>
         /// <returns></returns>
         public static bool SupportsEmailMerge(this MEGame game) => game.IsGame2();
+
+        /// <summary>
+        /// If this game supports linker patch merge (merge DLC m3lp files into BioGame\LinkerPatches). Only LMP's MilanHost can load linker patches.
+        /// </summary>
+        /// <param name="game"></param>
+        /// <returns></returns>
+        public static bool SupportsLinkerPatchMerge(this MEGame game) => game == MEGame.LMP;
 
     }
 
@@ -228,6 +236,12 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
             {
                 // Todo: Verbose logging pass through.
                 PlotManagerMerge.RunPlotManagerMerge(target, false);
+            }
+
+            // This also does not use the MergeDLC component.
+            if (target.Game.SupportsLinkerPatchMerge() && LinkerPatchMerge.NeedsMerged(target))
+            {
+                LinkerPatchMerge.RunLinkerPatchMerge(target);
             }
 
             // The following do use the merge DLC component

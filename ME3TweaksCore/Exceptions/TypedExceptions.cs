@@ -24,4 +24,12 @@ namespace ME3TweaksCore.Exceptions
     {
         public IncompatibleBio2DAMergeException(string message) : base(message) {}
     }
+
+    /// <summary>
+    /// Thrown when a linker patch merge fails due to invalid mod content, such as a bad manifest or patch package
+    /// </summary>
+    public class LinkerPatchMergeException : NoTelemetryException
+    {
+        public LinkerPatchMergeException(string message) : base(message) {}
+    }
 }

@@ -511,5 +511,39 @@
     <system:String x:Key="string_interp_fileInUseByUnknownProcess">Could not delete {0} because it is open in another program. Close any programs that may be using it, such as the game or modding tools, then try again.</system:String>
     <!-- 0={file path} -->
 
+    <!-- LinkerPatch Merge -->
+    <system:String x:Key="string_interp_linkerPatch_invalidManifest">Linker patch manifest {0} in {1} could not be read: {2}</system:String>
+    <!-- 0={manifest filename} 1={DLC folder name} 2={Error message} -->
+    <system:String x:Key="string_interp_linkerPatch_manifestWrongGame">Linker patch manifest {0} in {1} is for {2}, but this installation is {3}.</system:String>
+    <!-- 0={manifest filename} 1={DLC folder name} 2={Game} 3={Game} -->
+    <system:String x:Key="string_interp_linkerPatch_invalidEntry">Patch {2} in linker patch manifest {0} in {1} is invalid. Each patch must have an originalObject and a patchPackage value.</system:String>
+    <!-- 0={manifest filename} 1={DLC folder name} 2={Number of the patch in the manifest, starting at 1}. originalObject and patchPackage are names used in the manifest file, do not translate them -->
+    <system:String x:Key="string_interp_linkerPatch_invalidPackageName">Linker patch package {0} in {1} (manifest {2}) must have a filename that starts with Patch_ and ends with .pcc</system:String>
+    <!-- 0={package filename} 1={DLC folder name} 2={manifest filename}. 'Patch_' is literal and case sensitive, do not translate it -->
+    <system:String x:Key="string_interp_linkerPatch_duplicateInDLC">{0} declares more than one linker patch for {1} (in {2} and {3}). Each object can only be patched once per DLC mod.</system:String>
+    <!-- 0={DLC folder name} 1={Object path, like SFXGame.SFXWeapon_Avenger} 2={manifest filename} 3={manifest filename} -->
+    <system:String x:Key="string_interp_linkerPatch_packageNotFound">Linker patch package {0} was not found in the LinkerPatches folder of {1}. It is used by {2}.</system:String>
+    <!-- 0={package filename} 1={DLC folder name} 2={manifest filename}. LinkerPatches is a folder name, do not translate it -->
+    <system:String x:Key="string_interp_linkerPatch_packageCouldNotBeOpened">Linker patch package {0} in {1} could not be opened: {2}</system:String>
+    <!-- 0={package filename} 1={DLC folder name} 2={Error message} -->
+    <system:String x:Key="string_interp_linkerPatch_packageWrongGame">Linker patch package {0} in {1} is a {2} package, but it must be a {3} package.</system:String>
+    <!-- 0={package filename} 1={DLC folder name} 2={Game} 3={Game} -->
+    <system:String x:Key="string_interp_linkerPatch_packageNotCooked">Linker patch package {0} in {1} is not marked as cooked. Patch packages must have the Cooked package flag.</system:String>
+    <!-- 0={package filename} 1={DLC folder name}. Cooked is the name of a package flag, do not translate it -->
+    <system:String x:Key="string_interp_linkerPatch_importsPatchPackage">Linker patch package {0} in {1} imports {2}, which is inside a linker patch package. Patch packages are renamed when they are installed, so this reference would break. Objects in the same patch package must be referenced directly, not through imports.</system:String>
+    <!-- 0={package filename} 1={DLC folder name} 2={Object path, like Patch_Foo.SomeObject} -->
+    <system:String x:Key="string_interp_linkerPatch_missingPatchObject">Linker patch package {0} in {1} does not contain {2}. The patch object must be at the same path in the patch package as the object it replaces.</system:String>
+    <!-- 0={package filename} 1={DLC folder name} 2={Object path, like GUI_SF_Splash.Splash_I2} -->
+    <system:String x:Key="string_interp_linkerPatch_levelObjectNotAllowed">{0} cannot be linker patched because it is part of a level. It is patched by {1} in {2}. Objects in a level (TheWorld) cannot be replaced with linker patches.</system:String>
+    <!-- 0={Object path, like BioP_MPCommon.TheWorld.PersistentLevel.SeqAct_Log_3} 1={DLC folder name} 2={manifest filename}. TheWorld is an object name, do not translate it -->
+    <system:String x:Key="string_interp_linkerPatch_originalNotFound">{0} could not be found in the game files. It is patched by {1} in {2}.</system:String>
+    <!-- 0={Object path, like SFXGame.SFXWeapon_Avenger} 1={DLC folder name} 2={manifest filename} -->
+    <system:String x:Key="string_interp_linkerPatch_classMismatch">{0} is a {1}, but its linker patch {2} from {4} is a {3}. A patch must be the same class as the object it replaces.</system:String>
+    <!-- 0={Object path, like SFXGame.SFXWeapon_Avenger} 1={Class name} 2={Patch package filename and object path} 3={Class name} 4={DLC folder name} -->
+    <system:String x:Key="string_interp_linkerPatch_outputNameCollision">Linker patch package {0} would be installed by both {1} and {2}. One of the patch packages must be renamed.</system:String>
+    <!-- 0={package filename} 1={DLC folder name} 2={DLC folder name} -->
+    <system:String x:Key="string_interp_linkerPatch_collidesWithGamePackage">Linker patch package {0} from {1} has the same name as a package that is already in the game ({2}), so it would never load. The patch package must be renamed.</system:String>
+    <!-- 0={package filename} 1={DLC folder name} 2={File path} -->
+
 
 </ResourceDictionary>

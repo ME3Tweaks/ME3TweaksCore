@@ -116,5 +116,10 @@
         /// ModDesc 9.2 - Supports M3GS, M3TO, changes to DependsOnKeys selection logic
         /// </summary>
         public const double MODDESC_VERSION_9_2 = 9.2;
+
+        /// <summary>
+        /// ModDesc 10.0 - Supports LinkerPatches (.m3lp manifests in a DLC mod's LinkerPatches folder, LMP only)
+        /// </summary>
+        public const double MODDESC_VERSION_10_0 = 10.0;
     }
 }

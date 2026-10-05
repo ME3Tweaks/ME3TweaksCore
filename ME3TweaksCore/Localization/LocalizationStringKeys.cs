@@ -306,5 +306,21 @@ namespace ME3TweaksCore.Localization
 		public const string string_downloadingMicrosoftVisualCPPRedistributable = "string_downloadingMicrosoftVisualCPPRedistributable";
 		public const string string_interp_fileInUseByProcesses = "string_interp_fileInUseByProcesses";
 		public const string string_interp_fileInUseByUnknownProcess = "string_interp_fileInUseByUnknownProcess";
+		public const string string_interp_linkerPatch_invalidManifest = "string_interp_linkerPatch_invalidManifest";
+		public const string string_interp_linkerPatch_manifestWrongGame = "string_interp_linkerPatch_manifestWrongGame";
+		public const string string_interp_linkerPatch_invalidEntry = "string_interp_linkerPatch_invalidEntry";
+		public const string string_interp_linkerPatch_invalidPackageName = "string_interp_linkerPatch_invalidPackageName";
+		public const string string_interp_linkerPatch_duplicateInDLC = "string_interp_linkerPatch_duplicateInDLC";
+		public const string string_interp_linkerPatch_packageNotFound = "string_interp_linkerPatch_packageNotFound";
+		public const string string_interp_linkerPatch_packageCouldNotBeOpened = "string_interp_linkerPatch_packageCouldNotBeOpened";
+		public const string string_interp_linkerPatch_packageWrongGame = "string_interp_linkerPatch_packageWrongGame";
+		public const string string_interp_linkerPatch_packageNotCooked = "string_interp_linkerPatch_packageNotCooked";
+		public const string string_interp_linkerPatch_importsPatchPackage = "string_interp_linkerPatch_importsPatchPackage";
+		public const string string_interp_linkerPatch_missingPatchObject = "string_interp_linkerPatch_missingPatchObject";
+		public const string string_interp_linkerPatch_levelObjectNotAllowed = "string_interp_linkerPatch_levelObjectNotAllowed";
+		public const string string_interp_linkerPatch_originalNotFound = "string_interp_linkerPatch_originalNotFound";
+		public const string string_interp_linkerPatch_classMismatch = "string_interp_linkerPatch_classMismatch";
+		public const string string_interp_linkerPatch_outputNameCollision = "string_interp_linkerPatch_outputNameCollision";
+		public const string string_interp_linkerPatch_collidesWithGamePackage = "string_interp_linkerPatch_collidesWithGamePackage";
 	}
 }

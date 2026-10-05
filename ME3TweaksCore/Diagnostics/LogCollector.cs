@@ -275,6 +275,7 @@ namespace ME3TweaksCore.Diagnostics
                     new DiagASIInfo(),
                     new DiagBasegameFiles(),
                     new DiagInstalledDLC(),
+                    new DiagLinkerPatches(),
                     new DiagBTPVerify(),
                     new DiagTFCInfo(),
                     new DiagMEM(), // This also checks for extended in it
