@@ -14,6 +14,8 @@ using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Helpers;
 using ME3TweaksCore.Localization;
+using ME3TweaksCore.ME3Tweaks.M3Merge;
+using ME3TweaksCore.ME3Tweaks.M3Merge.LinkerPatches;
 using ME3TweaksCore.Misc;
 using ME3TweaksCore.NativeMods;
 using ME3TweaksCore.NativeMods.Interfaces;
@@ -754,6 +756,40 @@ namespace ME3TweaksCore.Targets
         public void PopulateTextureInstallHistory()
         {
             TextureInstallHistory.ReplaceAll(GetTextureModInstallationHistory());
+        }
+
+        /// <summary>
+        /// Linker patches installed into this target, from the linker patch build record. Only populated for games that support linker patch merge.
+        /// </summary>
+        public ObservableCollectionExtended<InstalledLinkerPatch> InstalledLinkerPatches { get; } = new ObservableCollectionExtended<InstalledLinkerPatch>();
+
+        /// <summary>
+        /// If the installed linker patches do not match the linker patch manifests of the enabled DLC, and the linker patch merge needs to be run
+        /// </summary>
+        public bool LinkerPatchesStale { get; private set; }
+
+        /// <summary>
+        /// Populates the list of installed linker patches and determines if they are out of date
+        /// </summary>
+        public void PopulateLinkerPatches()
+        {
+            if (!Game.SupportsLinkerPatchMerge())
+            {
+                InstalledLinkerPatches.ClearEx();
+                LinkerPatchesStale = false;
+                return;
+            }
+
+            try
+            {
+                var record = LinkerPatchMerge.LoadBuildRecord(Game, TargetPath);
+                InstalledLinkerPatches.ReplaceAll(record?.Redirects?.Select(x => new InstalledLinkerPatch(x)) ?? Enumerable.Empty<InstalledLinkerPatch>());
+                LinkerPatchesStale = LinkerPatchMerge.IsBuildStale(Game, TargetPath, record);
+            }
+            catch (Exception e)
+            {
+                MLog.Exception(e, $@"Error populating linker patches for target {TargetPath}:");
+            }
         }
 
         public List<TextureModInstallationInfo> GetTextureModInstallationHistory()
