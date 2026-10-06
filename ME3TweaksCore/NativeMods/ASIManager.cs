@@ -564,7 +564,7 @@ namespace ME3TweaksCore.NativeMods
                             Author = "ME3Tweaks",
                             Version = 7,
                             Description = "MilanHost adds required functionality to the game to allow Project Milan to work properly.",
-                            Hash = "",
+                            Hash = "4ffcbdcd226c5b184e564fc8778eaa75",
                             SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
                             DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPMilanHost-v7.0.asi",
                             IsBeta = false,
@@ -718,6 +718,22 @@ namespace ME3TweaksCore.NativeMods
                 throw new Exception(@"Error parsing the ASI Manifest: " + e.Message);
             }
 
+        }
+
+        /// <summary>
+        /// Gets the full paths of the support files ASIs need that are present in the specified target, outside of the ASI folder.
+        /// These are installed alongside ASIs, such as the VC++ runtime dlls that are required under Wine.
+        /// </summary>
+        /// <param name="target">Target to check</param>
+        /// <returns>Full paths of support files that exist in the target. Empty if there are none.</returns>
+        public static List<string> GetASISupportFiles(GameTarget target)
+        {
+            if (!WineWorkarounds.WineDetected)
+            {
+                return new List<string>();
+            }
+
+            return ASIWine.GetVC145TargetFilePaths(target).Where(File.Exists).ToList();
         }
 
         /// <summary>

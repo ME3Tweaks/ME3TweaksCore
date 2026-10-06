@@ -117,6 +117,35 @@ namespace ME3TweaksCore.NativeMods
         }
 
         /// <summary>
+        /// Gets the full paths the VC145 zip's files are extracted to in the specified game target. Empty if the zip has not been downloaded.
+        /// </summary>
+        /// <param name="target">The game target whose executable directory receives the extracted files</param>
+        /// <returns>Full paths of each file in the zip, whether or not it currently exists in the target</returns>
+        internal static List<string> GetVC145TargetFilePaths(GameTarget target)
+        {
+            var files = new List<string>();
+            var zipPath = GetVC145ZipPath();
+            if (target == null || !File.Exists(zipPath))
+            {
+                return files;
+            }
+
+            var executableDir = M3Directories.GetExecutableDirectory(target);
+            using (var archive = ZipFile.OpenRead(zipPath))
+            {
+                foreach (var entry in archive.Entries)
+                {
+                    // Skip directories
+                    if (string.IsNullOrEmpty(entry.Name))
+                        continue;
+
+                    files.Add(Path.Combine(executableDir, entry.FullName));
+                }
+            }
+            return files;
+        }
+
+        /// <summary>
         /// Extracts the VC145 zip file contents to the executable directory of the specified game target.
         /// The zip file must already be downloaded via EnsureVC145ZipDownloadedAsync.
         /// Skips extraction if all files already exist with matching sizes.
