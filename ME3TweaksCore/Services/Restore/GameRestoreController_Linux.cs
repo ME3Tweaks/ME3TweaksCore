@@ -54,6 +54,17 @@ namespace ME3TweaksCore.Services.Restore
                 return $@"/run/current-system/sw/bin/rsync";
             }
 
+            if (File.Exists(@"Z:/usr/bin/rsync"))
+            {
+                return @"/usr/bin/rsync";
+            }
+
+            // universal fallback
+            if (File.Exists(@"Z:/bin/rsync"))
+            {
+                return @"/bin/rsync";
+            }
+
             // Not found
             return null;
         }
@@ -75,26 +86,50 @@ namespace ME3TweaksCore.Services.Restore
             var excludesOption = @"--exclude cmm_vanilla";
 
             var script = $"""
-                {shebang}
+            {shebang}
 
-                set -o pipefail
+            set -o pipefail
 
-                echo "Starting restore" >> "$1"
-                # Nixos
-                if [ -d "/run/current-system/sw/bin/" ]; then
-                  RSYNC_PATH="/run/current-system/sw/bin/rsync"
-                else
-                  export LD_PRELOAD="$(find /run/host/usr/ -name libpopt.so.0 -print -quit 2>/dev/null)" # gets first libpopt.so.0 and exits
-                  RSYNC_PATH="/run/host/usr/bin/rsync"
+            LOG_FILE="$1"
+
+            echo "Starting restore" >> "$LOG_FILE"
+
+            if [ -x "/run/host/usr/bin/rsync" ]; then
+                RSYNC_PATH="/run/host/usr/bin/rsync"
+
+                # Flatpak host libraries may not be available to the process by default.
+                LIBPOPT="$(find /run/host/usr -name libpopt.so.0 -print -quit 2>/dev/null)"
+                if [ -n "$LIBPOPT" ]; then
+                    export LD_PRELOAD="$LIBPOPT"
                 fi
-                
-                $RSYNC_PATH {shortFlags} {longFlags} {format} {excludesOption} \
+
+            elif [ -x "/run/current-system/sw/bin/rsync" ]; then
+                RSYNC_PATH="/run/current-system/sw/bin/rsync"
+
+            elif [ -x "/usr/bin/rsync" ]; then
+                RSYNC_PATH="/usr/bin/rsync"
+
+            elif [ -x "/bin/rsync" ]; then
+                RSYNC_PATH="/bin/rsync"
+
+            else
+                echo "ERROR: rsync executable not found" >> "$LOG_FILE"
+                exit 127
+            fi
+
+            echo "Using rsync: $RSYNC_PATH" >> "$LOG_FILE"
+
+            "$RSYNC_PATH" {shortFlags} {longFlags} {format} {excludesOption} \
                 "{backupPath}/" \
-                "{destinationPath}/" 2>&1 \
-                >> "$1"
-                echo "$RSYNC_PATH" >> "$1"
-                echo "--- RESTORE COMPLETE (exit code $?) ---" >> "$1"
-                """;
+                "{destinationPath}/" \
+                >> "$LOG_FILE" 2>&1
+
+            RSYNC_EXIT_CODE=$?
+
+            echo "--- RESTORE COMPLETE (exit code $RSYNC_EXIT_CODE) ---" >> "$LOG_FILE"
+
+            exit "$RSYNC_EXIT_CODE"
+            """;
             File.WriteAllText(outputPath, script.Replace("\r", "").ToCharArray()); // do not localize
         }
 
