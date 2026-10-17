@@ -77,6 +77,11 @@
         LE3_LEXInterop = 80,
         LE3_FunctionLogger = 85,
 
+
+        LMP_MilanHost = 501,
+        LMP_AutoTOC = 502,
+        LEL_MilanLauncher = 510,
+
         LMP_DiscordIntegration = 1207
     }
 }
