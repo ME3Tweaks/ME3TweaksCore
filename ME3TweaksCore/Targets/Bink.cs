@@ -16,7 +16,7 @@ namespace ME3TweaksCore.Targets
         internal const string ME1ASILoaderHash = @"30660f25ab7f7435b9f3e1a08422411a";
         internal const string ME2ASILoaderHash = @"a5318e756893f6232284202c1196da13";
         internal const string ME3ASILoaderHash = @"1acccbdae34e29ca7a50951999ed80d5";
-        internal const string LEASILoaderHash = @"4832409a1e5ef385622043767cc37be8"; // bink 2.0.0.16 by ME3Tweaks 10/04/2026
+        internal const string LEASILoaderHash = @"2cf7e6ccf70b69ca6a18d3f25eaf192f"; // bink 2.0.0.17 by ME3Tweaks 10/16/2026
 
         // Original Trilogy won't be getting updated bink dlls so we don't care about their version info
         /// <summary>
