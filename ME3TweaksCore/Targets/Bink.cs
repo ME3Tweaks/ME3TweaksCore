@@ -72,7 +72,7 @@ namespace ME3TweaksCore.Targets
                         try
                         {
                             var fvi = FileVersionInfo.GetVersionInfo(binkPath);
-                            if (new Version(fvi.FileVersion) > CurrentBinkVersionLE)
+                            if (fvi.ProductName != "Bink and Smacker" && new Version(fvi.FileVersion) > CurrentBinkVersionLE)
                             {
                                 return true;
                             }
