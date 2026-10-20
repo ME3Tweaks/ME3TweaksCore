@@ -480,7 +480,6 @@ namespace ME3TweaksCore.NativeMods
                 // Add LE3 ASIs that we want
                 // This prevents duplication into the manifest
                 // Once public we can have new flag for LMP cloning.
-                updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_TEXTURE_OVERRIDE), MEGame.LMP, 1201));
                 updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_LINKER_PRINTER), MEGame.LMP, 1202));
                 updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_STREAMING_LEVELS_HUD), MEGame.LMP, 1203));
                 updateGroups.Add(new ASIMod(updateGroups.Find(x => x.UpdateGroupId == ASIModIDs.LE3_DEBUGLOGGER_DEV), MEGame.LMP, 1204));
@@ -642,13 +641,43 @@ namespace ME3TweaksCore.NativeMods
                             DevModeOnly = false,
                             Game = MEGame.LMP
                         },
+                        // V11 - 10/17/2026
+                        new ASIModVersion {
+                            Name = @"MilanHost",
+                            InstalledPrefix="MilanHost",
+                            Author = "ME3Tweaks",
+                            Version = 11,
+                            Description = "MilanHost adds required functionality to the game to allow Project Milan to work properly.",
+                            Hash = "4ca0764cf8aa4bf7deb00385e510b817",
+                            SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPMilanHost-v11.0.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = false,
+                            Game = MEGame.LMP
+                        },
+                        // V12 - 10/18/2026
+                        new ASIModVersion {
+                            Name = @"MilanHost",
+                            InstalledPrefix="MilanHost",
+                            Author = "ME3Tweaks",
+                            Version = 12,
+                            Description = "MilanHost adds required functionality to the game to allow Project Milan to work properly.",
+                            Hash = "2b99a6857b40b1a8a597b3202b95e049",
+                            SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPMilanHost-v12.0.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = false,
+                            Game = MEGame.LMP
+                        },
                     ]
                 });
 
                 // Add AutoTOC v3
                 updateGroups.Add(new ASIMod()
                 {
-                    UpdateGroupId = (int)ASIModUpdateGroupID.LMP_DiscordIntegration,
+                    UpdateGroupId = (int)ASIModUpdateGroupID.LMP_AutoTOC,
                     Game = MEGame.LMP,
                     Versions = [
                         // V3 - 8/26/2026
@@ -661,6 +690,30 @@ namespace ME3TweaksCore.NativeMods
                             Hash = "3e06aa2c71fcf093c658cd321e9d606a",
                             SourceCodeLink = "https://github.com/ME3Tweaks/blahblahblah",
                             DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LEAutoTOC-v3.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = false,
+                            Game = MEGame.LMP
+                        }
+                    ]
+                });
+
+                // Add LMP Texture Override
+                updateGroups.Add(new ASIMod()
+                {
+                    UpdateGroupId = (int)ASIModUpdateGroupID.LMP_TextureOverride,
+                    Game = MEGame.LMP,
+                    Versions = [
+                        // V5 - 10/18/2026
+                        new ASIModVersion {
+                            Name = @"TextureOverride",
+                            InstalledPrefix="TextureOverride",
+                            Author = "ME3Tweaks",
+                            Version = 5,
+                            Description = "Texture Override description here.",
+                            Hash = "016e6685ddd664bf89dcf4064f2c315e",
+                            SourceCodeLink = "https://github.com/ME3Tweaks/LExASIs/tree/main/TextureOverride",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPTextureOverride-v5.0.asi",
                             IsBeta = false,
                             Hidden = false,
                             DevModeOnly = false,

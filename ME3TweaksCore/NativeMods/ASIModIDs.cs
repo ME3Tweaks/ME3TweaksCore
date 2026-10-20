@@ -80,6 +80,8 @@
 
         LMP_MilanHost = 501,
         LMP_AutoTOC = 502,
+        LMP_TextureOverride = 503,
+
         LEL_MilanLauncher = 510,
 
         LMP_DiscordIntegration = 1207
