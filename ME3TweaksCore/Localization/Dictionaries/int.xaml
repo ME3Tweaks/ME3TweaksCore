@@ -544,6 +544,10 @@
     <!-- 0={package filename} 1={DLC folder name} 2={DLC folder name} -->
     <system:String x:Key="string_interp_linkerPatch_collidesWithGamePackage">Linker patch package {0} from {1} has the same name as a package that is already in the game ({2}), so it would never load. The patch package must be renamed.</system:String>
     <!-- 0={package filename} 1={DLC folder name} 2={File path} -->
+    <system:String x:Key="string_interp_linkerPatch_packageDeclaresNetObjects">Linker patch package {0} in {1} declares {2} net object(s). Patch packages must not take part in networking, so their net object count must be 0.</system:String>
+    <!-- 0={package filename} 1={DLC folder name} 2={Number of objects} -->
+    <system:String x:Key="string_interp_linkerPatch_exportHasNetIndex">Linker patch package {0} in {1} contains {2}, which has NetIndex {3}. Patch packages must not take part in networking, so every object in them must have a NetIndex of -1.</system:String>
+    <!-- 0={package filename} 1={DLC folder name} 2={Object path, like GUI_SF_Splash.Splash_I2} 3={Number}. NetIndex is the name of a value in the package, do not translate it -->
 
 
 </ResourceDictionary>

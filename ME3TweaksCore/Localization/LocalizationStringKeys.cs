@@ -322,5 +322,7 @@ namespace ME3TweaksCore.Localization
 		public const string string_interp_linkerPatch_classMismatch = "string_interp_linkerPatch_classMismatch";
 		public const string string_interp_linkerPatch_outputNameCollision = "string_interp_linkerPatch_outputNameCollision";
 		public const string string_interp_linkerPatch_collidesWithGamePackage = "string_interp_linkerPatch_collidesWithGamePackage";
+		public const string string_interp_linkerPatch_packageDeclaresNetObjects = "string_interp_linkerPatch_packageDeclaresNetObjects";
+		public const string string_interp_linkerPatch_exportHasNetIndex = "string_interp_linkerPatch_exportHasNetIndex";
 	}
 }
