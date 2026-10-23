@@ -406,8 +406,13 @@ namespace ME3TweaksCore.Targets
             Action notifyFileRestoringCallback = null,
             Action<object> notifyRestoredCallback = null)
         {
-            ModifiedBasegameFiles.ClearEx();
-            ModifiedSFARFiles.ClearEx();
+            // Collection changes must run on UI thread (if this library is being used in a UI project).
+            // Cross thread changes to collections bound in WPF can crash if WPF has discarded the view before processing the change.
+            ME3TweaksCoreLib.RunOnUIThread(() =>
+            {
+                ModifiedBasegameFiles.ClearEx();
+                ModifiedSFARFiles.ClearEx();
+            });
 
             List<string> modifiedSfars = new List<string>();
             List<string> modifiedFiles = new List<string>();
@@ -454,7 +459,8 @@ namespace ME3TweaksCore.Targets
                 modifiedSfars.AddRange(inconsistentDLC.Select(x => Path.Combine(x, @"CookedPCConsole", @"Default.sfar")));
                 modifiedSfars = modifiedSfars.Distinct().ToList(); //filter out if modified + inconsistent
 
-                ModifiedSFARFiles.AddRange(modifiedSfars.Select(file => MExtendedClassGenerators.GenerateSFARObject(file, this, restoreSfarConfirmationCallback, notifySFARRestoringCallback, notifyRestoredCallback)));
+                var sfarObjects = modifiedSfars.Select(file => MExtendedClassGenerators.GenerateSFARObject(file, this, restoreSfarConfirmationCallback, notifySFARRestoringCallback, notifyRestoredCallback)).ToList();
+                ME3TweaksCoreLib.RunOnUIThread(() => ModifiedSFARFiles.AddRange(sfarObjects));
             }
 
             // Filter out packages and TFCs if game is texture modded
@@ -496,7 +502,7 @@ namespace ME3TweaksCore.Targets
                         notifyRestoredCallback)).ToList();
             }
 
-            ModifiedBasegameFiles.AddRange(modifiedBasegameFiles);
+            ME3TweaksCoreLib.RunOnUIThread(() => ModifiedBasegameFiles.AddRange(modifiedBasegameFiles));
         }
 
         /// <summary>
@@ -755,7 +761,8 @@ namespace ME3TweaksCore.Targets
 
         public void PopulateTextureInstallHistory()
         {
-            TextureInstallHistory.ReplaceAll(GetTextureModInstallationHistory());
+            var history = GetTextureModInstallationHistory();
+            ME3TweaksCoreLib.RunOnUIThread(() => TextureInstallHistory.ReplaceAll(history));
         }
 
         /// <summary>
@@ -775,7 +782,7 @@ namespace ME3TweaksCore.Targets
         {
             if (!Game.SupportsLinkerPatchMerge())
             {
-                InstalledLinkerPatches.ClearEx();
+                ME3TweaksCoreLib.RunOnUIThread(InstalledLinkerPatches.ClearEx);
                 LinkerPatchesStale = false;
                 return;
             }
@@ -783,7 +790,8 @@ namespace ME3TweaksCore.Targets
             try
             {
                 var record = LinkerPatchMerge.LoadBuildRecord(Game, TargetPath);
-                InstalledLinkerPatches.ReplaceAll(record?.Redirects?.Select(x => new InstalledLinkerPatch(x)) ?? Enumerable.Empty<InstalledLinkerPatch>());
+                var linkerPatches = record?.Redirects?.Select(x => new InstalledLinkerPatch(x)).ToList() ?? [];
+                ME3TweaksCoreLib.RunOnUIThread(() => InstalledLinkerPatches.ReplaceAll(linkerPatches));
                 LinkerPatchesStale = LinkerPatchMerge.IsBuildStale(Game, TargetPath, record);
             }
             catch (Exception e)
@@ -1013,10 +1021,11 @@ namespace ME3TweaksCore.Targets
 
                 void notifyExtraFileDeleted(InstalledExtraFile ief)
                 {
-                    ExtraFiles.Remove(ief);
+                    ME3TweaksCoreLib.RunOnUIThread(() => ExtraFiles.Remove(ief));
                 }
 
-                ExtraFiles.ReplaceAll(extraDlls.Select(x => MExtendedClassGenerators.GenerateInstalledExtraFile(Path.Combine(exeDir, x), InstalledExtraFile.EFileType.DLL, Game, notifyExtraFileDeleted)));
+                var extraFiles = extraDlls.Select(x => MExtendedClassGenerators.GenerateInstalledExtraFile(Path.Combine(exeDir, x), InstalledExtraFile.EFileType.DLL, Game, notifyExtraFileDeleted)).ToList();
+                ME3TweaksCoreLib.RunOnUIThread(() => ExtraFiles.ReplaceAll(extraFiles));
             }
             catch (Exception e)
             {
