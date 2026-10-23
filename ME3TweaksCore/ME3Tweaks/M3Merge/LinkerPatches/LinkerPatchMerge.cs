@@ -7,6 +7,7 @@ using LegendaryExplorerCore.Coalesced;
 using LegendaryExplorerCore.GameFilesystem;
 using LegendaryExplorerCore.Misc;
 using LegendaryExplorerCore.Packages;
+using LegendaryExplorerCore.Packages.NetIndexing;
 using LegendaryExplorerCore.Unreal;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.Exceptions;
@@ -279,9 +280,10 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.LinkerPatches
         /// </summary>
         /// <param name="target">Target to merge</param>
         /// <param name="log">Optional callback that receives each redirect log line</param>
-        public static void RunLinkerPatchMerge(GameTarget target, Action<string> log = null)
+        /// <returns>Full paths of the files the merge wrote. Empty if no DLC contribute linker patches.</returns>
+        public static List<string> RunLinkerPatchMerge(GameTarget target, Action<string> log = null)
         {
-            RunLinkerPatchMerge(target.Game, target.TargetPath, log, true);
+            return RunLinkerPatchMerge(target.Game, target.TargetPath, log, true);
         }
 
         /// <summary>
@@ -291,8 +293,10 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.LinkerPatches
         /// <param name="gameRoot">Root of the game</param>
         /// <param name="log">Optional callback that receives each redirect log line</param>
         /// <param name="validateOriginalsAgainstGame">If each original object must be found in the game's files with the same class as its patch. Only tests should turn this off.</param>
-        public static void RunLinkerPatchMerge(MEGame game, string gameRoot, Action<string> log, bool validateOriginalsAgainstGame)
+        /// <returns>Full paths of the files the merge wrote. Empty if no DLC contribute linker patches.</returns>
+        public static List<string> RunLinkerPatchMerge(MEGame game, string gameRoot, Action<string> log, bool validateOriginalsAgainstGame)
         {
+            var writtenFiles = new List<string>();
             void logLine(string line)
             {
                 MLog.Information(line);
@@ -453,7 +457,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.LinkerPatches
                 if (!sourceRecords.Any())
                 {
                     MLog.Information(@"LINKERPATCH: No DLC contribute linker patches, output has been removed");
-                    return;
+                    return writtenFiles;
                 }
 
                 var redirects = winners.Values.Select(x => x.Record).OrderBy(x => x.OriginalObject, StringComparer.OrdinalIgnoreCase).ToList();
@@ -463,10 +467,14 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.LinkerPatches
                     Directory.CreateDirectory(cookedPath);
                     foreach (var outputPackage in outputPackages)
                     {
-                        File.Copy(outputPackage.Value.sourcePath, Path.Combine(cookedPath, outputPackage.Key));
+                        var outputPath = Path.Combine(cookedPath, outputPackage.Key);
+                        File.Copy(outputPackage.Value.sourcePath, outputPath);
+                        writtenFiles.Add(outputPath);
                     }
 
-                    File.WriteAllBytes(Path.Combine(cookedPath, LINKER_PATCH_INDEX_FILENAME), BuildIndex(redirects).ToArray());
+                    var indexPath = Path.Combine(cookedPath, LINKER_PATCH_INDEX_FILENAME);
+                    File.WriteAllBytes(indexPath, BuildIndex(redirects).ToArray());
+                    writtenFiles.Add(indexPath);
                 }
                 else
                 {
@@ -486,10 +494,13 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.LinkerPatches
                     SourceManifests = sourceRecords,
                     Redirects = redirects
                 };
-                record.Save(GetBuildRecordPath(game, gameRoot));
+                var recordPath = GetBuildRecordPath(game, gameRoot);
+                record.Save(recordPath);
+                writtenFiles.Add(recordPath);
 
                 sw.Stop();
                 MLog.Information($@"LINKERPATCH: Installed {redirects.Count} linker patches from {outputPackages.Count} packages in {sw.ElapsedMilliseconds}ms");
+                return writtenFiles;
             }
             catch (Exception e)
             {
@@ -544,6 +555,17 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.LinkerPatches
             // The engine raises a fatal mislinked error when a redirected export's patch object is not in a cooked package
             if (!package.Flags.HasFlag(UnrealFlags.EPackageFlags.Cooked))
                 throw new LinkerPatchMergeException(LC.GetString(LC.string_interp_linkerPatch_packageNotCooked, packageFile, dlc));
+
+            // Patch packages only exist to load objects, so they must be inert to networking. Not every machine loads the same patches,
+            // and each machine computes the package map's object bases from the net object counts of what it has loaded.
+            var netObjectCount = ((MEPackage)package).Gen0NetworkedObjectCount;
+            if (netObjectCount > 0)
+                throw new LinkerPatchMergeException(LC.GetString(LC.string_interp_linkerPatch_packageDeclaresNetObjects, packageFile, dlc, netObjectCount));
+
+            // Forced export roots are declarations of other packages and carry no net index of their own
+            var networkedExport = package.Exports.FirstOrDefault(x => x.NetIndex >= 0 && !NetIndexKeys.IsForcedExportRoot(x));
+            if (networkedExport != null)
+                throw new LinkerPatchMergeException(LC.GetString(LC.string_interp_linkerPatch_exportHasNetIndex, packageFile, dlc, networkedExport.InstancedFullPath, networkedExport.NetIndex));
 
             // Patch packages are renamed on install, so imports rooted at any patch package's source name (including its own) would no longer resolve
             var patchImport = package.Imports.FirstOrDefault(x => x.idxLink == 0 && x.ObjectName.Instanced.StartsWith(LINKER_PATCH_PACKAGE_PREFIX, StringComparison.Ordinal));
