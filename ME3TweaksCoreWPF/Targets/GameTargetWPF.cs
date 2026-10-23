@@ -59,10 +59,14 @@ namespace ME3TweaksCoreWPF.Targets
         public ICommand EnableAllDLCModsCommand { get; set; }
         public ICommand DisableAllDLCModsCommand { get; set; }
 
+        private ListCollectionView _modifiedBasegameFilesView;
+
         /// <summary>
-        /// View for filtering modified basegame files
+        /// View for filtering modified basegame files. This is an owned view rather than the default view, as WPF purges default
+        /// views that have no subscribers (e.g. when Installation Information is closed), which nulls their SourceCollection. If a
+        /// cross thread change is still queued for a purged view, WPF crashes processing it. Must first be accessed on the UI thread.
         /// </summary>
-        public ICollectionView ModifiedBasegameFilesView => CollectionViewSource.GetDefaultView(ModifiedBasegameFiles);
+        public ICollectionView ModifiedBasegameFilesView => _modifiedBasegameFilesView ??= new ListCollectionView(ModifiedBasegameFiles);
 
         /// <summary>
         /// Determines if this gametarget can be chosen in dropdowns
