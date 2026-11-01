@@ -686,6 +686,53 @@ namespace ME3TweaksCore.NativeMods
                             DevModeOnly = false,
                             Game = MEGame.LMP
                         },
+                        // V14 - 10/26/2026
+                        new ASIModVersion {
+                            Name = @"MilanHost",
+                            InstalledPrefix="MilanHost",
+                            Author = "ME3Tweaks",
+                            Version = 14,
+                            Description = "MilanHost adds required functionality to the game to allow Project Milan to work properly.",
+                            Hash = "a3450024422bc00b3e6260a4c381c88e",
+                            SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPMilanHost-v14.0.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = false,
+                            Game = MEGame.LMP
+                        },
+                        // Crash Fix
+                        // V15 - 10/28/2026
+                        new ASIModVersion {
+                            Name = @"MilanHost",
+                            InstalledPrefix="MilanHost",
+                            Author = "ME3Tweaks",
+                            Version = 15,
+                            Description = "MilanHost adds required functionality to the game to allow Legendary Edition Multiplayer to work properly.",
+                            Hash = "8077327aaee26084990d7d5b54baedbd",
+                            SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPMilanHost-v15.0.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = false,
+                            Game = MEGame.LMP
+                        },
+                        // MenuScreens, FINAL build mode
+                        // V16 - 10/31/2026
+                        new ASIModVersion {
+                            Name = @"MilanHost",
+                            InstalledPrefix="MilanHost",
+                            Author = "ME3Tweaks",
+                            Version = 16,
+                            Description = "MilanHost adds required functionality to the game to allow Legendary Edition Multiplayer to work properly. LMP will not boot without this ASI.",
+                            Hash = "fa889645f0f31251d28a69e9b23a88d3",
+                            SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPMilanHost-v16.0.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = false,
+                            Game = MEGame.LMP
+                        },
                     ]
                 });
 
