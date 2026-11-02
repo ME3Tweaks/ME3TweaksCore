@@ -187,12 +187,16 @@ namespace ME3TweaksCore.Services.Restore
                 SetProgressIndeterminateCallback?.Invoke(true);
 
                 backupStatus.BackupLocationStatus = LC.GetString(LC.string_preparingGameDirectory);
-                var created = MUtilities.CreateDirectoryWithWritePermission(destinationDirectory);
-                if (!created)
+                // CreateDirectoryWithWritePermission tries to get the parent of destinationDirectory, this skips this step if the target path is a drive root
+                if (new DirectoryInfo(destinationDirectory).Parent != null)
                 {
-                    RestoreErrorCallback?.Invoke(LC.GetString(LC.string_errorCreatingGameDirectory), LC.GetString(LC.string_interp_couldNotCreateGameDirectoryNoPermission, Game.ToGameName()));
-                    //b.Result = RestoreResult.ERROR_COULD_NOT_CREATE_DIRECTORY;
-                    return false;
+                    var created = MUtilities.CreateDirectoryWithWritePermission(destinationDirectory);
+                    if (!created)
+                    {
+                        RestoreErrorCallback?.Invoke(LC.GetString(LC.string_errorCreatingGameDirectory), LC.GetString(LC.string_interp_couldNotCreateGameDirectoryNoPermission, Game.ToGameName()));
+                        //b.Result = RestoreResult.ERROR_COULD_NOT_CREATE_DIRECTORY;
+                        return false;
+                    }
                 }
 
                 RestoreUsingRoboCopy(backupPath, restoreTarget, backupStatus, destinationDirectory);
