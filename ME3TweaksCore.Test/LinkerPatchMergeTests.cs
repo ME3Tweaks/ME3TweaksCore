@@ -66,7 +66,7 @@ namespace ME3TweaksCore.Test
         /// <summary>
         /// Creates an uncompressed patch package with an export at each of the given object paths. Outers are created as forced Package exports, as in cooked files.
         /// </summary>
-        private static void CreatePatchPackage(string path, IEnumerable<string> objectPaths, bool cooked = true, string? rootImport = null, string? outerClass = null)
+        private static void CreatePatchPackage(string path, IEnumerable<string> objectPaths, bool cooked = true, string? rootImport = null, string? outerClass = null, int netObjectCount = 0, int? leafNetIndex = null)
         {
             using var pcc = MEPackageHandler.CreateMemoryEmptyPackage(path, Game);
             foreach (var objectPath in objectPaths)
@@ -79,6 +79,7 @@ namespace ME3TweaksCore.Test
                     if (existing == null)
                     {
                         existing = pcc.CreatePackageExport(segments[i], parent, forcedExport: i == 0 && segments.Length > 1);
+                        existing.NetIndex = -1; // New exports get NetIndex 0, but patch packages must be inert to networking
                         if (outerClass != null && i == 1 && segments.Length > 2)
                         {
                             existing.Class = pcc.GetEntryOrAddImport($@"Engine.{outerClass}", @"Class", @"Engine");
@@ -86,7 +87,14 @@ namespace ME3TweaksCore.Test
                     }
                     parent = existing;
                 }
+
+                if (leafNetIndex != null)
+                {
+                    ((ExportEntry)parent!).NetIndex = leafNetIndex.Value;
+                }
             }
+
+            ((MEPackage)pcc).Gen0NetworkedObjectCount = netObjectCount;
 
             if (rootImport != null)
             {
@@ -344,6 +352,28 @@ namespace ME3TweaksCore.Test
             WriteManifest(Path.Combine(lp, @"A.m3lp"), (@"SFXGame.SFXWeapon_Avenger", @"Patch_A.pcc", null));
             var ex = Assert.ThrowsExactly<LinkerPatchMergeException>(RunMerge);
             StringAssert.Contains(ex.Message, @"is not marked as cooked");
+            Assert.IsFalse(Directory.Exists(OutputRoot));
+        }
+
+        [TestMethod]
+        public void TestPatchPackageWithNetObjectsFails()
+        {
+            var lp = CreateDLC(@"DLC_MOD_NetCount", 100);
+            CreatePatchPackage(Path.Combine(lp, @"Patch_A.pcc"), [@"SFXGame.SFXWeapon_Avenger"], netObjectCount: 3);
+            WriteManifest(Path.Combine(lp, @"A.m3lp"), (@"SFXGame.SFXWeapon_Avenger", @"Patch_A.pcc", null));
+            var ex = Assert.ThrowsExactly<LinkerPatchMergeException>(RunMerge);
+            StringAssert.Contains(ex.Message, @"declares 3 net object(s)");
+            Assert.IsFalse(Directory.Exists(OutputRoot));
+        }
+
+        [TestMethod]
+        public void TestPatchExportWithNetIndexFails()
+        {
+            var lp = CreateDLC(@"DLC_MOD_NetIndex", 100);
+            CreatePatchPackage(Path.Combine(lp, @"Patch_A.pcc"), [@"SFXGame.SFXWeapon_Avenger"], leafNetIndex: 7);
+            WriteManifest(Path.Combine(lp, @"A.m3lp"), (@"SFXGame.SFXWeapon_Avenger", @"Patch_A.pcc", null));
+            var ex = Assert.ThrowsExactly<LinkerPatchMergeException>(RunMerge);
+            StringAssert.Contains(ex.Message, @"contains SFXGame.SFXWeapon_Avenger, which has NetIndex 7");
             Assert.IsFalse(Directory.Exists(OutputRoot));
         }
 

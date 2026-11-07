@@ -20,10 +20,9 @@ namespace ME3TweaksCoreWPF.UI
     }
 
     // Vtable order must match the real interface starting from IUnknown,
-    // but trailing members we never call (overlay icons, thumbnails, etc.)
-    // can simply be omitted - COM interop only cares about declared order.
+    // but trailing members we never call can simply be omitted
     [ComImport]
-    [Guid("ea1afb91-9e28-4b86-90e9-9e9f8a5eefaf")]
+    [Guid(@"ea1afb91-9e28-4b86-90e9-9e9f8a5eefaf")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     public interface ITaskbarList3
     {
@@ -43,7 +42,7 @@ namespace ME3TweaksCoreWPF.UI
     }
 
     [ComImport]
-    [Guid("56fdf344-fd6d-11d0-958a-006097c9a090")]
+    [Guid(@"56fdf344-fd6d-11d0-958a-006097c9a090")]
     [ClassInterface(ClassInterfaceType.None)]
     internal class TaskbarListCoClass
     {
