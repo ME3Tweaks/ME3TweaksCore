@@ -733,6 +733,21 @@ namespace ME3TweaksCore.NativeMods
                             DevModeOnly = false,
                             Game = MEGame.LMP
                         },
+                        // V17 - 11/04/2026
+                        new ASIModVersion {
+                            Name = @"MilanHost",
+                            InstalledPrefix="MilanHost",
+                            Author = "ME3Tweaks",
+                            Version = 17,
+                            Description = "MilanHost adds required functionality to the game to allow Legendary Edition Multiplayer to work properly. LMP will not boot without this ASI.",
+                            Hash = "99aee0742571caf0e5b312056de435f5",
+                            SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPMilanHost-v17.0.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = false,
+                            Game = MEGame.LMP
+                        },
                     ]
                 });
 
@@ -1022,8 +1037,8 @@ namespace ME3TweaksCore.NativeMods
                     File.Copy(cachedPath, finalPath, true);
                     MLog.Information($@"Installed ASI to {finalPath}");
                     TelemetryInterposer.TrackEvent(@"Installed ASI", new Dictionary<string, string>() {
-                                { @"Filename", Path.GetFileNameWithoutExtension(finalPath)}
-                            });
+                        { @"Filename", Path.GetFileNameWithoutExtension(finalPath)}
+                    });
 
                     await asi.InstallDependencies(target);
 
