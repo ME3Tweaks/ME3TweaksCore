@@ -43,6 +43,11 @@ namespace ME3TweaksCore.Diagnostics.Modules
 
         internal override void RunModule(LogUploadPackage package)
         {
+            if (package.DiagnosticTarget.Game == MEGame.LMP)
+            {
+                // Not supported by MEM
+                return;
+            }
             var diag = package.DiagnosticWriter;
             var gameID = package.DiagnosticTarget.Game.ToMEMGameNum().ToString();
 
