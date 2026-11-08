@@ -30,14 +30,21 @@ namespace ME3TweaksCore.Diagnostics.Modules
                 diag.AddDiagLine(@"File Table of Contents (TOC) check", LogSeverity.DIAGSECTION);
                 diag.AddDiagLine(@"PCConsoleTOC.bin files list all files the game can normally access and stores the values in hash tables for faster lookup.");
                 bool hadTocError = false;
-                string markerfile = package.DiagnosticTarget.GetTextureMarkerPath();
                 var bgTOC = Path.Combine(package.DiagnosticTarget.GetBioGamePath(), @"PCConsoleTOC.bin"); // Basegame
-                var isTOCVanilla = VanillaDatabaseService.IsFileVanilla(package.DiagnosticTarget, bgTOC, true);
-                if (isTOCVanilla)
+
+                // Mark TOC as not-vanilla
+                bool isTOCVanilla = package.DiagnosticTarget.Game == MEGame.LMP ? false : VanillaDatabaseService.IsFileVanilla(package.DiagnosticTarget, bgTOC, true);
+                if (package.DiagnosticTarget.Game != MEGame.LMP)
                 {
-                    diag.AddDiagLine($@"Unmodified vanilla TOC: {Path.GetRelativePath(package.DiagnosticTarget.TargetPath, bgTOC)}", LogSeverity.GOOD);
-                    diag.AddDiagLine(@"The vanilla shipping game includes references to files that don't exist and incorrect size values for some files; these are normal.");
-                    diag.AddDiagLine(@"If you restored from a backup without all localizations, there may be additional missing LOC entries listed here, that is normal.");
+                    if (isTOCVanilla)
+                    {
+                        diag.AddDiagLine($@"Unmodified vanilla TOC: {Path.GetRelativePath(package.DiagnosticTarget.TargetPath, bgTOC)}", LogSeverity.GOOD);
+                        diag.AddDiagLine(@"The vanilla shipping game includes references to files that don't exist and incorrect size values for some files; these are normal.");
+                        diag.AddDiagLine(@"If you restored from a backup without all localizations, there may be additional missing LOC entries listed here, that is normal.");
+                    }
+                } else
+                {
+                    diag.AddDiagLine($@"LMP does not have a vanilla TOC - so only divergences from what TOC lists are shown here.");
                 }
 
                 ProgressInfo pi = new ProgressInfo()
@@ -49,6 +56,8 @@ namespace ME3TweaksCore.Diagnostics.Modules
                     Value = 0
                 };
 
+
+                string markerfile = package.DiagnosticTarget.GetTextureMarkerPath();
                 hadTocError |= CheckTOCFile(package, bgTOC, markerfile, diag.AddDiagLine, isTOCVanilla, pi);
 
                 var dlcs = package.DiagnosticTarget.GetInstalledDLC();
@@ -64,7 +73,8 @@ namespace ME3TweaksCore.Diagnostics.Modules
 
                 foreach (string toc in dlcTOCs)
                 {
-                    isTOCVanilla = VanillaDatabaseService.IsFileVanilla(package.DiagnosticTarget, toc, true);
+                    // Don't do next check if LMP
+                    isTOCVanilla = package.DiagnosticTarget.Game == MEGame.LMP ? false : VanillaDatabaseService.IsFileVanilla(package.DiagnosticTarget, toc, true);
                     if (isTOCVanilla)
                     {
                         diag.AddDiagLine($@"Unmodified vanilla TOC: {Path.GetRelativePath(package.DiagnosticTarget.TargetPath, toc)}", LogSeverity.GOOD);

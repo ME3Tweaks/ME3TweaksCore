@@ -40,6 +40,12 @@ namespace ME3TweaksCore.Diagnostics.Modules
                 package.UpdateStatusCallback?.Invoke(LC.GetString(LC.string_collectingBasegameFileModifications) + $@" {(int)progressInfo.Value}%");
             };
 
+            if (package.DiagnosticTarget.Game == MEGame.LMP)
+            {
+                diag.AddDiagLine(@"LMP basegame files check is disabled until base game is stabilized");
+                return;
+            }
+
             var isVanilla = VanillaDatabaseService.ValidateTargetAgainstVanilla(package.DiagnosticTarget, failedCallback, false, pi: pi);
             if (isVanilla)
             {

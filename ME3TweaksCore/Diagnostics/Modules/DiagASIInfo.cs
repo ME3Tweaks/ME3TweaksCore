@@ -280,7 +280,6 @@ namespace ME3TweaksCore.Diagnostics.Modules
                             // If the log was written within the last day.
                             StringBuilder sb = new StringBuilder();
                             var fileContentsLines = File.ReadAllLines(f);
-
                             int lastIndexRead = 0;
 
                             if (Path.GetFileName(f) != @"bink2w64_proxy.log")
