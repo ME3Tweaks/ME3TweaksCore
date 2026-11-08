@@ -135,7 +135,6 @@ namespace ME3TweaksCore.NativeMods
             logManifestInfo();
         }
 
-
         private static void LoadEmbeddedManifest()
         {
             MLog.Warning(@"Loading embedded ASI manifest as no on-disk or network based version could be used");
@@ -420,6 +419,21 @@ namespace ME3TweaksCore.NativeMods
                             Hash = "fbd140acfdb0c52de338cce41d12bced",
                             SourceCodeLink = "https://github.com/ME3Tweaks/ME3-ASI-Plugins/ME3ProfileDump",
                             DownloadLink = "https://me3tweaks.com/mods/asi/ME3ProfileDump-v1.0.asi",
+                            IsBeta = false,
+                            Hidden = true,
+                            DevModeOnly = false,
+                            Game = MEGame.ME3
+                        },
+                        // V2
+                        new ASIModVersion {
+                            Name = @"ME3MPProfileDump",
+                            InstalledPrefix="ME3MPProfileDump",
+                            Author = "ME3Tweaks",
+                            Version = 2,
+                            Description = "ME3MPProfileDump is an ASI used by ME3Tweaks Mod Manager to convert your ME3 online profile to LMP's local multiplayer profile.",
+                            Hash = "0340c109608663f7bc048d00b3668a24",
+                            SourceCodeLink = "https://github.com/ME3Tweaks/ME3-ASI-Plugins/ME3ProfileDump",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/ME3ProfileDump-v2.0.asi",
                             IsBeta = false,
                             Hidden = true,
                             DevModeOnly = false,
@@ -719,6 +733,38 @@ namespace ME3TweaksCore.NativeMods
                             Hash = "99aee0742571caf0e5b312056de435f5",
                             SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
                             DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPMilanHost-v17.0.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = false,
+                            Game = MEGame.LMP
+                        },
+                        // V18 - 11/08/2026
+                        // Origin name fix, Crash fix for FOV native extension
+                        new ASIModVersion {
+                            Name = @"MilanHost",
+                            InstalledPrefix="MilanHost",
+                            Author = "ME3Tweaks",
+                            Version = 18,
+                            Description = "MilanHost adds required functionality to the game to allow Legendary Edition Multiplayer to work properly. LMP will not boot without this ASI.",
+                            Hash = "84ccdd8f385d4194294582b46243fa0d",
+                            SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPMilanHost-v18.0.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = false,
+                            Game = MEGame.LMP
+                        },
+                        // V18 - 11/08/2026
+                        // Persisted matchmaking settings, joining improvements
+                        new ASIModVersion {
+                            Name = @"MilanHost",
+                            InstalledPrefix="MilanHost",
+                            Author = "ME3Tweaks",
+                            Version = 19,
+                            Description = "MilanHost adds required functionality to the game to allow Legendary Edition Multiplayer to work properly. LMP will not boot without this ASI.",
+                            Hash = "01c03389c4e0f23c725760f99f793367",
+                            SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPMilanHost-v19.0.asi",
                             IsBeta = false,
                             Hidden = false,
                             DevModeOnly = false,
