@@ -4,7 +4,7 @@
 		<Description>Core library for ME3Tweaks software</Description>
 		<Company>ME3Tweaks</Company>
 		<Authors>ME3Tweaks</Authors>
-		<Version>10.0.0.140</Version>
+		<Version>10.0.1.140</Version>
 		<TargetFrameworks>net10.0</TargetFrameworks>
 		<Platforms>x64</Platforms>
 		<Copyright>2021-2026 ME3Tweaks</Copyright>
