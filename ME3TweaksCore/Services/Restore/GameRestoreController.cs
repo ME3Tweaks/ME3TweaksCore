@@ -249,7 +249,9 @@ namespace ME3TweaksCore.Services.Restore
                 void addNonVanillaFile(string failedItem)
                 {
                     if (failedItem.RepresentsPackageFilePath())
+                    {
                         packagesToCheck.Add(failedItem);
+                    }
                 }
 
                 backupStatus.BackupLocationStatus = LC.GetString(LC.string_comparingGameAgainstVanillaDatabase);
