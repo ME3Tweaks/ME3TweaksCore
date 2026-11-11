@@ -754,8 +754,8 @@ namespace ME3TweaksCore.NativeMods
                             DevModeOnly = false,
                             Game = MEGame.LMP
                         },
-                        // V18 - 11/08/2026
-                        // Persisted matchmaking settings, joining improvements
+                        // V19 - 11/09/2026
+                        // Disable bugsentry
                         new ASIModVersion {
                             Name = @"MilanHost",
                             InstalledPrefix="MilanHost",
@@ -770,6 +770,23 @@ namespace ME3TweaksCore.NativeMods
                             DevModeOnly = false,
                             Game = MEGame.LMP
                         },
+                        // V20 - 11/10/2026
+                        // MOTD, Version upgrades, truncate log, more robust player name override
+                        new ASIModVersion {
+                            Name = @"MilanHost",
+                            InstalledPrefix="MilanHost",
+                            Author = "ME3Tweaks",
+                            Version = 20,
+                            Description = "MilanHost adds required functionality to the game to allow Legendary Edition Multiplayer to work properly. LMP will not boot without this ASI.",
+                            Hash = "7e5a38124eb84047fbe78292e07790c5",
+                            SourceCodeLink = "https://github.com/llamathings/MilanClientServer",
+                            DownloadLink = "https://me3tweaks.com/mods/asi/lmp/sdfa6sd9f89a7sdf897sg7gfsd4/LMPMilanHost-v20.0.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = false,
+                            Game = MEGame.LMP
+                        },
+                        
                     ]
                 });
 
