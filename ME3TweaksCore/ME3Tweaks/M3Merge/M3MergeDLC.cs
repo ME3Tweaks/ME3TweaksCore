@@ -105,7 +105,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
         /// <returns></returns>
         public static Guid? GetCurrentMergeGuid(GameTarget target)
         {
-            var metaPath = Path.Combine(M3Directories.GetDLCPath(target), MERGE_DLC_FOLDERNAME, @"_metacmm.txt");
+            var metaPath = Path.Combine(M3Directories.GetDLCPath(target), MERGE_DLC_FOLDERNAME, MetaCMM.FileName);
             if (File.Exists(metaPath))
             {
                 MetaCMM m = new MetaCMM(metaPath);
@@ -161,7 +161,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
                     { MERGE_DLC_GUID_ATTRIBUTE_NAME, Guid.NewGuid().ToString() }// A new GUID is generated
                 }
             };
-            mcmm.WriteMetaCMM(Path.Combine(M3Directories.GetDLCPath(Target), MERGE_DLC_FOLDERNAME, @"_metacmm.txt"), $@"{Path.GetFileNameWithoutExtension(MLibraryConsumer.GetHostingProcessname())} {MLibraryConsumer.GetAppVersion()}");
+            mcmm.WriteMetaCMM(Path.Combine(M3Directories.GetDLCPath(Target), MERGE_DLC_FOLDERNAME, MetaCMM.FileName), $@"{Path.GetFileNameWithoutExtension(MLibraryConsumer.GetHostingProcessname())} {MLibraryConsumer.GetAppVersion()}");
 
             Generated = true;
         }

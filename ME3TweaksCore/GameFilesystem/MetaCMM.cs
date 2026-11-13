@@ -19,6 +19,11 @@ namespace ME3TweaksCore.GameFilesystem
     /// </summary>
     public class MetaCMM
     {
+        /// <summary>
+        /// Name of the metacmm file
+        /// </summary>
+        public static readonly string FileName = @"_metacmm.txt";
+
         #region Info Prefixes
         public static readonly string PrefixOptionsSelectedOnInstall = @"[INSTALLOPTIONS]";
         public static readonly string PrefixOptionKeysSelectedOnInstall = @"[OPTIONKEYS]";

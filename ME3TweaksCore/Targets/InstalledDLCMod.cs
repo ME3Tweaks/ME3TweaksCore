@@ -86,7 +86,7 @@ namespace ME3TweaksCore.Targets
         {
             // Get name of DLC folder, removing beginning x if any.
             DLCFolderNameString = DLCFolderName.TrimStart('x');
-            var metaFile = Path.Combine(dlcFolderPath, @"_metacmm.txt");
+            var metaFile = Path.Combine(dlcFolderPath, MetaCMM.FileName);
             if (File.Exists(metaFile))
             {
                 InstalledByManagedSolution = true;

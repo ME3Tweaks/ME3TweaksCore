@@ -184,7 +184,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.LinkerPatches
                     continue;
 
                 // Same as GameTarget.GetMetaCMMForDLC()
-                var metaPath = Path.Combine(dlcPath, dlc, @"_metacmm.txt");
+                var metaPath = Path.Combine(dlcPath, dlc, MetaCMM.FileName);
                 var metacmm = File.Exists(metaPath) ? new MetaCMM(metaPath) : null;
                 if (metacmm == null || metacmm.ModDescFeatureLevel < ModDescConsts.MODDESC_VERSION_10_0)
                 {
@@ -203,7 +203,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.LinkerPatches
         }
 
         /// <summary>
-        /// Returns if the linker patch merge should run on the target: either a DLC contributes manifests, or there is existing output that must be cleaned up.
+        /// Returns if the linker patch merge should run on the target
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>

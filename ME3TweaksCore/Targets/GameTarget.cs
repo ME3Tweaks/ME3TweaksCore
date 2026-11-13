@@ -1182,7 +1182,7 @@ namespace ME3TweaksCore.Targets
         public MetaCMM GetMetaCMMForDLC(string dlcName)
         {
             var dlcpath = M3Directories.GetDLCPath(this);
-            var meta = Path.Combine(dlcpath, dlcName, @"_metacmm.txt");
+            var meta = Path.Combine(dlcpath, dlcName, MetaCMM.FileName);
             if (File.Exists(meta))
             {
                 return new MetaCMM(meta);

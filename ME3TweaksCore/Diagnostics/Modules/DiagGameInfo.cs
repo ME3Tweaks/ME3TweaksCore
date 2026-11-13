@@ -46,6 +46,28 @@ namespace ME3TweaksCore.Diagnostics.Modules
                 var versInfo = FileVersionInfo.GetVersionInfo(exePath);
                 diag.AddDiagLine($@"Version: {versInfo.FileMajorPart}.{versInfo.FileMinorPart}.{versInfo.FileBuildPart}.{versInfo.FilePrivatePart}");
 
+                if (package.DiagnosticTarget.Game == MEGame.LMP)
+                {
+                    // Write version of LMP here too
+                    var metaInfo = Path.Combine(package.DiagnosticTarget.GetDLCPath(), @"DLC_MOD_ProjectMilan", MetaCMM.FileName);
+                    if (File.Exists(metaInfo))
+                    {
+                        try
+                        {
+                            var meta = new MetaCMM(metaInfo);
+                            diag.AddDiagLine($@"Project Milan version: {meta.Version}");
+                        }
+                        catch (Exception ex)
+                        {
+                            diag.AddDiagLine($@"Unable to parse metadata for Project Milan: {ex.Message}", LogSeverity.ERROR);
+                        }
+                    }
+                    else
+                    {
+                        diag.AddDiagLine($@"Unable to read version of Project Milan", LogSeverity.ERROR);
+                    }
+                }
+
                 //Disk type
                 string pathroot = Path.GetPathRoot(package.DiagnosticTarget.TargetPath);
                 pathroot = pathroot.Substring(0, 1);
