@@ -68,6 +68,12 @@ namespace ME3TweaksCore.Targets
 
 
         public string ALOTVersion { get; private set; }
+
+        /// <summary>
+        /// Project Milan version from its metacmm, LMP targets only. Null if not known.
+        /// </summary>
+        public string LMPVersion { get; private set; }
+
         /// <summary>
         /// Indicates that this is a custom, abnormal game object. It may be used only for UI purposes, but it depends on the context.
         /// </summary>
@@ -179,6 +185,8 @@ namespace ME3TweaksCore.Targets
                             MEUITMVersion = 0;
                         }
 
+                        LMPVersion = Game == MEGame.LMP ? ReadLMPVersion(logInfo) : null;
+
                         IsPolishME1 = Game == MEGame.ME1 && File.Exists(Path.Combine(TargetPath, @"BioGame", @"CookedPC", @"Movies", @"niebieska_pl.bik"));
                         if (IsPolishME1)
                         {
@@ -256,6 +264,23 @@ namespace ME3TweaksCore.Targets
         }
 
         public bool TextureModded { get; private set; }
+
+        /// <summary>
+        /// Reads the Project Milan version out of its metacmm. Null if missing or unreadable.
+        /// </summary>
+        private string ReadLMPVersion(bool logInfo)
+        {
+            try
+            {
+                var version = GetMetaCMMForDLC(@"DLC_MOD_ProjectMilan")?.Version;
+                return string.IsNullOrWhiteSpace(version) ? null : version;
+            }
+            catch (Exception ex)
+            {
+                MLog.Error($@"Unable to read Project Milan metacmm: {ex.Message}", shouldLog: logInfo);
+                return null;
+            }
+        }
 
 
         private TextureModInstallationInfo cachedTextureModInfo;
