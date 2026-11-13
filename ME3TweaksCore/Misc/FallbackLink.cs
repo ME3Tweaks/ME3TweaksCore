@@ -12,7 +12,7 @@ namespace ME3TweaksCore.Misc
         /// <summary>
         /// If this URL should randomly pick one of the two links to reduce load
         /// </summary>
-        public bool LoadBalancing { get; init; }
+        public bool LoadBalancing { get; set; }
         public string MainURL { get; init; }
         public string FallbackURL { get; init; }
 
