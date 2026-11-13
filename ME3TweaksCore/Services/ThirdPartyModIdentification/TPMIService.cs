@@ -1,19 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Xml.Schema;
-using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Misc;
 using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.Helpers;
-using ME3TweaksCore.Misc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PropertyChanged;
-using Serilog;
 
 namespace ME3TweaksCore.Services.ThirdPartyModIdentification
 {

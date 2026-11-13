@@ -1,5 +1,6 @@
 ﻿using LegendaryExplorerCore.GameFilesystem;
 using LegendaryExplorerCore.Helpers;
+using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics.Support;
 using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Localization;
@@ -44,7 +45,9 @@ namespace ME3TweaksCore.Diagnostics.Modules
                 };
 
                 string errorLine = null;
-                if (!officialDLC.Contains(dlc.Key, StringComparer.InvariantCultureIgnoreCase))
+                // LMP is always unofficial so use the unofficial branch or diags show 'Bioware' and no version info
+                // We want it to stay 'official' though so it can't be as easily removed by users.
+                if (package.DiagnosticTarget.Game == MEGame.LMP || !officialDLC.Contains(dlc.Key, StringComparer.InvariantCultureIgnoreCase))
                 {
                     var metaMappedDLC = dlc.Value;
                     if (metaMappedDLC != null)
@@ -79,7 +82,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
                 else
                 {
                     dlcStruct.IsOfficialDLC = true;
-                    dlcStruct.ModName = TPMIService.GetThirdPartyModInfo(dlc.Key, package.DiagnosticTarget.Game).modname;
+                    dlcStruct.ModName = TPMIService.GetThirdPartyModInfo(dlc.Key, package.DiagnosticTarget.Game)?.modname ?? dlc.Key;
                     var dlcPath = Path.Combine(package.DiagnosticTarget.GetDLCPath(), dlc.Key);
                     var mount = MELoadedDLC.GetMountPriority(dlcPath, package.DiagnosticTarget.Game);
                     dlcStruct.MountPriority = mount;
