@@ -462,7 +462,7 @@ namespace ME3TweaksCore.Targets
                 if (Game.IsLEGame() && TextureModded && file.RepresentsPackageFilePath())
                 {
                     var size = new FileInfo(file).Length;
-                    var relative = file.Substring(TargetPath.Length) + 1;
+                    var relative = file.Substring(TargetPath.Length + 1);
                     if (trackedBasegameFilesTextureModded.TryGetValue(relative, out var tracked) && tracked.All(x => x.size != size))
                     {
                         // There is no way we will have a match for this
