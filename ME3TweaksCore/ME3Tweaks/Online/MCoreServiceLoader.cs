@@ -63,6 +63,7 @@ namespace ME3TweaksCore.ME3Tweaks.Online
         /// </summary>
         public static JToken LoadServices(FallbackLink endpoints, bool useCachedContent = false)
         {
+            MLog.Information($"Loading combined service data. useCachedContent: {useCachedContent}");
             // We cache this here in the event that there's some exception.
             useCachedContent = useCachedContent || (FirstContentCheck && !MOnlineContent.CanFetchContentThrottleCheck());
             FirstContentCheck = false; // Ensure this is false after the initial usage
