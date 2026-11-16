@@ -20,7 +20,8 @@ $gameFolders = @{
     "4" = "LE1"
     "5" = "LE2"
     "6" = "LE3"
-    "7" = "LEL"
+    "7" = "LELauncher"
+    "8" = "LMP"
 }
 
 # Function to calculate MD5 hash
@@ -236,7 +237,7 @@ try {
 
         $removedCount = 0
 
-        foreach ($gameFolder in $gameFolders.Values) {
+        foreach ($gameFolder in @($expectedFilesByFolder.Keys)) {
             $targetFolder = Join-Path $nativeModsDir $gameFolder
 
             if (-not (Test-Path $targetFolder)) {
