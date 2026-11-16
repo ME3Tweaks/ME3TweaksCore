@@ -245,8 +245,14 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
 
             var lecllessSize = (int)finalPackageStream.Position;
             finalPackageStream.Position = 0;
-            var lecllessMd5 = MUtilities.CalculateHash(finalPackageStream, byteLenToHash: lecllessSize);
-            var isVanilla = VanillaDatabaseService.IsFileVanilla(target.Game, target.GetRelativePath(finalPackage.FilePath), false, lecllessSize, lecllessMd5);
+            var isVanilla = false;
+            var vanillaDB = VanillaDatabaseService.GetDatabaseFor(target);
+            if (vanillaDB != null)
+            {
+                // Hash has to match what the target's database uses
+                var lecllessHash = MUtilities.CalculateHash(finalPackageStream, vanillaDB.HashAlgorithmName, byteLenToHash: lecllessSize);
+                isVanilla = vanillaDB.IsFileVanilla(target.GetRelativePath(finalPackage.FilePath), lecllessSize, lecllessHash);
+            }
 
             if (isVanilla)
             {

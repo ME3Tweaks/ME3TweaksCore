@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -36,10 +37,133 @@ namespace ME3TweaksCore.Services
         public static CaseInsensitiveConcurrentDictionary<List<(int size, string md5)>> LE1VanillaDatabase = new();
         public static CaseInsensitiveConcurrentDictionary<List<(int size, string md5)>> LE2VanillaDatabase = new();
         public static CaseInsensitiveConcurrentDictionary<List<(int size, string md5)>> LE3VanillaDatabase = new();
-        public static CaseInsensitiveConcurrentDictionary<List<(int size, string md5)>> LMPVanillaDatabase = new();
         public static CaseInsensitiveConcurrentDictionary<List<(int size, string md5)>> LELauncherVanillaDatabase = new();
 
         private static bool? ME1LoadedDatabaseIsPL = null;
+
+        /// <summary>
+        /// Vanilla database stored in the root of targets whose game has no fixed vanilla state (LMP)
+        /// </summary>
+        public const string TargetDatabaseFilename = @"cmm_vanilladb.bin";
+
+        // MD5T is the original MD5-only format the embedded databases use.
+        private const string LegacyDatabaseMagic = @"MD5T";
+
+        // VDB2 adds a version and a hash algorithm.
+        private const string DatabaseMagic = @"VDB2";
+        private const int DatabaseVersion = 1;
+
+        /// <summary>
+        /// Target databases by file path, along with the file's write time and size when it was read
+        /// </summary>
+        private static readonly ConcurrentDictionary<string, (DateTime writeTime, long length, VanillaDatabase db)> TargetDatabases = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// If the game's vanilla state depends on the installation (LMP is built by Mod Manager and changes between versions), so its
+        /// vanilla database is stored in the target instead of shipped with ME3TweaksCore.
+        /// </summary>
+        public static bool UsesTargetDatabase(MEGame game) => game == MEGame.LMP;
+
+        /// <summary>
+        /// Gets the vanilla database for the target. Returns null if there isn't one, such as an LMP install from before they were written.
+        /// </summary>
+        public static VanillaDatabase GetDatabaseFor(GameTarget target)
+        {
+            if (UsesTargetDatabase(target.Game))
+            {
+                return LoadTargetDatabase(target.Game, target.TargetPath);
+            }
+
+            return GetEmbeddedDatabase(target.Game, target.IsPolishME1);
+        }
+
+        private static VanillaDatabase GetEmbeddedDatabase(MEGame game, bool isMe1PL)
+        {
+            var files = LoadDatabaseFor(game, isMe1PL);
+            return files == null ? null : new VanillaDatabase(game, VanillaHashAlgorithm.MD5, files);
+        }
+
+        /// <summary>
+        /// Loads the vanilla database stored in the root of the given target folder
+        /// </summary>
+        public static VanillaDatabase LoadTargetDatabase(MEGame game, string targetPath)
+        {
+            var file = new FileInfo(Path.Combine(targetPath, TargetDatabaseFilename));
+            if (!file.Exists)
+            {
+                return null;
+            }
+
+            if (TargetDatabases.TryGetValue(file.FullName, out var cached) && cached.writeTime == file.LastWriteTimeUtc && cached.length == file.Length)
+            {
+                return cached.db;
+            }
+
+            try
+            {
+                var files = new CaseInsensitiveConcurrentDictionary<List<(int size, string md5)>>();
+                var algorithm = ParseDatabase(new MemoryStream(File.ReadAllBytes(file.FullName)), files);
+                var db = new VanillaDatabase(game, algorithm, files);
+                TargetDatabases[file.FullName] = (file.LastWriteTimeUtc, file.Length, db);
+                return db;
+            }
+            catch (Exception e)
+            {
+                MLog.Exception(e, $@"Could not read vanilla database {file.FullName}:");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Writes a vanilla database to the root of the given target folder
+        /// </summary>
+        /// <param name="files">Relative path, size and hash (as hex) of each vanilla file</param>
+        /// <param name="algorithm">Algorithm the hashes use</param>
+        public static void WriteTargetDatabase(string targetPath, IEnumerable<(string relativePath, int size, string hash)> files, VanillaHashAlgorithm algorithm)
+        {
+            var entries = files.ToList();
+            var hashLength = GetHashLength(algorithm);
+
+            var table = new MemoryStream();
+            table.WriteInt32(entries.Count);
+            foreach (var entry in entries)
+            {
+                table.WriteStringASCIINull(entry.relativePath);
+            }
+
+            table.WriteInt32(entries.Count);
+            for (int i = 0; i < entries.Count; i++)
+            {
+                var hash = Convert.FromHexString(entries[i].hash);
+                if (hash.Length != hashLength)
+                {
+                    throw new Exception($@"Hash for {entries[i].relativePath} is {hash.Length} bytes, expected {hashLength} for {algorithm}");
+                }
+
+                table.WriteInt32(i); // Name table index
+                table.WriteInt32(entries[i].size);
+                table.Write(hash);
+            }
+
+            var output = new MemoryStream();
+            output.WriteStringASCII(DatabaseMagic);
+            output.WriteInt32(DatabaseVersion);
+            output.WriteByte((byte)algorithm);
+            output.WriteInt32((int)table.Length);
+            output.Write(LZMA.Compress(table.ToArray()));
+
+            var path = Path.GetFullPath(Path.Combine(targetPath, TargetDatabaseFilename));
+            output.WriteToFile(path);
+            TargetDatabases.TryRemove(path, out _);
+            MLog.Information($@"Wrote vanilla database with {entries.Count} {algorithm} entries to {path}");
+        }
+
+        private static int GetHashLength(VanillaHashAlgorithm algorithm) => algorithm switch
+        {
+            VanillaHashAlgorithm.MD5 => 16,
+            VanillaHashAlgorithm.SHA256 => 32,
+            _ => throw new Exception($@"Unsupported vanilla database hash algorithm {(int)algorithm}")
+        };
 
         public static CaseInsensitiveConcurrentDictionary<List<(int size, string md5)>> LoadDatabaseFor(MEGame game, bool isMe1PL = false)
         {
@@ -95,11 +219,8 @@ namespace ME3TweaksCore.Services
                     ParseDatabase(lelstream, LELauncherVanillaDatabase);
                     return LELauncherVanillaDatabase;
                 case MEGame.LMP:
-                    if (LMPVanillaDatabase.Count > 0) return LMPVanillaDatabase;
-                    var lmpstream = MUtilities.ExtractInternalFileToStream($@"{assetPrefix}.bin");
-                    ParseDatabase(lmpstream, LMPVanillaDatabase);
-                    return LMPVanillaDatabase;
-
+                    // Use GetDatabaseFor(target)
+                    return new();
             }
 
             return null;
@@ -167,12 +288,29 @@ namespace ME3TweaksCore.Services
             return null;
         }
 
-        private static void ParseDatabase(MemoryStream stream, IDictionary<string, List<(int size, string md5)>> targetDictionary, bool trimLERoots = false)
+        /// <summary>
+        /// Reads a vanilla database into the dictionary. Returns the hash algorithm its entries use.
+        /// </summary>
+        private static VanillaHashAlgorithm ParseDatabase(MemoryStream stream, IDictionary<string, List<(int size, string md5)>> targetDictionary, bool trimLERoots = false)
         {
-            if (stream.ReadStringASCII(4) != @"MD5T")
+            var algorithm = VanillaHashAlgorithm.MD5;
+            var magic = stream.ReadStringASCII(4);
+            if (magic == DatabaseMagic)
+            {
+                var version = stream.ReadInt32();
+                if (version > DatabaseVersion)
+                {
+                    throw new Exception($@"Vanilla database is version {version}, this build only supports up to {DatabaseVersion}");
+                }
+
+                algorithm = (VanillaHashAlgorithm)stream.ReadByte();
+            }
+            else if (magic != LegacyDatabaseMagic)
             {
                 throw new Exception(@"Header of MD5 table doesn't match expected value!");
             }
+
+            var hashLength = GetHashLength(algorithm);
 
             //Decompress
             var decompressedSize = stream.ReadInt32();
@@ -206,22 +344,8 @@ namespace ME3TweaksCore.Services
                 var index = table.ReadInt32();
                 string path = packageNames[index];
                 int size = table.ReadInt32();
-                byte[] md5bytes = table.ReadToBuffer(16);
-                StringBuilder sb = new StringBuilder();
-                foreach (var b in md5bytes)
-                {
-                    var c1 = (b & 0x0F);
-                    var c2 = (b & 0xF0) >> 4;
-                    //Debug.WriteLine(c1.ToString("x1"));
-                    //Debug.WriteLine(c2.ToString("x1"));
+                var hash = Convert.ToHexString(table.ReadToBuffer(hashLength)).ToLowerInvariant();
 
-                    //Reverse order
-                    sb.Append(c2.ToString(@"x1"));
-                    sb.Append(c1.ToString(@"x1"));
-                    //Debug.WriteLine(sb.ToString());
-                }
-
-                //var t = sb.ToString();
                 List<(int size, string md5)> list;
                 targetDictionary.TryGetValue(path, out list);
                 if (list == null)
@@ -229,8 +353,10 @@ namespace ME3TweaksCore.Services
                     list = new List<(int size, string md5)>(3);
                     targetDictionary[path] = list;
                 }
-                list.Add((size, sb.ToString()));
+                list.Add((size, hash));
             }
+
+            return algorithm;
         }
 
         /// <summary>
@@ -319,91 +445,31 @@ namespace ME3TweaksCore.Services
         /// <returns></returns>
         public static bool IsFileVanilla(GameTarget target, string fullFilePath, bool md5check = false)
         {
+            var db = GetDatabaseFor(target);
+            if (db == null)
+            {
+                return false;
+            }
+
             var relativePath = fullFilePath.Substring(target.TargetPath.Length + 1);
-            return IsFileVanilla(target.Game, fullFilePath, relativePath, target.IsPolishME1, md5check);
+            return db.IsFileVanilla(relativePath, new FileInfo(fullFilePath), md5check);
         }
+
+        // The overloads below only use the shipped databases (MD5), so they can't check LMP. Use the GameTarget ones for that.
 
         public static bool IsFileVanilla(MEGame game, string fullpath, string relativepath, bool isME1Polish, bool md5check = false)
         {
-            if (game.IsLEGame() && relativepath.StartsWith(@"BioGame\Config\", StringComparison.OrdinalIgnoreCase))
-                return true; // Don't consider these as modified, they differ per user
-            var database = LoadDatabaseFor(game, isME1Polish);
-            if (database.TryGetValue(relativepath, out var info))
-            {
-                //foreach (var c in info)
-                //{
-                //    Debug.WriteLine("Sizes accepted: " + c.size);
-                //}
-                FileInfo f = new FileInfo(fullpath);
-                var length = f.Length;
-                bool hasSameSize = info.Any(x => x.size == length);
-                if (!hasSameSize)
-                {
-                    return false;
-                }
-
-                if (md5check)
-                {
-                    var md5 = MUtilities.CalculateHash(fullpath);
-                    return info.Any(x => x.md5 == md5);
-                }
-                return true;
-            }
-
-            return false;
+            return GetEmbeddedDatabase(game, isME1Polish)?.IsFileVanilla(relativepath, new FileInfo(fullpath), md5check) ?? false;
         }
 
         public static bool IsFileVanilla(MEGame game, string relativepath, bool isME1Polish, int fileSize, string md5 = null)
         {
-            if (game.IsLEGame() && relativepath.StartsWith(@"BioGame\Config\", StringComparison.OrdinalIgnoreCase))
-                return true; // Don't consider these as modified, they differ per user
-            var database = LoadDatabaseFor(game, isME1Polish);
-            if (database.TryGetValue(relativepath, out var info))
-            {
-                // Size check
-                if (info.All(x => x.size != fileSize))
-                {
-                    return false;
-                }
-
-                // Optional md5 check
-                if (md5 != null)
-                {
-                    return info.Any(x => x.md5 == md5);
-                }
-
-                // File is vanilla
-                return true;
-            }
-
-            return false;
+            return GetEmbeddedDatabase(game, isME1Polish)?.IsFileVanilla(relativepath, fileSize, md5) ?? false;
         }
 
         public static bool IsFileVanilla(MEGame game, FileInfo finfo, string relativepath, bool isME1Polish, bool md5check = false, string md5 = null)
         {
-            if (game.IsLEGame() && relativepath.StartsWith(@"BioGame\Config\", StringComparison.OrdinalIgnoreCase))
-                return true; // Don't consider these as modified, they differ per user
-            var database = LoadDatabaseFor(game, isME1Polish);
-            if (database.TryGetValue(relativepath, out var info))
-            {
-                // Size check
-                if (info.All(x => x.size != finfo.Length))
-                {
-                    return false;
-                }
-
-                // Optional md5 check
-                if (md5check)
-                {
-                    md5 ??= MUtilities.CalculateHash(finfo.FullName);
-                    return info.Any(x => x.md5 == md5);
-                }
-
-                // File is vanilla
-                return true;
-            }
-
-            return false;
+            return GetEmbeddedDatabase(game, isME1Polish)?.IsFileVanilla(relativepath, finfo, md5check, md5) ?? false;
         }
 
         /// <summary>
@@ -427,45 +493,17 @@ namespace ME3TweaksCore.Services
         public static bool ValidateTargetAgainstVanilla(GameTarget target, Action<string> failedValidationCallback, bool strictCheck, bool md5check = false, ProgressInfo pi = null)
         {
             bool isVanilla = true;
-            CaseInsensitiveConcurrentDictionary<List<(int size, string md5)>> vanillaDB = null;
-            switch (target.Game)
+            var vanillaDB = GetDatabaseFor(target);
+            if (vanillaDB == null)
             {
-                case MEGame.ME1:
-                    if (ME1VanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.ME1, target.IsPolishME1);
-                    vanillaDB = ME1VanillaDatabase;
-                    break;
-                case MEGame.ME2:
-                    if (ME2VanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.ME2);
-                    vanillaDB = ME2VanillaDatabase;
-                    break;
-                case MEGame.ME3:
-                    if (ME3VanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.ME3);
-                    vanillaDB = ME3VanillaDatabase;
-                    break;
-                case MEGame.LE1:
-                    if (LE1VanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.LE1);
-                    vanillaDB = LE1VanillaDatabase;
-                    break;
-                case MEGame.LE2:
-                    if (LE2VanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.LE2);
-                    vanillaDB = LE2VanillaDatabase;
-                    break;
-                case MEGame.LE3:
-                    if (LE3VanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.LE3);
-                    vanillaDB = LE3VanillaDatabase;
-                    break;
-                case MEGame.LELauncher:
-                    if (LELauncherVanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.LELauncher);
-                    vanillaDB = LELauncherVanillaDatabase;
-                    break;
-                case MEGame.LMP:
-                    // TODO: THIS NEEDS SET TO LMP
-                    if (LMPVanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.LMP);
-                    vanillaDB = LMPVanillaDatabase;
-                    break;
-
-                default:
+                if (!UsesTargetDatabase(target.Game))
+                {
                     throw new Exception(@"Cannot vanilla check against game that is not ME1/ME2/ME3/LE1/LE2/LE3/LMP/LELauncher");
+                }
+
+                // e.g. LMP installed before targets got a database
+                MLog.Warning($@"{target.TargetPath} has no vanilla database - cannot validate");
+                return false;
             }
 
             var di = new DirectoryInfo(target.TargetPath);
@@ -491,12 +529,12 @@ namespace ME3TweaksCore.Services
                     }
 
                     var shortname = file.FullName.Substring(target.TargetPath.Length + 1);
-                    if (vanillaDB.TryGetValue(shortname, out var fileInfo))
+                    if (vanillaDB.Files.TryGetValue(shortname, out var fileInfo))
                     {
                         if (file.Extension != @".sfar")
                         {
                             // Normal file
-                            var isVanila = IsFileVanilla(target.Game, file, shortname, false, md5check);
+                            var isVanila = vanillaDB.IsFileVanilla(shortname, file, md5check);
                             if (!isVanila)
                             {
                                 failedValidationCallback?.Invoke(file.FullName);
@@ -521,7 +559,7 @@ namespace ME3TweaksCore.Services
                         {
                             if (md5check)
                             {
-                                var md5 = MUtilities.CalculateHash(file.FullName);
+                                var md5 = vanillaDB.CalculateHash(file.FullName);
                                 if (fileInfo.All(x => x.md5 != md5))
                                 {
                                     failedValidationCallback?.Invoke(file.FullName);
@@ -612,48 +650,15 @@ namespace ME3TweaksCore.Services
         /// <param name="target"></param>
         /// <param name="relativeFilepath"></param>
         /// <returns></returns>
+        /// <remarks>The hashes use the target's database algorithm; see <see cref="GetDatabaseFor"/>.</remarks>
         public static List<(int size, string md5)> GetVanillaFileInfo(GameTarget target, string relativeFilepath)
         {
-            CaseInsensitiveConcurrentDictionary<List<(int size, string md5)>> vanillaDB = null;
-            switch (target.Game)
+            if (target.Game is not (MEGame.ME1 or MEGame.ME2 or MEGame.ME3) && !target.Game.IsLEGame())
             {
-                case MEGame.ME1:
-                    if (ME1VanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.ME1, target.IsPolishME1);
-                    vanillaDB = ME1VanillaDatabase;
-                    break;
-                case MEGame.ME2:
-                    if (ME2VanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.ME2);
-                    vanillaDB = ME2VanillaDatabase;
-                    break;
-                case MEGame.ME3:
-                    if (ME3VanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.ME3);
-                    vanillaDB = ME3VanillaDatabase;
-                    break;
-                case MEGame.LE1:
-                    if (LE1VanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.LE1);
-                    vanillaDB = LE1VanillaDatabase;
-                    break;
-                case MEGame.LE2:
-                    if (LE2VanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.LE2);
-                    vanillaDB = LE2VanillaDatabase;
-                    break;
-                case MEGame.LE3:
-                    if (LE3VanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.LE3);
-                    vanillaDB = LE3VanillaDatabase;
-                    break;
-                case MEGame.LMP:
-                    if (LE3VanillaDatabase.Count == 0) LoadDatabaseFor(MEGame.LMP);
-                    vanillaDB = LMPVanillaDatabase;
-                    break;
-                default:
-                    throw new Exception(@"Cannot vanilla check against game that is not ME1/ME2/ME3 or LE");
-            }
-            if (vanillaDB.TryGetValue(relativeFilepath, out var info))
-            {
-                return info;
+                throw new Exception(@"Cannot vanilla check against game that is not ME1/ME2/ME3 or LE");
             }
 
-            return null;
+            return GetDatabaseFor(target)?.GetFileInfo(relativeFilepath);
         }
 
         /// <summary>

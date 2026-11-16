@@ -40,9 +40,10 @@ namespace ME3TweaksCore.Diagnostics.Modules
                 package.UpdateStatusCallback?.Invoke(LC.GetString(LC.string_collectingBasegameFileModifications) + $@" {(int)progressInfo.Value}%");
             };
 
-            if (package.DiagnosticTarget.Game == MEGame.LMP)
+            if (VanillaDatabaseService.UsesTargetDatabase(package.DiagnosticTarget.Game) && VanillaDatabaseService.GetDatabaseFor(package.DiagnosticTarget) == null)
             {
-                diag.AddDiagLine(@"LMP basegame files check is disabled until base game is stabilized");
+                // Installed before Mod Manager started writing them
+                diag.AddDiagLine(@"Installation has no vanilla database, check skipped", LogSeverity.WARN);
                 return;
             }
 
