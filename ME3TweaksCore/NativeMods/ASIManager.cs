@@ -14,6 +14,7 @@ using PropertyChanged;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -109,6 +110,7 @@ namespace ME3TweaksCore.NativeMods
 
             if (File.Exists(ManifestLocation))
             {
+                ReplaceCacheIfEmbeddedIsNewer();
                 MLog.Information(@"Loading cached ASI manifest");
                 try
                 {
@@ -134,9 +136,41 @@ namespace ME3TweaksCore.NativeMods
         private static void LoadEmbeddedManifest()
         {
             MLog.Warning(@"Loading embedded ASI manifest as no on-disk or network based version could be used");
-            var resource = MUtilities.ExtractInternalFileToStream(@"ME3TweaksCore.NativeMods.CachedASI.asimanifest.xml");
-            var embeddedManifest = new StreamReader(resource).ReadToEnd();
-            ParseManifest(embeddedManifest, false);
+            ParseManifest(ReadEmbeddedManifest(), false);
+        }
+
+        private static string ReadEmbeddedManifest()
+        {
+            using var resource = MUtilities.ExtractInternalFileToStream(@"ME3TweaksCore.NativeMods.CachedASI.asimanifest.xml");
+            return new StreamReader(resource).ReadToEnd();
+        }
+
+        /// <summary>
+        /// UpdateCachedContent.ps1 stamps the embedded manifest with when it was pulled. If that's newer than the on-disk cache
+        /// (e.g. first boot of a new build before going online), overwrite the cache so we don't show stale ASIs.
+        /// </summary>
+        private static void ReplaceCacheIfEmbeddedIsNewer()
+        {
+            try
+            {
+                var embeddedManifest = ReadEmbeddedManifest();
+                var generatedStr = XDocument.Parse(embeddedManifest).Root?.Attribute(@"generated")?.Value;
+                if (generatedStr == null || !DateTime.TryParse(generatedStr, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var embeddedGenerated))
+                {
+                    return;
+                }
+
+                var cacheTime = File.GetLastWriteTimeUtc(ManifestLocation);
+                if (embeddedGenerated > cacheTime)
+                {
+                    MLog.Information($@"Embedded ASI manifest ({embeddedGenerated:u}) is newer than the cached one ({cacheTime:u}), replacing the cache with it");
+                    File.WriteAllText(ManifestLocation, embeddedManifest);
+                }
+            }
+            catch (Exception e)
+            {
+                MLog.Warning($@"Couldn't compare embedded ASI manifest against the cache: {e.Message}");
+            }
         }
 
         private static void logManifestInfo()

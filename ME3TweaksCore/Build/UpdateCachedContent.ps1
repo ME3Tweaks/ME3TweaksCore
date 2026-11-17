@@ -71,6 +71,14 @@ try {
         
         Write-Host "Target file: $targetFilePath" -ForegroundColor Yellow
         
+        # Add timestamp to manifest
+        $generated = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+        $rootRegex = [regex]'<ASIManifest\s*>'
+        if (-not $rootRegex.IsMatch($xmlContent)) {
+            throw "Couldn't find a plain <ASIManifest> root to stamp with the generated date"
+        }
+        $xmlContent = $rootRegex.Replace($xmlContent, "<ASIManifest generated=`"$generated`">", 1)
+
         # Write the new manifest
         $xmlContent | Out-File -FilePath $targetFilePath -Encoding UTF8 -Force
         
