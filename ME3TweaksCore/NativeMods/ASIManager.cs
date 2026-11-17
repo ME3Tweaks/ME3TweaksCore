@@ -146,8 +146,7 @@ namespace ME3TweaksCore.NativeMods
         }
 
         /// <summary>
-        /// UpdateCachedContent.ps1 stamps the embedded manifest with when it was pulled. If that's newer than the on-disk cache
-        /// (e.g. first boot of a new build before going online), overwrite the cache so we don't show stale ASIs.
+        /// Use embedded manifest if its newer than the cached version
         /// </summary>
         private static void ReplaceCacheIfEmbeddedIsNewer()
         {
