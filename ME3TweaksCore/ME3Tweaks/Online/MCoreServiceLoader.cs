@@ -61,11 +61,12 @@ namespace ME3TweaksCore.ME3Tweaks.Online
         /// <param name="endpoints">The list of endpoints to load from</param>
         /// <returns>The parsed online content if the manifest was successfully fetched; null otherwise</returns>
         /// </summary>
-        public static JToken LoadServices(FallbackLink endpoints, bool useCachedContent = false)
+        public static JToken LoadServices(FallbackLink endpoints, bool useCachedContent = false, bool forceOnlineFetch = false)
         {
-            MLog.Information($"Loading combined service data. useCachedContent: {useCachedContent}");
+            MLog.Information($"Loading combined service data. useCachedContent: {useCachedContent}, forceOnlineFetch: {forceOnlineFetch}");
             // We cache this here in the event that there's some exception.
-            useCachedContent = useCachedContent || (FirstContentCheck && !MOnlineContent.CanFetchContentThrottleCheck());
+            // Force online fetch overrides cached request
+            useCachedContent = !forceOnlineFetch && (useCachedContent || (FirstContentCheck && !MOnlineContent.CanFetchContentThrottleCheck()));
             FirstContentCheck = false; // Ensure this is false after the initial usage
 
             string serviceData = null;
